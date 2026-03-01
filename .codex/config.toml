@@ -1,0 +1,4 @@
+# 项目级最高权限（仅当前仓库生效）
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+web_search = "live"
