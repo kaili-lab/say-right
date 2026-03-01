@@ -7,6 +7,11 @@
 - 任务模板、字段定义、执行流程：`tasks/任务拆分说明-final.md`
 - 任务验收清单与审阅包模板：`tasks/REVIEW-CHECKLIST.md`
 
+## 后端任务必读
+
+- 执行 `backend/` 相关 task 前，必须先阅读：`docs/FastAPI项目固定流程.md`。
+- 执行 `backend/` 相关 task 完成前，必须执行并通过：`make -C backend check`。
+
 ## 语言与沟通
 
 - 所有输出使用中文。

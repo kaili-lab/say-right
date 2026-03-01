@@ -72,4 +72,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已新增 `POST /records/generate`，支持鉴权访问、参数校验与契约字段返回。
+- 已实现可复现英文生成 stub：固定 fixture 命中 + 稳定 fallback 文本，返回 `model_hint=stub:deterministic-v1`。
+- 已补充模型不可用分支：当输入 `__FAIL_STUB__` 时返回 503（用于稳定覆盖错误路径）。
+- 已新增测试：`backend/tests/unit/test_record_generate_service.py`、`backend/tests/integration/test_record_generate_api.py`。
+- 已完成回归：`make -C backend check` 通过（含 test/lint/typecheck）。

@@ -16,6 +16,9 @@ from app.deck.api import create_deck_router
 from app.deck.repository import InMemoryDeckRepository
 from app.deck.service import DeckService
 from app.domain.models import User
+from app.record.api import create_record_router
+from app.record.service import RecordGenerateService
+from app.record.stub import DeterministicEnglishGenerator
 
 
 def build_health_payload() -> dict[str, str]:
@@ -35,6 +38,7 @@ def create_app() -> FastAPI:
     auth_service = AuthService(user_repository=user_repository)
     deck_service = DeckService(repository=deck_repository)
     card_service = CardService(repository=card_repository)
+    record_generate_service = RecordGenerateService(generator=DeterministicEnglishGenerator())
 
     # 暴露核心依赖给测试使用，便于构造边界数据而不污染业务 API。
     application.state.user_repository = user_repository
@@ -56,6 +60,9 @@ def create_app() -> FastAPI:
     )
     application.include_router(
         create_card_router(card_service=card_service, auth_service=auth_service),
+    )
+    application.include_router(
+        create_record_router(record_service=record_generate_service, auth_service=auth_service),
     )
 
     @application.get("/health")
