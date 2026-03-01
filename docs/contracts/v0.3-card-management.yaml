@@ -1,0 +1,16 @@
+version: v0.3-card-management
+endpoints:
+  - method: GET
+    path: /decks/{deck_id}/cards
+    auth: required
+  - method: PATCH
+    path: /cards/{card_id}
+    auth: required
+  - method: DELETE
+    path: /cards/{card_id}
+    auth: required
+  - method: POST
+    path: /cards/{card_id}/move
+    auth: required
+    request:
+      to_deck_id: string

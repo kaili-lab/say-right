@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Say Right - 方案C Warm Orange · 首页 V3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf9f6;
+      --surface: #fffffe;
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --primary-soft: #fff7ed;
+      --primary-soft-hover: #ffedd5;
+      --accent: #92400e;
+      --text: #292524;
+      --muted: #78716c;
+      --line: #e7e5e4;
+      --card-radius: 16px;
+      --btn-radius: 12px;
+      --badge-radius: 8px;
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+      --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scrollbar-gutter: stable; }
+
+    body {
+      font-family: 'Inter', -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topnav { position: sticky; top: 0; z-index: 50; background: rgba(250, 249, 246, 0.82); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+    .topnav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: var(--accent); }
+    .brand-icon { width: 32px; height: 32px; border-radius: 10px; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab { text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 500; padding: 8px 14px; border-radius: var(--btn-radius); transition: all 0.15s ease-out; }
+    .nav-tab:hover { background: var(--primary-soft); color: var(--primary); }
+    .nav-tab.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    .avatar-menu { position: relative; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: #fff1e0; color: var(--accent); display: grid; place-items: center; font-size: 12px; font-weight: 700; border: 0; cursor: pointer; }
+    .avatar:focus-visible { outline: 2px solid #fdba74; outline-offset: 2px; }
+    .avatar-dropdown {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 10px);
+      min-width: 188px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      padding: 6px;
+      display: none;
+      z-index: 70;
+    }
+    .avatar-dropdown.show { display: block; }
+    .avatar-menu-item {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      border-radius: 8px;
+      text-align: left;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .avatar-menu-item:hover { background: var(--primary-soft); }
+    .avatar-menu-item.danger { color: #b91c1c; }
+    .avatar-menu-item.danger:hover { background: #fee2e2; }
+
+    .main { max-width: 1100px; margin: 0 auto; padding: 24px 24px 100px; }
+
+    .view-control {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+    }
+
+    .state-switch {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .state-switch a {
+      text-decoration: none;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 6px 10px;
+      transition: all 0.15s ease-out;
+    }
+
+    .state-switch a.active {
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .card { background: var(--surface); border-radius: var(--card-radius); padding: 24px; box-shadow: var(--shadow-card); border: 1px solid #f5f0ea; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
+    .card:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: var(--btn-radius); font-family: inherit; font-size: 14px; font-weight: 600; padding: 10px 20px; min-height: 44px; cursor: pointer; transition: all 0.15s ease-out; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-ghost { background: var(--primary-soft); color: var(--primary); }
+    .btn-ghost:hover { background: var(--primary-soft-hover); }
+
+    .welcome {
+      grid-column: span 7;
+      background: linear-gradient(150deg, #fffcf7 0%, #fff7ed 100%);
+    }
+    .welcome h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; color: var(--accent); }
+    .welcome p { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+    .welcome-stats { display: flex; gap: 12px; }
+    .welcome-stat { padding: 10px 16px; background: var(--surface); border: 1px solid #f0e6d9; border-radius: var(--btn-radius); text-align: center; min-width: 90px; }
+    .welcome-stat-value { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .welcome-stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .due-card {
+      grid-column: span 5;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: linear-gradient(165deg, #fffffe 0%, #fff7ed 100%);
+    }
+    .due-label { font-size: 13px; color: var(--muted); }
+    .due-number { font-size: 52px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .due-sub { font-size: 12px; color: var(--muted); }
+    .due-btns { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+
+    .deck-section { grid-column: span 7; }
+    .deck-section h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .deck-section h2 a { font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; }
+    .deck-list { display: flex; flex-direction: column; gap: 10px; }
+    .deck-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--btn-radius); cursor: pointer; transition: border-color 0.15s ease-out; }
+    .deck-item:hover { border-color: var(--primary); }
+    .deck-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .deck-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--badge-radius); }
+    .badge-new { background: #dbeafe; color: #1d4ed8; }
+    .badge-learning { background: #fee2e2; color: #b91c1c; }
+    .badge-review { background: #dcfce7; color: #15803d; }
+    .deck-due-count { font-size: 20px; font-weight: 700; color: var(--primary); flex-shrink: 0; margin-left: 16px; }
+
+    .insight-card { grid-column: span 5; }
+    .insight-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+    .insight-bar-track { height: 10px; background: #f5e6d5; border-radius: 99px; overflow: hidden; margin-bottom: 16px; }
+    .insight-bar-fill { height: 100%; background: linear-gradient(90deg, #f97316, #fb923c); border-radius: 99px; transition: width 0.5s ease-out; }
+    .insight-list { display: flex; flex-direction: column; gap: 10px; }
+    .insight-row { display: flex; justify-content: space-between; font-size: 13px; padding-bottom: 10px; border-bottom: 1px dashed #ede5da; }
+    .insight-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .insight-row span:first-child { color: var(--muted); }
+    .insight-row span:last-child { font-weight: 600; color: var(--accent); }
+
+    .empty-card {
+      grid-column: 1 / -1;
+      background: var(--surface);
+      border: 1px dashed #f1dfcc;
+      border-radius: var(--card-radius);
+      padding: 36px 24px;
+      text-align: center;
+    }
+    .empty-card h2 { font-size: 24px; color: var(--accent); margin-bottom: 8px; }
+    .empty-card p { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+    .empty-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+    .bottom-nav { display: none; }
+
+    @media (max-width: 767px) {
+      .topnav .nav-tabs, .topnav .avatar { display: none; }
+      .main { padding: 16px 16px 96px; }
+      .view-control { justify-content: stretch; }
+      .state-switch { width: 100%; }
+      .state-switch a { flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 10px; }
+      .bento { grid-template-columns: 1fr; }
+      .welcome, .due-card, .deck-section, .insight-card { grid-column: span 1; }
+      .due-number { font-size: 40px; }
+      .welcome-stats { flex-wrap: wrap; }
+      .deck-section h2 a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; }
+
+      .bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(250, 249, 246, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--line);
+        padding: 6px 8px calc(env(safe-area-inset-bottom, 8px) + 6px);
+        z-index: 50;
+      }
+      .bottom-nav a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 500;
+        padding: 6px 4px;
+        border-radius: 10px;
+      }
+      .bottom-nav a.active { color: var(--primary); font-weight: 600; }
+      .bottom-nav svg { width: 22px; height: 22px; stroke-width: 1.8; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <div class="brand"><div class="brand-icon">SR</div><span>Say Right</span></div>
+      <div class="nav-tabs">
+        <a href="#" class="nav-tab active">首页</a>
+        <a href="v3-c-warm-orange-record.html" class="nav-tab">记录</a>
+        <a href="v3-c-warm-orange-review.html" class="nav-tab">复习</a>
+        <a href="v3-c-warm-orange-decks.html" class="nav-tab">卡片组</a>
+      </div>
+      <div class="avatar-menu">
+        <button class="avatar" id="avatarBtn" type="button" aria-haspopup="menu" aria-expanded="false">K</button>
+        <div class="avatar-dropdown" id="avatarDropdown" role="menu" aria-labelledby="avatarBtn">
+          <button class="avatar-menu-item" id="accountInfoBtn" type="button" role="menuitem">账号信息（即将上线）</button>
+          <button class="avatar-menu-item danger" id="logoutBtn" type="button" role="menuitem">退出登录</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="view-control">
+      <div class="state-switch">
+        <a id="normalLink" href="v3-c-warm-orange-home.html">正常态</a>
+        <a id="emptyLink" href="v3-c-warm-orange-home.html?state=empty">空状态</a>
+      </div>
+    </div>
+
+    <div class="bento" id="homeGrid">
+      <div class="card welcome">
+        <h1 id="greeting"></h1>
+        <p>比起一次学很多，持续复习和记录更容易形成长期记忆。</p>
+        <div class="welcome-stats" id="stats"></div>
+      </div>
+
+      <div class="card due-card">
+        <div class="due-label">今日待复习</div>
+        <div class="due-number" id="dueCount"></div>
+        <div class="due-sub" id="dueSub"></div>
+        <div class="due-btns">
+          <button class="btn btn-primary" id="startReviewBtn" onclick="location.href='v3-c-warm-orange-review.html'">开始复习</button>
+          <button class="btn btn-ghost" onclick="location.href='v3-c-warm-orange-record.html'">去记录新内容</button>
+        </div>
+      </div>
+
+      <div class="card deck-section" id="deckCard">
+        <h2>最近卡片组 <a href="v3-c-warm-orange-decks.html">管理全部</a></h2>
+        <div class="deck-list" id="deckList"></div>
+      </div>
+
+      <div class="card insight-card" id="insightCard">
+        <h2>学习洞察</h2>
+        <div class="insight-bar-track">
+          <div class="insight-bar-fill" id="insightBar"></div>
+        </div>
+        <div class="insight-list" id="insightList"></div>
+      </div>
+
+      <div class="empty-card" id="emptyCard" style="display:none;">
+        <h2>还没有学习卡片</h2>
+        <p>新用户首次进入首页时，只突出一个主路径：先创建第一张卡片。</p>
+        <div class="empty-actions">
+          <button class="btn btn-primary" onclick="location.href='v3-c-warm-orange-record.html'">创建第一张卡片</button>
+          <button class="btn btn-ghost" onclick="location.href='v3-c-warm-orange-review.html'">去看看复习规则</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="#" class="active">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+      首页
+    </a>
+    <a href="v3-c-warm-orange-record.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      记录
+    </a>
+    <a href="v3-c-warm-orange-review.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.903 59.903 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0112 13.489a50.702 50.702 0 017.74-3.342"/></svg>
+      复习
+    </a>
+    <a href="v3-c-warm-orange-decks.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>
+      卡片组
+    </a>
+  </nav>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const isEmptyState = params.get('state') === 'empty';
+
+    document.getElementById('normalLink').classList.toggle('active', !isEmptyState);
+    document.getElementById('emptyLink').classList.toggle('active', isEmptyState);
+
+    const mock = {
+      userName: 'Kai',
+      streakDays: 16,
+      reviewedToday: 11,
+      dailyGoal: 24,
+      dueToday: 21,
+      decks: [
+        { name: '日常口语', newCount: 3, learningCount: 2, reviewCount: 10, due: 10 },
+        { name: '跨团队沟通', newCount: 2, learningCount: 2, reviewCount: 6, due: 6 },
+        { name: '英文会议', newCount: 1, learningCount: 1, reviewCount: 3, due: 3 }
+      ],
+      insights: [
+        ['最活跃时段', '20:00-22:00'],
+        ['本周完成率', '79%'],
+        ['建议动作', '先清空前2个 Deck']
+      ]
+    };
+
+    const hour = new Date().getHours();
+    const period = hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
+    document.getElementById('greeting').textContent = `${period}，${mock.userName}`;
+    document.getElementById('dueCount').textContent = mock.dueToday;
+    document.getElementById('dueSub').textContent = `已完成 ${mock.reviewedToday}/${mock.dailyGoal}`;
+
+    const stats = document.getElementById('stats');
+    [
+      { label: '连续学习', value: `${mock.streakDays} 天` },
+      { label: '今日已复习', value: `${mock.reviewedToday} 张` },
+      { label: '今日目标', value: `${mock.dailyGoal} 张` }
+    ].forEach((s) => {
+      const el = document.createElement('div');
+      el.className = 'welcome-stat';
+      el.innerHTML = `<div class="welcome-stat-value">${s.value}</div><div class="welcome-stat-label">${s.label}</div>`;
+      stats.appendChild(el);
+    });
+
+    const deckList = document.getElementById('deckList');
+    const startReviewBtn = document.getElementById('startReviewBtn');
+    mock.decks.forEach((d) => {
+      const el = document.createElement('div');
+      el.className = 'deck-item';
+      el.innerHTML = `
+        <div>
+          <div class="deck-name">${d.name}</div>
+          <div class="deck-badges">
+            <span class="badge badge-new">新 ${d.newCount}</span>
+            <span class="badge badge-learning">学习中 ${d.learningCount}</span>
+            <span class="badge badge-review">待复习 ${d.reviewCount}</span>
+          </div>
+        </div>
+        <div class="deck-due-count">${d.due}</div>
+      `;
+      deckList.appendChild(el);
+    });
+
+    const ratio = Math.min(100, Math.round((mock.reviewedToday / mock.dailyGoal) * 100));
+    document.getElementById('insightBar').style.width = `${ratio}%`;
+
+    const insightList = document.getElementById('insightList');
+    mock.insights.forEach(([label, value]) => {
+      const row = document.createElement('div');
+      row.className = 'insight-row';
+      row.innerHTML = `<span>${label}</span><span>${value}</span>`;
+      insightList.appendChild(row);
+    });
+
+    if (isEmptyState) {
+      document.getElementById('deckCard').style.display = 'none';
+      document.getElementById('insightCard').style.display = 'none';
+      document.getElementById('emptyCard').style.display = 'block';
+      document.getElementById('dueCount').textContent = '0';
+      document.getElementById('dueSub').textContent = '先创建第一张卡片';
+      // 空状态把主路径收敛到“先创建卡片”，避免误导用户先进入复习
+      startReviewBtn.textContent = '创建第一张卡片';
+      startReviewBtn.onclick = () => {
+        location.href = 'v3-c-warm-orange-record.html';
+      };
+    }
+
+    function initAvatarMenu() {
+      const avatarBtn = document.getElementById('avatarBtn');
+      const avatarDropdown = document.getElementById('avatarDropdown');
+      if (!avatarBtn || !avatarDropdown) return;
+
+      const closeAvatarMenu = () => {
+        avatarDropdown.classList.remove('show');
+        avatarBtn.setAttribute('aria-expanded', 'false');
+      };
+
+      avatarBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const willShow = !avatarDropdown.classList.contains('show');
+        avatarDropdown.classList.toggle('show', willShow);
+        avatarBtn.setAttribute('aria-expanded', String(willShow));
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!event.target.closest('.avatar-menu')) closeAvatarMenu();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeAvatarMenu();
+      });
+
+      document.getElementById('accountInfoBtn')?.addEventListener('click', () => {
+        alert('账号信息页将在后续版本上线。');
+        closeAvatarMenu();
+      });
+
+      document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        alert('已退出登录（Mock）。');
+        closeAvatarMenu();
+        location.href = 'v3-c-warm-orange-home.html';
+      });
+    }
+
+    initAvatarMenu();
+  </script>
+</body>
+</html>

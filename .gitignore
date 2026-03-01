@@ -1,0 +1,41 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+.pytest_cache/
+
+# Node / React
+node_modules/
+.next/
+
+# Playwright / tooling
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.local
+.env.*.local
+
+# docs
+docs/subagents
+
+# Claude Code project config (intentionally tracked)
+!.claude/
+!.claude/**
+
+# other
+/prd-multi-agent

@@ -1,0 +1,54 @@
+version: v0.5-review-flow-fsrs
+endpoints:
+  - method: GET
+    path: /review/decks
+    auth: required
+    response:
+      status: 200
+      body:
+        - deck_id: string
+          deck_name: string
+          due_count: integer
+  - method: GET
+    path: /review/decks/{deck_id}/session
+    auth: required
+    response:
+      status: 200
+      body:
+        session_id: string
+        cards:
+          - card_id: string
+            front_text: string
+            back_text: string
+            fsrs_state: object
+  - method: POST
+    path: /review/session/{session_id}/ai-score
+    auth: required
+    request:
+      card_id: string
+      user_answer: string
+    response:
+      status: 200
+      body:
+        score: integer
+        feedback: string
+        suggested_rating: again_hard_good_easy
+    errors:
+      - 422_validation
+      - 503_llm_unavailable
+  - method: POST
+    path: /review/session/{session_id}/rate
+    auth: required
+    request:
+      card_id: string
+      rating_source: manual_or_ai
+      rating_value: again_hard_good_easy
+      user_answer: string?
+    response:
+      status: 200
+      body:
+        next_due_at: datetime
+        updated_fsrs_state: object
+rules:
+  - 未完成今日复习的卡，次日仍参与到期查询
+  - AI 评分仅提供建议档位，最终评级以用户点击为准

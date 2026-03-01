@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(ls:*)",
+      "Bash(claude mcp:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_run_code",
+      "Bash(git check-ignore:*)",
+      "Bash(curl:*)",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_snapshot"
+    ]
+  }
+}

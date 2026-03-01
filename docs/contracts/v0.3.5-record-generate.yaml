@@ -1,0 +1,20 @@
+version: v0.3.5-record-generate
+endpoints:
+  - method: POST
+    path: /records/generate
+    auth: required
+    request:
+      source_text: string
+      source_lang: zh
+      target_lang: en
+    response:
+      status: 200
+      body:
+        generated_text: string
+        model_hint: string
+        trace_id: string
+    errors:
+      - 422_validation
+      - 503_llm_unavailable
+rules:
+  - v1 使用可复现 stub/fixture，禁止在测试中依赖真实模型

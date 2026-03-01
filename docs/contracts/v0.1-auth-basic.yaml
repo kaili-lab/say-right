@@ -1,0 +1,46 @@
+version: v0.1-auth-basic
+endpoints:
+  - method: POST
+    path: /auth/register
+    auth: none
+    request:
+      email: string
+      password: string
+    response:
+      status: 201
+      body:
+        user_id: string
+        email: string
+    errors:
+      - 409_email_exists
+      - 422_validation
+  - method: POST
+    path: /auth/login
+    auth: none
+    request:
+      email: string
+      password: string
+    response:
+      status: 200
+      body:
+        access_token: string
+        refresh_token: string
+        token_type: bearer
+    errors:
+      - 401_invalid_credentials
+  - method: POST
+    path: /auth/refresh
+    auth: refresh_token
+    response:
+      status: 200
+      body:
+        access_token: string
+        token_type: bearer
+  - method: GET
+    path: /me
+    auth: access_token
+    response:
+      status: 200
+      body:
+        user_id: string
+        email: string

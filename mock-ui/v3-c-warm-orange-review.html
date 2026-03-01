@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Say Right - 方案C Warm Orange · 复习 V3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf9f6;
+      --surface: #fffffe;
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --primary-soft: #fff7ed;
+      --primary-soft-hover: #ffedd5;
+      --accent: #92400e;
+      --text: #292524;
+      --muted: #78716c;
+      --line: #e7e5e4;
+      --card-radius: 16px;
+      --btn-radius: 12px;
+      --badge-radius: 8px;
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+      --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --again: #ef4444;
+      --hard: #f97316;
+      --good: #22c55e;
+      --easy: #3b82f6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scrollbar-gutter: stable; }
+
+    body {
+      font-family: 'Inter', -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topnav { position: sticky; top: 0; z-index: 50; background: rgba(250, 249, 246, 0.82); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+    .topnav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: var(--accent); }
+    .brand-icon { width: 32px; height: 32px; border-radius: 10px; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab { text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 500; padding: 8px 14px; border-radius: var(--btn-radius); transition: all 0.15s ease-out; }
+    .nav-tab:hover { background: var(--primary-soft); color: var(--primary); }
+    .nav-tab.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    .avatar-menu { position: relative; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: #fff1e0; color: var(--accent); display: grid; place-items: center; font-size: 12px; font-weight: 700; border: 0; cursor: pointer; }
+    .avatar:focus-visible { outline: 2px solid #fdba74; outline-offset: 2px; }
+    .avatar-dropdown {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 10px);
+      min-width: 188px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      padding: 6px;
+      display: none;
+      z-index: 70;
+    }
+    .avatar-dropdown.show { display: block; }
+    .avatar-menu-item {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      border-radius: 8px;
+      text-align: left;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .avatar-menu-item:hover { background: var(--primary-soft); }
+    .avatar-menu-item.danger { color: #b91c1c; }
+    .avatar-menu-item.danger:hover { background: #fee2e2; }
+
+    .main { max-width: 1100px; margin: 0 auto; padding: 24px 24px 100px; }
+
+    .view-control { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+    .state-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; }
+    .state-switch a { text-decoration: none; font-size: 12px; color: var(--muted); padding: 6px 10px; transition: all 0.15s ease-out; }
+    .state-switch a.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+
+    .card { background: var(--surface); border-radius: var(--card-radius); padding: 24px; box-shadow: var(--shadow-card); border: 1px solid #f5f0ea; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
+    .card:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: var(--btn-radius); font-family: inherit; font-size: 14px; font-weight: 600; padding: 10px 18px; min-height: 44px; cursor: pointer; transition: all 0.15s ease-out; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-ghost { background: var(--primary-soft); color: var(--primary); }
+
+    .overview { grid-column: span 4; background: linear-gradient(160deg, #fffcf7 0%, #fff7ed 100%); }
+    .overview h2 { font-size: 18px; color: var(--accent); margin-bottom: 10px; }
+    .overview-main { font-size: 44px; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 8px; }
+    .overview-sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+    .overview-kpis { display: grid; gap: 8px; }
+    .kpi-row { display: flex; justify-content: space-between; font-size: 13px; padding-bottom: 8px; border-bottom: 1px dashed #ecd7bf; }
+    .kpi-row span:first-child { color: var(--muted); }
+    .kpi-row span:last-child { font-weight: 600; color: var(--accent); }
+
+    .flow { grid-column: span 8; }
+    .flow h2 { font-size: 18px; margin-bottom: 12px; }
+    .flow-steps { display: flex; gap: 8px; flex-wrap: wrap; }
+    .flow-step { background: #fff9f2; border: 1px solid #f5e4cf; border-radius: 10px; padding: 8px 10px; font-size: 12px; color: var(--muted); }
+    .flow-step.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; border-color: #fcd9ba; }
+
+    .deck-list-card { grid-column: span 7; }
+    .deck-list-card h2 { font-size: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .deck-list-card h2 small { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .deck-list { display: grid; gap: 10px; }
+
+    .deck-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      background: #fff;
+      align-items: center;
+    }
+    .deck-item.recommended { border-color: #fdcda8; background: #fffaf4; }
+    .deck-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .deck-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--badge-radius); }
+    .badge-new { background: #dbeafe; color: #1d4ed8; }
+    .badge-learning { background: #fee2e2; color: #b91c1c; }
+    .badge-review { background: #dcfce7; color: #15803d; }
+    .deck-actions { display: grid; gap: 8px; justify-items: end; }
+    .due-number { font-size: 20px; color: var(--primary); font-weight: 800; }
+
+    .preview-card { grid-column: span 5; }
+    .preview-card h2 { font-size: 16px; margin-bottom: 10px; }
+    .preview-tip { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+    .card-front { border: 1px solid #f0ddc8; background: #fffaf3; border-radius: 10px; padding: 12px; font-size: 14px; margin-bottom: 10px; }
+    .card-back { border: 1px dashed #f0ddc8; border-radius: 10px; padding: 12px; font-size: 14px; margin-bottom: 10px; }
+    .rating-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .rating-btn { border: 0; border-radius: 8px; padding: 8px 4px; min-height: 44px; font-size: 12px; font-weight: 600; color: #fff; }
+    .rating-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .rating-again { background: var(--again); }
+    .rating-hard { background: var(--hard); }
+    .rating-good { background: var(--good); }
+    .rating-easy { background: var(--easy); }
+
+    .summary-card { grid-column: 1 / -1; }
+    .summary-card h2 { font-size: 16px; margin-bottom: 10px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .summary-item { padding: 10px; border: 1px solid var(--line); border-radius: 10px; text-align: center; }
+    .summary-value { font-size: 22px; font-weight: 800; color: var(--accent); }
+    .summary-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .empty-card { grid-column: 1 / -1; background: var(--surface); border: 1px dashed #f1dfcc; border-radius: var(--card-radius); padding: 36px 24px; text-align: center; }
+    .empty-card h2 { font-size: 24px; color: var(--accent); margin-bottom: 8px; }
+    .empty-card p { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+    .empty-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+    .bottom-nav { display: none; }
+
+    @media (max-width: 767px) {
+      .topnav .nav-tabs, .topnav .avatar { display: none; }
+      .main { padding: 16px 16px 96px; }
+      .view-control { justify-content: stretch; }
+      .state-switch { width: 100%; }
+      .state-switch a { flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 10px; }
+      .grid { grid-template-columns: 1fr; }
+      .overview, .flow, .deck-list-card, .preview-card { grid-column: span 1; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+
+      .bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(250, 249, 246, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--line);
+        padding: 6px 8px calc(env(safe-area-inset-bottom, 8px) + 6px);
+        z-index: 50;
+      }
+      .bottom-nav a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 500;
+        padding: 6px 4px;
+        border-radius: 10px;
+      }
+      .bottom-nav a.active { color: var(--primary); font-weight: 600; }
+      .bottom-nav svg { width: 22px; height: 22px; stroke-width: 1.8; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <div class="brand"><div class="brand-icon">SR</div><span>Say Right</span></div>
+      <div class="nav-tabs">
+        <a href="v3-c-warm-orange-home.html" class="nav-tab">首页</a>
+        <a href="v3-c-warm-orange-record.html" class="nav-tab">记录</a>
+        <a href="#" class="nav-tab active">复习</a>
+        <a href="v3-c-warm-orange-decks.html" class="nav-tab">卡片组</a>
+      </div>
+      <div class="avatar-menu">
+        <button class="avatar" id="avatarBtn" type="button" aria-haspopup="menu" aria-expanded="false">K</button>
+        <div class="avatar-dropdown" id="avatarDropdown" role="menu" aria-labelledby="avatarBtn">
+          <button class="avatar-menu-item" id="accountInfoBtn" type="button" role="menuitem">账号信息（即将上线）</button>
+          <button class="avatar-menu-item danger" id="logoutBtn" type="button" role="menuitem">退出登录</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="view-control">
+      <div class="state-switch">
+        <a id="normalLink" href="v3-c-warm-orange-review.html">正常态</a>
+        <a id="emptyLink" href="v3-c-warm-orange-review.html?state=empty">空状态</a>
+      </div>
+    </div>
+
+    <div class="grid" id="reviewGrid">
+      <div class="card overview">
+        <h2>今日复习总览</h2>
+        <div class="overview-main" id="dueTotal">0</div>
+        <div class="overview-sub">张待复习卡片（按 Deck 进入）</div>
+        <button class="btn btn-primary" style="width:100%; margin-bottom:12px;" onclick="location.hash='deckCard'">查看 Deck 列表</button>
+        <div class="overview-kpis" id="overviewKpis"></div>
+      </div>
+
+      <div class="card flow">
+        <h2>复习流程</h2>
+        <div class="flow-steps">
+          <div class="flow-step active">1. 查看 Deck 列表</div>
+          <div class="flow-step">2. 进入某个 Deck</div>
+          <div class="flow-step">3. 评分（AI 或手动）</div>
+          <div class="flow-step">4. Session 总结</div>
+        </div>
+      </div>
+
+      <div class="card deck-list-card" id="deckCard">
+        <h2>Deck 列表 <small>按待复习数量降序</small></h2>
+        <div class="deck-list" id="deckList"></div>
+      </div>
+
+      <div class="card preview-card" id="previewCard">
+        <h2>单卡流程预览（仅示意）</h2>
+        <p class="preview-tip">实际复习请点击左侧 Deck 的“进入 Deck”。</p>
+        <div class="card-front">正面（中文）：这个会议我需要再确认一下时间。</div>
+        <div class="card-back">背面（英文）：I need to double-check the time for this meeting.</div>
+        <div class="rating-row">
+          <button class="rating-btn rating-again" disabled>Again</button>
+          <button class="rating-btn rating-hard" disabled>Hard</button>
+          <button class="rating-btn rating-good" disabled>Good</button>
+          <button class="rating-btn rating-easy" disabled>Easy</button>
+        </div>
+      </div>
+
+      <div class="card summary-card" id="summaryCard">
+        <h2>上一次 Session 总结</h2>
+        <div class="summary-grid" id="summaryGrid"></div>
+      </div>
+
+      <div class="empty-card" id="emptyCard" style="display:none;">
+        <h2>暂无待复习内容</h2>
+        <p>今天没有到期卡片，可以先记录新表达，系统会在后续自动安排复习。</p>
+        <div class="empty-actions">
+          <button class="btn btn-primary" onclick="location.href='v3-c-warm-orange-record.html'">去记录新内容</button>
+          <button class="btn btn-ghost" onclick="location.href='v3-c-warm-orange-decks.html'">查看全部卡片组</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="v3-c-warm-orange-home.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+      首页
+    </a>
+    <a href="v3-c-warm-orange-record.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      记录
+    </a>
+    <a href="#" class="active">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.903 59.903 0 0110.399 5.84c-.896.248-1.783.520-2.658.814m-15.482 0A50.717 50.717 0 0112 13.489a50.702 50.702 0 017.74-3.342"/></svg>
+      复习
+    </a>
+    <a href="v3-c-warm-orange-decks.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>
+      卡片组
+    </a>
+  </nav>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const isEmptyState = params.get('state') === 'empty';
+
+    document.getElementById('normalLink').classList.toggle('active', !isEmptyState);
+    document.getElementById('emptyLink').classList.toggle('active', isEmptyState);
+
+    const mock = {
+      dueTotal: 21,
+      reviewedToday: 11,
+      dailyGoal: 24,
+      decks: [
+        { id: 'daily', name: '日常口语', due: 10, newCount: 3, learningCount: 2, reviewCount: 10 },
+        { id: 'work', name: '工作沟通', due: 6, newCount: 2, learningCount: 2, reviewCount: 6 },
+        { id: 'meeting', name: '英文会议', due: 3, newCount: 1, learningCount: 1, reviewCount: 3 },
+        { id: 'travel', name: '旅行应急', due: 2, newCount: 0, learningCount: 1, reviewCount: 2 }
+      ],
+      summary: [
+        ['本次复习', '32 张'],
+        ['正确率', '78%'],
+        ['Again', '5'],
+        ['Hard', '2'],
+        ['Good', '15'],
+        ['Easy', '10']
+      ]
+    };
+
+    // 这里统一渲染页面主要数据，保证正常态/空状态切换时只切结构不改样式语言
+    function renderNormal() {
+      document.getElementById('dueTotal').textContent = mock.dueTotal;
+
+      const kpis = document.getElementById('overviewKpis');
+      [
+        ['今日已完成', `${mock.reviewedToday} 张`],
+        ['今日目标', `${mock.dailyGoal} 张`],
+        ['剩余', `${Math.max(mock.dueTotal - mock.reviewedToday, 0)} 张`]
+      ].forEach(([label, val]) => {
+        const row = document.createElement('div');
+        row.className = 'kpi-row';
+        row.innerHTML = `<span>${label}</span><span>${val}</span>`;
+        kpis.appendChild(row);
+      });
+
+      const deckList = document.getElementById('deckList');
+      mock.decks.forEach((deck, idx) => {
+        const item = document.createElement('article');
+        item.className = `deck-item ${idx === 0 ? 'recommended' : ''}`;
+        item.innerHTML = `
+          <div>
+            <div class="deck-name">${deck.name}${idx === 0 ? ' · 推荐先复习' : ''}</div>
+            <div class="deck-meta">
+              <span class="badge badge-new">新 ${deck.newCount}</span>
+              <span class="badge badge-learning">学习中 ${deck.learningCount}</span>
+              <span class="badge badge-review">待复习 ${deck.reviewCount}</span>
+            </div>
+          </div>
+          <div class="deck-actions">
+            <div class="due-number">${deck.due}</div>
+            <button class="btn btn-primary" data-action="enter-deck" data-deck-id="${deck.id}">进入 Deck</button>
+          </div>
+        `;
+        deckList.appendChild(item);
+      });
+
+      const summaryGrid = document.getElementById('summaryGrid');
+      mock.summary.forEach(([label, value]) => {
+        const el = document.createElement('div');
+        el.className = 'summary-item';
+        el.innerHTML = `<div class="summary-value">${value}</div><div class="summary-label">${label}</div>`;
+        summaryGrid.appendChild(el);
+      });
+    }
+
+    if (isEmptyState) {
+      document.getElementById('dueTotal').textContent = '0';
+      document.getElementById('deckCard').style.display = 'none';
+      document.getElementById('previewCard').style.display = 'none';
+      document.getElementById('summaryCard').style.display = 'none';
+      document.getElementById('emptyCard').style.display = 'block';
+    } else {
+      renderNormal();
+
+      // 进入 Deck 后跳转到复习 Session 主页面，用 query 传递当前 Deck
+      document.getElementById('deckList').addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-action="enter-deck"]');
+        if (!btn) return;
+        const deckId = btn.dataset.deckId;
+        location.href = `v3-c-warm-orange-session.html?deck=${encodeURIComponent(deckId)}`;
+      });
+    }
+
+    function initAvatarMenu() {
+      const avatarBtn = document.getElementById('avatarBtn');
+      const avatarDropdown = document.getElementById('avatarDropdown');
+      if (!avatarBtn || !avatarDropdown) return;
+
+      const closeAvatarMenu = () => {
+        avatarDropdown.classList.remove('show');
+        avatarBtn.setAttribute('aria-expanded', 'false');
+      };
+
+      avatarBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const willShow = !avatarDropdown.classList.contains('show');
+        avatarDropdown.classList.toggle('show', willShow);
+        avatarBtn.setAttribute('aria-expanded', String(willShow));
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!event.target.closest('.avatar-menu')) closeAvatarMenu();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeAvatarMenu();
+      });
+
+      document.getElementById('accountInfoBtn')?.addEventListener('click', () => {
+        alert('账号信息页将在后续版本上线。');
+        closeAvatarMenu();
+      });
+
+      document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        alert('已退出登录（Mock）。');
+        closeAvatarMenu();
+        location.href = 'v3-c-warm-orange-home.html';
+      });
+    }
+
+    initAvatarMenu();
+  </script>
+</body>
+</html>

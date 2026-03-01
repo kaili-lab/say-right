@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Say Right - 方案C Warm Orange · 复习 Session V3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf9f6;
+      --surface: #fffffe;
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --primary-soft: #fff7ed;
+      --accent: #92400e;
+      --text: #292524;
+      --muted: #78716c;
+      --line: #e7e5e4;
+      --card-radius: 16px;
+      --btn-radius: 12px;
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+      --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --again: #ef4444;
+      --hard: #f97316;
+      --good: #22c55e;
+      --easy: #3b82f6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scrollbar-gutter: stable; }
+
+    body {
+      font-family: 'Inter', -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topnav { position: sticky; top: 0; z-index: 50; background: rgba(250, 249, 246, 0.82); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+    .topnav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: var(--accent); }
+    .brand-icon { width: 32px; height: 32px; border-radius: 10px; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab { text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 500; padding: 8px 14px; border-radius: var(--btn-radius); transition: all 0.15s ease-out; }
+    .nav-tab:hover { background: var(--primary-soft); color: var(--primary); }
+    .nav-tab.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    .avatar-menu { position: relative; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: #fff1e0; color: var(--accent); display: grid; place-items: center; font-size: 12px; font-weight: 700; border: 0; cursor: pointer; }
+    .avatar:focus-visible { outline: 2px solid #fdba74; outline-offset: 2px; }
+    .avatar-dropdown {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 10px);
+      min-width: 188px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      padding: 6px;
+      display: none;
+      z-index: 70;
+    }
+    .avatar-dropdown.show { display: block; }
+    .avatar-menu-item {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      border-radius: 8px;
+      text-align: left;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .avatar-menu-item:hover { background: var(--primary-soft); }
+    .avatar-menu-item.danger { color: #b91c1c; }
+    .avatar-menu-item.danger:hover { background: #fee2e2; }
+
+    .main { max-width: 1100px; margin: 0 auto; padding: 24px 24px 100px; }
+    .session-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .session-title { font-size: 24px; font-weight: 700; color: var(--accent); }
+    .session-sub { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: var(--btn-radius); font-family: inherit; font-size: 14px; font-weight: 600; padding: 10px 16px; min-height: 44px; cursor: pointer; transition: all 0.15s ease-out; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-ghost { background: var(--primary-soft); color: var(--primary); }
+
+    .grid { display: grid; grid-template-columns: 300px 1fr; gap: 16px; }
+    .card { background: var(--surface); border-radius: var(--card-radius); border: 1px solid #f5f0ea; box-shadow: var(--shadow-card); padding: 20px; }
+
+    .progress-card { background: linear-gradient(160deg, #fffcf7 0%, #fff7ed 100%); }
+    .progress-card h2 { font-size: 18px; color: var(--accent); margin-bottom: 10px; }
+    .progress-main { font-size: 36px; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 8px; }
+    .progress-sub { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    .progress-track { height: 10px; border-radius: 999px; background: #f5e6d5; overflow: hidden; margin-bottom: 12px; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #f97316, #fb923c); width: 0; transition: width 0.2s ease-out; }
+    .progress-kpi { display: grid; gap: 8px; }
+    .progress-row { display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px dashed #ecd7bf; padding-bottom: 8px; }
+    .progress-row span:first-child { color: var(--muted); }
+    .progress-row span:last-child { font-weight: 600; color: var(--accent); }
+
+    .review-card { min-height: 560px; }
+    .card-header { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 14px; align-items: center; }
+    .chip { font-size: 12px; color: var(--primary); background: var(--primary-soft); border-radius: 999px; padding: 4px 10px; font-weight: 600; }
+
+    .prompt-front { border: 1px solid #f0ddc8; background: #fffaf3; border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+    .prompt-front-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .prompt-front-text { font-size: 20px; font-weight: 700; color: var(--accent); line-height: 1.45; }
+
+    .field-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+    .answer-input { width: 100%; min-height: 92px; border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-family: inherit; font-size: 15px; line-height: 1.6; color: var(--text); resize: vertical; background: #fffdfb; margin-bottom: 10px; }
+    .answer-input:focus { outline: none; border-color: var(--primary); }
+
+    .action-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .ai-panel { display: none; border: 1px solid #f5e4cf; background: #fff9f2; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+    .ai-panel.show { display: block; }
+    .ai-score { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 6px; }
+    .ai-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    .answer-back { display: none; border: 1px dashed #f0ddc8; border-radius: 12px; padding: 12px; margin-bottom: 12px; background: #fffcf7; }
+    .answer-back.show { display: block; }
+    .answer-back-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .answer-back-text { font-size: 16px; font-weight: 600; line-height: 1.5; }
+
+    .rating-title { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .rating-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+    .rating-btn { border: 0; border-radius: 10px; padding: 10px 6px; min-height: 44px; font-size: 13px; font-weight: 700; color: #fff; cursor: pointer; opacity: 0.85; transition: transform 0.15s ease-out, opacity 0.15s ease-out, box-shadow 0.15s ease-out; }
+    .rating-btn:hover { opacity: 1; }
+    .rating-btn.selected { transform: translateY(-1px); opacity: 1; box-shadow: var(--shadow-hover); }
+    .rating-btn.suggested { box-shadow: 0 0 0 2px rgba(41, 37, 36, 0.2) inset; }
+    .rating-again { background: var(--again); }
+    .rating-hard { background: var(--hard); }
+    .rating-good { background: var(--good); }
+    .rating-easy { background: var(--easy); }
+
+    .foot-row { display: flex; justify-content: flex-end; gap: 8px; }
+    .done-card { display: none; }
+    .done-card.show { display: block; }
+    .done-title { font-size: 26px; color: var(--accent); margin-bottom: 8px; }
+    .done-desc { color: var(--muted); margin-bottom: 14px; font-size: 14px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+    .summary-item { border: 1px solid var(--line); border-radius: 10px; padding: 10px; text-align: center; }
+    .summary-value { font-size: 22px; font-weight: 800; color: var(--accent); }
+    .summary-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .bottom-nav { display: none; }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .review-card { min-height: auto; }
+    }
+    @media (max-width: 767px) {
+      .topnav .nav-tabs, .topnav .avatar { display: none; }
+      .main { padding: 16px 16px 96px; }
+      .session-head { flex-direction: column; align-items: flex-start; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .bottom-nav { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; bottom: 0; left: 0; right: 0; background: rgba(250, 249, 246, 0.92); backdrop-filter: blur(12px); border-top: 1px solid var(--line); padding: 6px 8px calc(env(safe-area-inset-bottom, 8px) + 6px); z-index: 50; }
+      .bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; color: var(--muted); font-size: 12px; font-weight: 500; padding: 6px 4px; border-radius: 10px; }
+      .bottom-nav a.active { color: var(--primary); font-weight: 600; }
+      .bottom-nav svg { width: 22px; height: 22px; stroke-width: 1.8; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <div class="brand"><div class="brand-icon">SR</div><span>Say Right</span></div>
+      <div class="nav-tabs">
+        <a href="v3-c-warm-orange-home.html" class="nav-tab">首页</a>
+        <a href="v3-c-warm-orange-record.html" class="nav-tab">记录</a>
+        <a href="v3-c-warm-orange-review.html" class="nav-tab active">复习</a>
+        <a href="v3-c-warm-orange-decks.html" class="nav-tab">卡片组</a>
+      </div>
+      <div class="avatar-menu">
+        <button class="avatar" id="avatarBtn" type="button" aria-haspopup="menu" aria-expanded="false">K</button>
+        <div class="avatar-dropdown" id="avatarDropdown" role="menu" aria-labelledby="avatarBtn">
+          <button class="avatar-menu-item" id="accountInfoBtn" type="button" role="menuitem">账号信息（即将上线）</button>
+          <button class="avatar-menu-item danger" id="logoutBtn" type="button" role="menuitem">退出登录</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="session-head">
+      <div>
+        <h1 class="session-title" id="sessionTitle">复习 Session</h1>
+        <p class="session-sub" id="sessionSub">按 Deck 进行复习，AI 评分与手动评级并行</p>
+      </div>
+      <button class="btn btn-ghost" onclick="location.href='v3-c-warm-orange-review.html'">返回 Deck 列表</button>
+    </div>
+
+    <div class="grid">
+      <section class="card progress-card">
+        <h2>当前进度</h2>
+        <div class="progress-main" id="progressMain">1 / 1</div>
+        <div class="progress-sub" id="progressSub">本轮待复习 1 张</div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-kpi">
+          <div class="progress-row"><span>Again</span><span id="againCount">0</span></div>
+          <div class="progress-row"><span>Hard</span><span id="hardCount">0</span></div>
+          <div class="progress-row"><span>Good</span><span id="goodCount">0</span></div>
+          <div class="progress-row"><span>Easy</span><span id="easyCount">0</span></div>
+        </div>
+      </section>
+
+      <section class="card review-card" id="reviewCard">
+        <div class="card-header">
+          <div class="chip" id="deckChip">Deck</div>
+          <div class="chip" id="cardIndexChip">第 1 张</div>
+        </div>
+
+        <div class="prompt-front">
+          <div class="prompt-front-label">正面（中文）</div>
+          <div class="prompt-front-text" id="frontText"></div>
+        </div>
+
+        <div class="field-label">你会怎么说（可选）</div>
+        <textarea class="answer-input" id="userAnswer" placeholder="可输入你的英文表达，也可以直接手动评级"></textarea>
+
+        <div class="action-row">
+          <button class="btn btn-primary" id="scoreBtn">AI 评分</button>
+          <button class="btn btn-ghost" id="toggleAnswerBtn">显示参考答案</button>
+        </div>
+
+        <div class="ai-panel" id="aiPanel">
+          <div class="ai-score" id="aiScore">AI 评分：0</div>
+          <div class="ai-desc" id="aiDesc"></div>
+        </div>
+
+        <div class="answer-back" id="answerBack">
+          <div class="answer-back-label">背面（标准英文）</div>
+          <div class="answer-back-text" id="backText"></div>
+        </div>
+
+        <div class="rating-title">手动评级（始终可用，最终以你的选择为准）</div>
+        <div class="rating-row" id="ratingRow">
+          <button class="rating-btn rating-again" data-rating="again">Again</button>
+          <button class="rating-btn rating-hard" data-rating="hard">Hard</button>
+          <button class="rating-btn rating-good" data-rating="good">Good</button>
+          <button class="rating-btn rating-easy" data-rating="easy">Easy</button>
+        </div>
+
+        <div class="foot-row">
+          <button class="btn btn-primary" id="nextBtn">下一张</button>
+        </div>
+      </section>
+
+      <section class="card done-card" id="doneCard">
+        <h2 class="done-title">本轮复习完成</h2>
+        <p class="done-desc">这是 mock 版 Session 主页：展示了 AI 评分 + 手动评级并行的主流程。</p>
+        <div class="summary-grid" id="doneSummary"></div>
+        <div class="foot-row">
+          <button class="btn btn-ghost" onclick="location.href='v3-c-warm-orange-review.html'">返回复习 Tab</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="v3-c-warm-orange-home.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+      首页
+    </a>
+    <a href="v3-c-warm-orange-record.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      记录
+    </a>
+    <a href="v3-c-warm-orange-review.html" class="active">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.903 59.903 0 0110.399 5.84c-.896.248-1.783.520-2.658.814m-15.482 0A50.717 50.717 0 0112 13.489a50.702 50.702 0 017.74-3.342"/></svg>
+      复习
+    </a>
+    <a href="v3-c-warm-orange-decks.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>
+      卡片组
+    </a>
+  </nav>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const deckId = params.get('deck') || 'daily';
+
+    const deckMap = {
+      daily: {
+        name: '日常口语',
+        cards: [
+          { zh: '这个我再想想。', en: 'Let me think about this.' },
+          { zh: '我晚点给你回复。', en: 'I will get back to you later.' },
+          { zh: '你今天有空吗？', en: 'Are you free today?' }
+        ]
+      },
+      work: {
+        name: '工作沟通',
+        cards: [
+          { zh: '我们先对齐下目标。', en: 'Let us align on the goals first.' },
+          { zh: '这个风险需要提前暴露。', en: 'We need to surface this risk early.' },
+          { zh: '这个会议我需要再确认一下时间。', en: 'I need to double-check the time for this meeting.' }
+        ]
+      },
+      meeting: {
+        name: '英文会议',
+        cards: [
+          { zh: '这次会议建议先讲结论。', en: 'I suggest we start this meeting with the conclusion.' },
+          { zh: '请给我五分钟整理下思路。', en: 'Please give me five minutes to organize my thoughts.' }
+        ]
+      },
+      travel: {
+        name: '旅行应急',
+        cards: [
+          { zh: '请问登机口改了吗？', en: 'Has the boarding gate changed?' },
+          { zh: '我想确认一下行李托运规则。', en: 'I would like to confirm the baggage check-in policy.' }
+        ]
+      }
+    };
+
+    const currentDeck = deckMap[deckId] || deckMap.daily;
+    const cards = currentDeck.cards;
+
+    let currentIndex = 0;
+    let selectedRating = '';
+    let aiSuggested = '';
+    const ratingStats = { again: 0, hard: 0, good: 0, easy: 0 };
+
+    const reviewCard = document.getElementById('reviewCard');
+    const doneCard = document.getElementById('doneCard');
+    const ratingButtons = document.querySelectorAll('[data-rating]');
+
+    function scoreToRating(score) {
+      if (score >= 90) return 'easy';
+      if (score >= 70) return 'good';
+      if (score >= 50) return 'hard';
+      return 'again';
+    }
+
+    function ratingLabel(rating) {
+      return { again: 'Again', hard: 'Hard', good: 'Good', easy: 'Easy' }[rating];
+    }
+
+    function refreshProgress() {
+      document.getElementById('againCount').textContent = ratingStats.again;
+      document.getElementById('hardCount').textContent = ratingStats.hard;
+      document.getElementById('goodCount').textContent = ratingStats.good;
+      document.getElementById('easyCount').textContent = ratingStats.easy;
+
+      const total = cards.length;
+      const done = currentIndex;
+      const percent = total === 0 ? 100 : Math.round((done / total) * 100);
+      document.getElementById('progressMain').textContent = `${Math.min(currentIndex + 1, total)} / ${total}`;
+      document.getElementById('progressSub').textContent = `本轮待复习 ${total} 张`;
+      document.getElementById('progressFill').style.width = `${percent}%`;
+    }
+
+    function updateRatingButtons() {
+      ratingButtons.forEach((btn) => {
+        const value = btn.dataset.rating;
+        btn.classList.toggle('selected', value === selectedRating);
+        btn.classList.toggle('suggested', value === aiSuggested && value !== selectedRating);
+      });
+    }
+
+    function renderCard() {
+      if (currentIndex >= cards.length) {
+        reviewCard.style.display = 'none';
+        doneCard.classList.add('show');
+
+        const total = cards.length || 1;
+        const accuracy = Math.round(((ratingStats.good + ratingStats.easy) / total) * 100);
+        const summary = [
+          ['总卡片', String(cards.length)],
+          ['正确率', `${accuracy}%`],
+          ['Again', String(ratingStats.again)],
+          ['Hard', String(ratingStats.hard)],
+          ['Good', String(ratingStats.good)],
+          ['Easy', String(ratingStats.easy)]
+        ];
+
+        const doneSummary = document.getElementById('doneSummary');
+        doneSummary.innerHTML = '';
+        summary.forEach(([label, value]) => {
+          const el = document.createElement('div');
+          el.className = 'summary-item';
+          el.innerHTML = `<div class="summary-value">${value}</div><div class="summary-label">${label}</div>`;
+          doneSummary.appendChild(el);
+        });
+
+        document.getElementById('progressMain').textContent = `${cards.length} / ${cards.length}`;
+        document.getElementById('progressFill').style.width = '100%';
+        return;
+      }
+
+      const card = cards[currentIndex];
+      document.getElementById('deckChip').textContent = currentDeck.name;
+      document.getElementById('cardIndexChip').textContent = `第 ${currentIndex + 1} 张`;
+      document.getElementById('frontText').textContent = card.zh;
+      document.getElementById('backText').textContent = card.en;
+      document.getElementById('sessionTitle').textContent = `${currentDeck.name} · 复习 Session`;
+      document.getElementById('sessionSub').textContent = 'AI 评分可作为建议，但最终评级由你手动决定';
+
+      document.getElementById('userAnswer').value = '';
+      document.getElementById('aiPanel').classList.remove('show');
+      document.getElementById('answerBack').classList.remove('show');
+      document.getElementById('toggleAnswerBtn').textContent = '显示参考答案';
+
+      selectedRating = '';
+      aiSuggested = '';
+      updateRatingButtons();
+      refreshProgress();
+    }
+
+    document.getElementById('scoreBtn').addEventListener('click', () => {
+      const userAnswer = document.getElementById('userAnswer').value.trim();
+      if (!userAnswer) {
+        alert('你可以直接手动评级；如果要 AI 评分，请先输入英文表达。');
+        return;
+      }
+
+      const target = cards[currentIndex].en.toLowerCase().replace(/[^a-z\\s]/g, '');
+      const answer = userAnswer.toLowerCase().replace(/[^a-z\\s]/g, '');
+      const targetWords = target.split(/\\s+/).filter(Boolean);
+      const answerWords = answer.split(/\\s+/).filter(Boolean);
+      const overlap = targetWords.filter((w) => answerWords.includes(w)).length;
+
+      // 用词汇重合度估算 mock 分数，快速打通“AI 建议 + 手动最终评级”的并行链路
+      const rawScore = Math.round((overlap / Math.max(targetWords.length, 1)) * 60 + 35 + Math.random() * 10);
+      const score = Math.max(0, Math.min(rawScore, 100));
+      aiSuggested = scoreToRating(score);
+
+      document.getElementById('aiScore').textContent = `AI 评分：${score} / 100（建议 ${ratingLabel(aiSuggested)}）`;
+      document.getElementById('aiDesc').textContent = '评分只做建议：可优先优化自然表达和词汇搭配，最后仍以你的手动评级为准。';
+      document.getElementById('aiPanel').classList.add('show');
+      updateRatingButtons();
+    });
+
+    document.getElementById('toggleAnswerBtn').addEventListener('click', () => {
+      const answerBack = document.getElementById('answerBack');
+      const isShow = answerBack.classList.toggle('show');
+      document.getElementById('toggleAnswerBtn').textContent = isShow ? '隐藏参考答案' : '显示参考答案';
+    });
+
+    document.getElementById('ratingRow').addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-rating]');
+      if (!btn) return;
+      selectedRating = btn.dataset.rating;
+      updateRatingButtons();
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (!selectedRating) {
+        alert('请先选择本卡评级（Again / Hard / Good / Easy）。');
+        return;
+      }
+      ratingStats[selectedRating] += 1;
+      currentIndex += 1;
+      renderCard();
+    });
+
+    function initAvatarMenu() {
+      const avatarBtn = document.getElementById('avatarBtn');
+      const avatarDropdown = document.getElementById('avatarDropdown');
+      if (!avatarBtn || !avatarDropdown) return;
+
+      const closeAvatarMenu = () => {
+        avatarDropdown.classList.remove('show');
+        avatarBtn.setAttribute('aria-expanded', 'false');
+      };
+
+      avatarBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const willShow = !avatarDropdown.classList.contains('show');
+        avatarDropdown.classList.toggle('show', willShow);
+        avatarBtn.setAttribute('aria-expanded', String(willShow));
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!event.target.closest('.avatar-menu')) closeAvatarMenu();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeAvatarMenu();
+      });
+
+      document.getElementById('accountInfoBtn')?.addEventListener('click', () => {
+        alert('账号信息页将在后续版本上线。');
+        closeAvatarMenu();
+      });
+
+      document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        alert('已退出登录（Mock）。');
+        closeAvatarMenu();
+        location.href = 'v3-c-warm-orange-home.html';
+      });
+    }
+
+    initAvatarMenu();
+    renderCard();
+  </script>
+</body>
+</html>

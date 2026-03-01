@@ -1,0 +1,36 @@
+# 项目级 AGENTS 增补规则
+
+本文件是项目级增补规则，与系统/上级规则共同生效，不替代更高优先级指令。
+
+## 语言与沟通
+
+- 所有输出使用中文。
+
+## TDD 执行规则
+
+- 前后端任务默认采用 TDD：先写测试（Red）-> 最小实现（Green）-> 重构（Refactor）。
+- 每个任务必须声明测试范围：`test_scope`（`unit` / `integration` / `e2e`）。
+- 每个任务必须声明测试命令：`test_commands`，并在完成前实际执行。
+- LLM 相关测试必须使用可复现的 stub/fixture；禁止在测试中依赖真实模型调用。
+
+## Subagent 使用边界
+
+- 可使用 Subagent 处理可并行且边界清晰的子任务（如测试脚手架、fixture、文档整理）。
+- 主上下文必须负责最终收口：复核变更、运行关键回归、给出最终 DoD 结论。
+- 未经主上下文复核的 Subagent 结果，不可视为任务完成。
+
+## Skill 使用规则
+
+- 任务或用户显式写出 `$SkillName` 时，必须优先使用对应 Skill。
+- 任务文档存在 `skill_required` 字段时，先读取并执行对应 `SKILL.md`。
+- 如果请求的 Skill 不存在或不可读，需明确说明并切换到常规实现流程。
+
+## 任务文档字段约定（建议）
+
+- `skill_required`：本任务必须使用的 Skill 列表。
+- `paired_with`：关联的前端/后端任务 ID。
+- `contract_version`：接口契约版本号。
+- `sync_point`：跨任务联调节点。
+- `test_scope`：测试范围（unit/integration/e2e）。
+- `test_commands`：执行命令与通过标准。
+

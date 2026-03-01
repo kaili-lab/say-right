@@ -1,0 +1,31 @@
+version: v0.2-deck-basic
+endpoints:
+  - method: GET
+    path: /decks
+    auth: required
+    response:
+      status: 200
+      body:
+        - id: string
+          name: string
+          is_default: boolean
+          new_count: integer
+          learning_count: integer
+          due_count: integer
+  - method: POST
+    path: /decks
+    auth: required
+    request:
+      name: string
+    response:
+      status: 201
+      body:
+        id: string
+        name: string
+        is_default: boolean
+    errors:
+      - 409_duplicate_name
+      - 422_validation
+rules:
+  - 每个用户必须有且仅有一个默认组
+  - 默认组不可删除

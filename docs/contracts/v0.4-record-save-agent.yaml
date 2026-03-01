@@ -1,0 +1,22 @@
+version: v0.4-record-save-agent
+endpoints:
+  - method: POST
+    path: /records/save-with-agent
+    auth: required
+    request:
+      source_text: string
+      generated_text: string
+      source_lang: zh
+      target_lang: en
+    response:
+      status: 201
+      body:
+        card_id: string
+        deck_id: string
+        deck_name: string
+        deck_created: boolean
+        fallback_used: boolean
+rules:
+  - 命中已有组时直接创建卡片
+  - 未命中时允许自动创建分组再创建卡片
+  - Agent 或建组失败时回退默认组

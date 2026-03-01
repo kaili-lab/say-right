@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Say Right - 方案C Warm Orange · 记录 V3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf9f6;
+      --surface: #fffffe;
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --primary-soft: #fff7ed;
+      --primary-soft-hover: #ffedd5;
+      --accent: #92400e;
+      --accent-soft: #ffe8d6;
+      --text: #292524;
+      --muted: #78716c;
+      --line: #e7e5e4;
+      --card-radius: 16px;
+      --btn-radius: 12px;
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+      --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.12);
+      --green: #22c55e;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scrollbar-gutter: stable; }
+
+    body {
+      font-family: 'Inter', -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topnav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(250, 249, 246, 0.82);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topnav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: var(--accent); }
+    .brand-icon { width: 32px; height: 32px; border-radius: 10px; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab { text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 500; padding: 8px 14px; border-radius: var(--btn-radius); transition: all 0.15s ease-out; }
+    .nav-tab:hover { background: var(--primary-soft); color: var(--primary); }
+    .nav-tab.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    .avatar-menu { position: relative; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: #fff1e0; color: var(--accent); display: grid; place-items: center; font-size: 12px; font-weight: 700; border: 0; cursor: pointer; }
+    .avatar:focus-visible { outline: 2px solid #fdba74; outline-offset: 2px; }
+    .avatar-dropdown {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 10px);
+      min-width: 188px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      padding: 6px;
+      display: none;
+      z-index: 70;
+    }
+    .avatar-dropdown.show { display: block; }
+    .avatar-menu-item {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      border-radius: 8px;
+      text-align: left;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .avatar-menu-item:hover { background: var(--primary-soft); }
+    .avatar-menu-item.danger { color: #b91c1c; }
+    .avatar-menu-item.danger:hover { background: #fee2e2; }
+
+    .main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 100px; }
+    .content-narrow { max-width: 640px; margin: 0 auto; }
+    .page-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 20px; }
+    .page-title { font-size: 24px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+    .page-desc { font-size: 14px; color: var(--muted); }
+
+    .state-switch {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .state-switch a {
+      text-decoration: none;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 6px 10px;
+      transition: all 0.15s ease-out;
+    }
+    .state-switch a.active {
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .steps { display: flex; align-items: center; gap: 0; margin-bottom: 24px; }
+    .step { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--muted); }
+    .step.active { color: var(--primary); font-weight: 600; }
+    .step.done { color: var(--green); }
+    .step-num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--line); color: var(--muted); }
+    .step.active .step-num { background: var(--primary); color: #fff; }
+    .step.done .step-num { background: var(--green); color: #fff; }
+    .step-line { width: 40px; height: 2px; background: var(--line); margin: 0 8px; }
+    .step-line.done { background: var(--green); }
+
+    .input-card { background: var(--surface); border-radius: var(--card-radius); box-shadow: var(--shadow-card); border: 1px solid #f5f0ea; padding: 24px; margin-bottom: 24px; }
+    .input-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+    .input-card textarea { width: 100%; min-height: 120px; border: 1px solid var(--line); border-radius: var(--btn-radius); padding: 14px; font-family: inherit; font-size: 15px; line-height: 1.6; color: var(--text); resize: vertical; background: #fffdfb; }
+    .input-card textarea:focus { outline: none; border-color: var(--primary); }
+    .input-card textarea::placeholder { color: #a8a29e; }
+    .input-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+    .char-count { font-size: 12px; color: var(--muted); }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: var(--btn-radius); font-family: inherit; font-size: 14px; font-weight: 600; padding: 10px 20px; min-height: 44px; cursor: pointer; transition: all 0.15s ease-out; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-ghost { background: var(--primary-soft); color: var(--primary); }
+    .btn-ghost:hover { background: var(--primary-soft-hover); }
+
+    .result-card { background: var(--surface); border-radius: var(--card-radius); box-shadow: var(--shadow-card); border: 1px solid #f5f0ea; overflow: hidden; margin-bottom: 24px; }
+    .result-header { padding: 14px 24px; background: var(--primary-soft); border-bottom: 1px solid #ffedd5; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--primary); }
+    .result-header .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    .result-body { padding: 24px; }
+    .result-original { font-size: 14px; color: var(--muted); margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+
+    .result-english-edit {
+      width: 100%;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.5;
+      color: var(--text);
+      background: #fffcf7;
+      resize: none;
+      min-height: 60px;
+    }
+    .result-english-edit:focus { outline: none; border-color: var(--primary); border-style: solid; }
+    .edit-hint { font-size: 11px; color: var(--muted); margin-top: 4px; margin-bottom: 12px; }
+
+    .result-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .group-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: var(--primary); background: var(--primary-soft); padding: 6px 12px; border-radius: var(--btn-radius); }
+    .group-tag svg { width: 14px; height: 14px; }
+    .save-btns { display: flex; gap: 8px; }
+    .save-result {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid #f5e4cf;
+      background: #fff9f2;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--accent);
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .save-result.show { display: flex; }
+    .save-result-action {
+      border: 0;
+      background: transparent;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      min-height: 44px;
+      padding: 0 4px;
+    }
+
+    .recent-title { font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .recent-item { background: var(--surface); border-radius: var(--card-radius); box-shadow: var(--shadow-card); border: 1px solid #f5f0ea; padding: 16px 20px; margin-bottom: 10px; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
+    .recent-item:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+    .recent-zh { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .recent-en { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .recent-meta { display: flex; justify-content: space-between; align-items: center; }
+    .recent-group { font-size: 12px; color: var(--primary); background: var(--primary-soft); padding: 3px 8px; border-radius: 6px; font-weight: 500; }
+    .recent-time { font-size: 12px; color: var(--muted); }
+
+    .empty-card {
+      background: var(--surface);
+      border: 1px dashed #f1dfcc;
+      border-radius: var(--card-radius);
+      padding: 24px;
+      text-align: center;
+    }
+    .empty-card h3 { font-size: 18px; color: var(--accent); margin-bottom: 6px; }
+    .empty-card p { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(41, 37, 36, 0.35);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 80;
+    }
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      width: min(460px, 100%);
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: var(--shadow-modal);
+      border: 1px solid #f5f0ea;
+      overflow: hidden;
+    }
+    .modal-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--accent); }
+    .modal-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .modal-close { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 20px; line-height: 1; width: 44px; height: 44px; display: grid; place-items: center; }
+    .modal-body {
+      padding: 12px 16px;
+      max-height: min(52vh, 340px);
+      overflow-y: auto;
+    }
+
+    .group-option {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+    .group-option:hover { background: #fffaf3; border-color: #fde6ce; }
+    .group-option input { accent-color: var(--primary); }
+    .group-name { font-size: 14px; font-weight: 600; }
+    .group-meta { font-size: 12px; color: var(--muted); }
+    .group-due { font-size: 12px; color: var(--primary); font-weight: 600; }
+
+    .modal-foot {
+      border-top: 1px solid var(--line);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .bottom-nav { display: none; }
+    @media (max-width: 767px) {
+      .topnav .nav-tabs, .topnav .avatar { display: none; }
+      .main { padding: 20px 16px 96px; }
+      .steps { display: none; }
+      .page-head { flex-direction: column; }
+      .state-switch { width: 100%; }
+      .state-switch a { flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 10px; }
+      .bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(250, 249, 246, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--line);
+        padding: 6px 8px calc(env(safe-area-inset-bottom, 8px) + 6px);
+        z-index: 50;
+      }
+      .bottom-nav a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 500;
+        padding: 6px 4px;
+        border-radius: 10px;
+      }
+      .bottom-nav a.active { color: var(--primary); font-weight: 600; }
+      .bottom-nav svg { width: 22px; height: 22px; stroke-width: 1.8; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <div class="brand"><div class="brand-icon">SR</div><span>Say Right</span></div>
+      <div class="nav-tabs">
+        <a href="v3-c-warm-orange-home.html" class="nav-tab">首页</a>
+        <a href="#" class="nav-tab active">记录</a>
+        <a href="v3-c-warm-orange-review.html" class="nav-tab">复习</a>
+        <a href="v3-c-warm-orange-decks.html" class="nav-tab">卡片组</a>
+      </div>
+      <div class="avatar-menu">
+        <button class="avatar" id="avatarBtn" type="button" aria-haspopup="menu" aria-expanded="false">K</button>
+        <div class="avatar-dropdown" id="avatarDropdown" role="menu" aria-labelledby="avatarBtn">
+          <button class="avatar-menu-item" id="accountInfoBtn" type="button" role="menuitem">账号信息（即将上线）</button>
+          <button class="avatar-menu-item danger" id="logoutBtn" type="button" role="menuitem">退出登录</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+  <div class="content-narrow">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">记录新表达</h1>
+        <p class="page-desc">输入你想说的中文，AI 帮你转化为地道英文</p>
+      </div>
+      <div class="state-switch">
+        <a id="normalLink" href="v3-c-warm-orange-record.html">正常态</a>
+        <a id="emptyLink" href="v3-c-warm-orange-record.html?state=empty">空状态</a>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step done"><div class="step-num">1</div>输入中文</div>
+      <div class="step-line done"></div>
+      <div class="step active"><div class="step-num">2</div>生成英文</div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-num">3</div>保存卡片</div>
+    </div>
+
+    <div class="input-card">
+      <div class="input-label">中文内容</div>
+      <textarea id="zhInput" placeholder="例如：我们明天先对齐目标，再确定执行节奏">这个会议我需要再确认一下时间</textarea>
+      <div class="input-footer">
+        <span class="char-count"><span id="charCount">0</span>/200</span>
+        <button class="btn btn-primary">生成英文</button>
+      </div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-header">
+        <div class="dot"></div>
+        <span>英文生成完成</span>
+      </div>
+      <div class="result-body">
+        <div class="result-original">原文：这个会议我需要再确认一下时间</div>
+        <textarea class="result-english-edit" id="enInput" rows="2">I need to double-check the time for this meeting.</textarea>
+        <div class="edit-hint">你可以直接编辑上方英文内容</div>
+        <div class="result-footer">
+          <div class="group-tag" id="groupTag">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>
+            <span id="groupText">工作沟通 · 自动分组</span>
+          </div>
+          <div class="save-btns">
+            <button class="btn btn-ghost" id="changeGroupBtn">换个组</button>
+            <button class="btn btn-primary" id="saveCardBtn" type="button">保存卡片</button>
+          </div>
+        </div>
+        <div class="save-result" id="saveResult">
+          <span id="saveResultText"></span>
+          <button class="save-result-action" id="adjustAfterSaveBtn" type="button">立即调整</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="recent-title">最近记录</div>
+    <div id="recentList"></div>
+  </div>
+  </div>
+
+  <!-- 卡片组选择弹窗：用于呈现“可立即调整分组”的视觉态 -->
+  <div class="modal-backdrop" id="groupModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="groupModalTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="groupModalTitle">调整卡片组</div>
+          <div class="modal-sub">自动分组后可立即改组，减少误分组成本</div>
+        </div>
+        <button class="modal-close" id="closeModalBtn" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body" id="groupOptions"></div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" id="cancelModalBtn">取消</button>
+        <button class="btn btn-primary" id="confirmModalBtn">确认分组</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="v3-c-warm-orange-home.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+      首页
+    </a>
+    <a href="#" class="active">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      记录
+    </a>
+    <a href="v3-c-warm-orange-review.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.903 59.903 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0112 13.489a50.702 50.702 0 017.74-3.342"/></svg>
+      复习
+    </a>
+    <a href="v3-c-warm-orange-decks.html">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>
+      卡片组
+    </a>
+  </nav>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const isEmptyState = params.get('state') === 'empty';
+
+    document.getElementById('normalLink').classList.toggle('active', !isEmptyState);
+    document.getElementById('emptyLink').classList.toggle('active', isEmptyState);
+
+    const input = document.getElementById('zhInput');
+    const counter = document.getElementById('charCount');
+
+    function syncCount() {
+      const len = input.value.length;
+      counter.textContent = Math.min(len, 200);
+      if (len > 200) input.value = input.value.slice(0, 200);
+    }
+
+    input.addEventListener('input', syncCount);
+    syncCount();
+
+    const recentData = [
+      { zh: '我想去买个咖啡', en: "I'd like to grab a coffee.", group: '日常口语', time: '10 分钟前' },
+      { zh: '这个方案我觉得可以先跑个试点', en: 'I think we can run a pilot for this plan first.', group: '工作沟通', time: '1 小时前' },
+      { zh: '你能帮我看下这个报告吗', en: 'Could you take a look at this report for me?', group: '工作沟通', time: '3 小时前' }
+    ];
+
+    const recentList = document.getElementById('recentList');
+    if (isEmptyState) {
+      recentList.innerHTML = `
+        <div class="empty-card">
+          <h3>还没有最近记录</h3>
+          <p>新用户首次进入时只展示输入区域，便于直接开始记录。</p>
+          <button class="btn btn-primary">创建第一条记录</button>
+        </div>
+      `;
+    } else {
+      recentData.forEach((item) => {
+        const el = document.createElement('div');
+        el.className = 'recent-item';
+        el.innerHTML = `
+          <div class="recent-zh">${item.zh}</div>
+          <div class="recent-en">${item.en}</div>
+          <div class="recent-meta">
+            <span class="recent-group">${item.group}</span>
+            <span class="recent-time">${item.time}</span>
+          </div>
+        `;
+        recentList.appendChild(el);
+      });
+    }
+
+    const groups = [
+      { name: '工作沟通', due: 6 },
+      { name: '日常口语', due: 10 },
+      { name: '英文会议', due: 3 },
+      { name: '旅行应急', due: 5 },
+      { name: '电话沟通', due: 4 },
+      { name: '面试表达', due: 7 },
+      { name: '产品讨论', due: 3 },
+      { name: '英文邮件', due: 8 },
+      { name: '客户演示', due: 2 },
+      { name: '团队协作', due: 5 },
+      { name: '项目管理', due: 6 },
+      { name: '复盘总结', due: 4 },
+      { name: '默认组', due: 2 }
+    ];
+
+    const groupOptions = document.getElementById('groupOptions');
+    const groupText = document.getElementById('groupText');
+    const enInput = document.getElementById('enInput');
+    const saveCardBtn = document.getElementById('saveCardBtn');
+    const saveResult = document.getElementById('saveResult');
+    const saveResultText = document.getElementById('saveResultText');
+    const adjustAfterSaveBtn = document.getElementById('adjustAfterSaveBtn');
+    let selectedGroup = '工作沟通';
+    let dynamicGroupSuffix = 1;
+
+    function renderGroupOptions() {
+      groupOptions.innerHTML = '';
+      groups.forEach((group) => {
+        const item = document.createElement('label');
+        item.className = 'group-option';
+        item.innerHTML = `
+          <input type="radio" name="group" value="${group.name}" ${group.name === selectedGroup ? 'checked' : ''}>
+          <div>
+            <div class="group-name">${group.name}</div>
+            <div class="group-meta">推荐原因：语义最接近当前表达</div>
+          </div>
+          <div class="group-due">待复习 ${group.due}</div>
+        `;
+        groupOptions.appendChild(item);
+      });
+    }
+
+    function pickExistingGroupByAgent(zhText) {
+      const rules = [
+        { keywords: ['会议', '汇报', '对齐', '风险', '方案', '报告', '项目'], group: '工作沟通' },
+        { keywords: ['旅行', '航班', '登机', '酒店', '签证', '行李'], group: '旅行应急' },
+        { keywords: ['面试', '自我介绍', '经历', '岗位'], group: '面试表达' },
+        { keywords: ['电话', '来电', '回拨'], group: '电话沟通' },
+        { keywords: ['邮件', '抄送', '附件'], group: '英文邮件' },
+        { keywords: ['复盘', '总结'], group: '复盘总结' }
+      ];
+      const hit = rules.find((rule) => rule.keywords.some((keyword) => zhText.includes(keyword)));
+      return hit ? hit.group : '';
+    }
+
+    function buildNewGroupName(zhText) {
+      const normalized = zhText.replace(/[，。！？,.!?\s]/g, '').slice(0, 6) || '新主题';
+      const safeBase = normalized.replace(/[<>]/g, '');
+      let candidate = `${safeBase}主题`;
+      while (groups.some((group) => group.name === candidate)) {
+        candidate = `${safeBase}主题${dynamicGroupSuffix}`;
+        dynamicGroupSuffix += 1;
+      }
+      return candidate;
+    }
+
+    function addRecentRecord(zhText, enText, groupName) {
+      if (recentList.querySelector('.empty-card')) recentList.innerHTML = '';
+      const item = document.createElement('div');
+      item.className = 'recent-item';
+      item.innerHTML = `
+        <div class="recent-zh">${zhText}</div>
+        <div class="recent-en">${enText}</div>
+        <div class="recent-meta">
+          <span class="recent-group">${groupName}</span>
+          <span class="recent-time">刚刚</span>
+        </div>
+      `;
+      recentList.prepend(item);
+    }
+
+    function showSaveResult(message) {
+      saveResultText.textContent = message;
+      saveResult.classList.add('show');
+    }
+
+    renderGroupOptions();
+
+    const modal = document.getElementById('groupModal');
+    const openBtn = document.getElementById('changeGroupBtn');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const confirmBtn = document.getElementById('confirmModalBtn');
+
+    function openModal() {
+      renderGroupOptions();
+      modal.classList.add('show');
+    }
+
+    function closeModal() {
+      modal.classList.remove('show');
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    confirmBtn.addEventListener('click', () => {
+      const checked = document.querySelector('input[name="group"]:checked');
+      if (!checked) return;
+      selectedGroup = checked.value;
+      groupText.textContent = `${selectedGroup} · 手动调整`;
+      closeModal();
+    });
+
+    saveCardBtn.addEventListener('click', () => {
+      const zhText = input.value.trim();
+      const enText = enInput.value.trim();
+      if (!zhText || !enText) {
+        alert('请先完成中文输入和英文结果后再保存。');
+        return;
+      }
+
+      const matchedGroup = pickExistingGroupByAgent(zhText);
+      let isCreated = false;
+      if (matchedGroup) {
+        selectedGroup = matchedGroup;
+      } else {
+        const newGroup = buildNewGroupName(zhText);
+        groups.push({ name: newGroup, due: 0 });
+        selectedGroup = newGroup;
+        isCreated = true;
+      }
+
+      groupText.textContent = `${selectedGroup} · ${isCreated ? 'Agent新建分组' : 'Agent自动分组'}`;
+      addRecentRecord(zhText, enText, selectedGroup);
+      showSaveResult(
+        isCreated
+          ? `Agent 未命中已有分组，已新建「${selectedGroup}」并完成保存。`
+          : `Agent 已自动分到「${selectedGroup}」并完成保存。`
+      );
+      renderGroupOptions();
+    });
+
+    adjustAfterSaveBtn.addEventListener('click', openModal);
+
+    function initAvatarMenu() {
+      const avatarBtn = document.getElementById('avatarBtn');
+      const avatarDropdown = document.getElementById('avatarDropdown');
+      if (!avatarBtn || !avatarDropdown) return;
+
+      const closeAvatarMenu = () => {
+        avatarDropdown.classList.remove('show');
+        avatarBtn.setAttribute('aria-expanded', 'false');
+      };
+
+      avatarBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const willShow = !avatarDropdown.classList.contains('show');
+        avatarDropdown.classList.toggle('show', willShow);
+        avatarBtn.setAttribute('aria-expanded', String(willShow));
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!event.target.closest('.avatar-menu')) closeAvatarMenu();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeAvatarMenu();
+      });
+
+      document.getElementById('accountInfoBtn')?.addEventListener('click', () => {
+        alert('账号信息页将在后续版本上线。');
+        closeAvatarMenu();
+      });
+
+      document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        alert('已退出登录（Mock）。');
+        closeAvatarMenu();
+        location.href = 'v3-c-warm-orange-home.html';
+      });
+    }
+
+    initAvatarMenu();
+  </script>
+</body>
+</html>
