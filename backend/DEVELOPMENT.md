@@ -92,8 +92,17 @@ python -V
 `backend/.env.example` 中当前有：
 
 - `APP_ENV`：环境标识（如 `dev`）
+- `APP_STORAGE_BACKEND`：运行态存储后端（`memory` / `postgres`）
 - `JWT_SECRET_KEY`：JWT 签名密钥（生产必须长随机串）
 - `DATABASE_URL`：数据库连接串（当前阶段全任务共用）
+
+### 6.1 存储后端如何生效
+
+- `APP_STORAGE_BACKEND=postgres`：API 读写直接走 PostgreSQL（可持久化）
+- `APP_STORAGE_BACKEND=memory`：API 读写走内存仓储（重启会丢失）
+- 若未设置 `APP_STORAGE_BACKEND`，系统会自动判断：
+  - 有 `DATABASE_URL` -> 使用 `postgres`
+  - 无 `DATABASE_URL` -> 使用 `memory`
 
 ## 7.1 schema 同步到 Neon / PostgreSQL（新增）
 
@@ -144,6 +153,12 @@ make -C backend db-sync # 同步 schema 到 Neon/PostgreSQL
 ### Q3: 改了 `.env` 后没生效
 
 `make dev` 会通过 `--env-file` 读取 `.env`，改完后重启服务即可。
+
+### Q4: 前端请求后端报 405 Method Not Allowed（OPTIONS 请求）
+
+这是 CORS 预检失败。前端（`localhost:5173`）与后端（`localhost:8000`）端口不同，属于跨域。浏览器会先发 OPTIONS 预检请求，后端必须配置 `CORSMiddleware` 才能正确响应。
+
+当前已在 `app/main.py` 的 `create_app()` 中配置。如果部署到生产环境，需要把 `allow_origins` 改为实际域名。
 
 ---
 

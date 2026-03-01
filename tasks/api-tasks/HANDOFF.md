@@ -2,8 +2,8 @@
 
 ## 最近一次交接
 
-- 当前阶段：API-014 已完成，首页概览聚合接口已落地
-- 本次变更：新增 `GET /dashboard/home-summary`，前端首页可移除静态示例数据
-- 关键产出：`backend/app/dashboard/service.py`、`backend/app/dashboard/api.py`、`backend/tests/integration/test_dashboard_api.py`
-- 可追溯证据：`pytest -q tests/integration/test_dashboard_api.py`（2 passed）；`make -C backend check`（73 passed + lint/typecheck passed）
-- 下一步建议：把首页问候语与学习统计口径进一步对齐产品定义（如“学习天数”的精确定义与持久化来源）。
+- 当前阶段：API-015 已完成，运行态已支持切换 PostgreSQL 仓储
+- 本次变更：新增 Postgres 仓储实现（users/decks/cards）与存储后端自动装配逻辑
+- 关键产出：`backend/app/main.py`、`backend/app/db/runtime.py`、`backend/app/auth/repository.py`、`backend/app/deck/repository.py`、`backend/app/card/repository.py`
+- 可追溯证据：`pytest -q tests/unit/test_storage_runtime.py`（7 passed）；`make -C backend check`（80 passed + lint/typecheck passed）
+- 下一步建议：进入 API-016，接入 LangChain 统一 LLM 适配层并替换当前生成/评分/分组 stub。

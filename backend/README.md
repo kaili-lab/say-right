@@ -12,6 +12,7 @@ FastAPI 后端子项目。
 - 同步 schema 到 Neon/PostgreSQL：`make db-sync`
 - 健康检查：`GET /health`
 - 首页概览：`GET /dashboard/home-summary`
+- 运行态存储：`APP_STORAGE_BACKEND=postgres`（默认可由 `DATABASE_URL` 自动推断）
 
 > 以上命令默认在 `backend/` 目录执行；若在仓库根执行，请使用 `make -C backend dev` / `make -C backend check`。
 

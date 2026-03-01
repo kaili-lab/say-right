@@ -1,8 +1,13 @@
 """Deck 仓储抽象与内存实现。"""
 
+from collections.abc import Mapping
 from dataclasses import replace
+from datetime import datetime
 from threading import Lock
-from typing import Protocol
+from typing import Protocol, cast
+
+import psycopg
+from psycopg.rows import dict_row
 
 from app.domain.models import Deck
 
@@ -145,3 +150,250 @@ class InMemoryDeckRepository(DeckRepository):
     @staticmethod
     def _normalize_name(name: str) -> str:
         return name.strip().lower()
+
+
+class PostgresDeckRepository(DeckRepository):
+    """基于 PostgreSQL 的 deck 仓储实现。"""
+
+    def __init__(self, *, database_url: str) -> None:
+        """初始化数据库连接信息。"""
+        self._database_url = database_url
+
+    def ensure_default_deck(self, user_id: str) -> Deck:
+        """初始化或返回用户默认组。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                existing_default = self._find_default_deck(cursor=cursor, user_id=user_id)
+                if existing_default is not None:
+                    return _row_to_deck(existing_default)
+
+                default_deck = Deck.create(
+                    user_id=user_id,
+                    name=DEFAULT_DECK_NAME,
+                    is_default=True,
+                )
+                try:
+                    cursor.execute(
+                        """
+                        INSERT INTO decks (
+                            deck_id,
+                            user_id,
+                            name,
+                            is_default,
+                            new_count,
+                            learning_count,
+                            due_count,
+                            created_at
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (
+                            default_deck.deck_id,
+                            default_deck.user_id,
+                            default_deck.name,
+                            default_deck.is_default,
+                            default_deck.new_count,
+                            default_deck.learning_count,
+                            default_deck.due_count,
+                            default_deck.created_at,
+                        ),
+                    )
+                    return default_deck
+                except psycopg.errors.UniqueViolation:
+                    # 并发请求下默认组可能已被其他事务创建，回读即可。
+                    connection.rollback()
+                    with connection.cursor(row_factory=dict_row) as retry_cursor:
+                        existing_default = self._find_default_deck(
+                            cursor=retry_cursor,
+                            user_id=user_id,
+                        )
+                    if existing_default is not None:
+                        return _row_to_deck(existing_default)
+                    raise
+
+    def list_by_user(self, user_id: str) -> list[Deck]:
+        """按创建顺序返回该用户 deck。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        deck_id,
+                        user_id,
+                        name,
+                        is_default,
+                        new_count,
+                        learning_count,
+                        due_count,
+                        created_at
+                    FROM decks
+                    WHERE user_id = %s
+                    ORDER BY created_at ASC, deck_id ASC
+                    """,
+                    (user_id,),
+                )
+                rows = cursor.fetchall()
+        return [_row_to_deck(row) for row in rows]
+
+    def get_by_id(self, deck_id: str) -> Deck | None:
+        """按 deck_id 读取 deck。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        deck_id,
+                        user_id,
+                        name,
+                        is_default,
+                        new_count,
+                        learning_count,
+                        due_count,
+                        created_at
+                    FROM decks
+                    WHERE deck_id = %s
+                    LIMIT 1
+                    """,
+                    (deck_id,),
+                )
+                row = cursor.fetchone()
+        if row is None:
+            return None
+        return _row_to_deck(row)
+
+    def add_custom_deck(self, user_id: str, name: str) -> Deck:
+        """新增自定义组并保证名称唯一。"""
+        deck = Deck.create(
+            user_id=user_id,
+            name=name.strip(),
+            is_default=False,
+        )
+        try:
+            with psycopg.connect(self._database_url) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        INSERT INTO decks (
+                            deck_id,
+                            user_id,
+                            name,
+                            is_default,
+                            new_count,
+                            learning_count,
+                            due_count,
+                            created_at
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (
+                            deck.deck_id,
+                            deck.user_id,
+                            deck.name,
+                            deck.is_default,
+                            deck.new_count,
+                            deck.learning_count,
+                            deck.due_count,
+                            deck.created_at,
+                        ),
+                    )
+        except psycopg.errors.UniqueViolation as exc:
+            raise DuplicateDeckNameError("duplicate deck name") from exc
+        return deck
+
+    def delete_deck(self, user_id: str, deck_id: str) -> None:
+        """删除用户 deck 并校验业务约束。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        deck_id,
+                        user_id,
+                        name,
+                        is_default,
+                        new_count,
+                        learning_count,
+                        due_count,
+                        created_at
+                    FROM decks
+                    WHERE deck_id = %s
+                    LIMIT 1
+                    """,
+                    (deck_id,),
+                )
+                row = cursor.fetchone()
+                if row is None or str(row["user_id"]) != user_id:
+                    raise DeckNotFoundError("deck not found")
+
+                if bool(row["is_default"]):
+                    raise DefaultDeckDeleteForbiddenError("default deck cannot be deleted")
+
+                if (
+                    cast(int, row["new_count"])
+                    + cast(int, row["learning_count"])
+                    + cast(int, row["due_count"])
+                    > 0
+                ):
+                    raise DeckNotEmptyError("deck is not empty")
+
+                cursor.execute(
+                    """
+                    DELETE FROM decks
+                    WHERE deck_id = %s
+                    """,
+                    (deck_id,),
+                )
+
+    def update_counts(self, *, deck_id: str, new_count: int, learning_count: int, due_count: int) -> None:
+        """更新 deck 聚合计数。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE decks
+                    SET
+                        new_count = %s,
+                        learning_count = %s,
+                        due_count = %s
+                    WHERE deck_id = %s
+                    """,
+                    (new_count, learning_count, due_count, deck_id),
+                )
+                if cursor.rowcount == 0:
+                    raise DeckNotFoundError("deck not found")
+
+    @staticmethod
+    def _find_default_deck(*, cursor: psycopg.Cursor[dict[str, object]], user_id: str) -> dict[str, object] | None:
+        cursor.execute(
+            """
+            SELECT
+                deck_id,
+                user_id,
+                name,
+                is_default,
+                new_count,
+                learning_count,
+                due_count,
+                created_at
+            FROM decks
+            WHERE user_id = %s AND is_default = TRUE
+            ORDER BY created_at ASC, deck_id ASC
+            LIMIT 1
+            """,
+            (user_id,),
+        )
+        return cursor.fetchone()
+
+
+def _row_to_deck(row: Mapping[str, object]) -> Deck:
+    """把数据库行映射为领域实体。"""
+    return Deck(
+        deck_id=str(row["deck_id"]),
+        user_id=str(row["user_id"]),
+        name=str(row["name"]),
+        is_default=bool(row["is_default"]),
+        new_count=cast(int, row["new_count"]),
+        learning_count=cast(int, row["learning_count"]),
+        due_count=cast(int, row["due_count"]),
+        created_at=cast(datetime, row["created_at"]),
+    )

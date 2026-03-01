@@ -1,9 +1,13 @@
 """Card 仓储抽象与内存实现。"""
 
+from collections.abc import Mapping
 from dataclasses import replace
 from datetime import UTC, datetime
 from threading import Lock
-from typing import Protocol
+from typing import Protocol, cast
+
+import psycopg
+from psycopg.rows import dict_row
 
 from app.deck.repository import DeckNotFoundError, DeckRepository
 from app.domain.models import Card
@@ -237,3 +241,435 @@ class InMemoryCardRepository(CardRepository):
             learning_count=learning_count,
             due_count=due_count,
         )
+
+
+class PostgresCardRepository(CardRepository):
+    """基于 PostgreSQL 的 card 仓储实现。"""
+
+    def __init__(self, *, database_url: str) -> None:
+        """初始化数据库连接信息。"""
+        self._database_url = database_url
+
+    def create_card(
+        self,
+        *,
+        user_id: str,
+        deck_id: str,
+        front_text: str,
+        back_text: str,
+        source_lang: str = "zh",
+        target_lang: str = "en",
+        due_at: datetime | None = None,
+        stability: float = 0.0,
+        difficulty: float = 0.0,
+        reps: int = 0,
+        lapses: int = 0,
+    ) -> Card:
+        """创建并落盘卡片，同时刷新 deck 统计。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                self._ensure_deck_accessible(cursor=cursor, user_id=user_id, deck_id=deck_id)
+                card = Card.create(
+                    user_id=user_id,
+                    deck_id=deck_id,
+                    front_text=front_text,
+                    back_text=back_text,
+                    source_lang=source_lang,
+                    target_lang=target_lang,
+                    due_at=due_at,
+                    stability=stability,
+                    difficulty=difficulty,
+                    reps=reps,
+                    lapses=lapses,
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO cards (
+                        card_id,
+                        user_id,
+                        deck_id,
+                        front_text,
+                        back_text,
+                        source_lang,
+                        target_lang,
+                        due_at,
+                        stability,
+                        difficulty,
+                        reps,
+                        lapses,
+                        created_at,
+                        updated_at
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        card.card_id,
+                        card.user_id,
+                        card.deck_id,
+                        card.front_text,
+                        card.back_text,
+                        card.source_lang,
+                        card.target_lang,
+                        card.due_at,
+                        card.stability,
+                        card.difficulty,
+                        card.reps,
+                        card.lapses,
+                        card.created_at,
+                        card.updated_at,
+                    ),
+                )
+                self._refresh_deck_counts(cursor=cursor, deck_id=deck_id)
+        return card
+
+    def list_by_deck(self, *, user_id: str, deck_id: str) -> list[Card]:
+        """按插入顺序返回 deck 下的卡片。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                self._ensure_deck_accessible(cursor=cursor, user_id=user_id, deck_id=deck_id)
+                cursor.execute(
+                    """
+                    SELECT
+                        card_id,
+                        user_id,
+                        deck_id,
+                        front_text,
+                        back_text,
+                        source_lang,
+                        target_lang,
+                        due_at,
+                        stability,
+                        difficulty,
+                        reps,
+                        lapses,
+                        created_at,
+                        updated_at
+                    FROM cards
+                    WHERE user_id = %s AND deck_id = %s
+                    ORDER BY created_at ASC, card_id ASC
+                    """,
+                    (user_id, deck_id),
+                )
+                rows = cursor.fetchall()
+        return [_row_to_card(row) for row in rows]
+
+    def list_by_user(self, *, user_id: str) -> list[Card]:
+        """按创建时间返回用户全部卡片。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        card_id,
+                        user_id,
+                        deck_id,
+                        front_text,
+                        back_text,
+                        source_lang,
+                        target_lang,
+                        due_at,
+                        stability,
+                        difficulty,
+                        reps,
+                        lapses,
+                        created_at,
+                        updated_at
+                    FROM cards
+                    WHERE user_id = %s
+                    ORDER BY created_at ASC, card_id ASC
+                    """,
+                    (user_id,),
+                )
+                rows = cursor.fetchall()
+        return [_row_to_card(row) for row in rows]
+
+    def get_by_id(self, *, user_id: str, card_id: str) -> Card:
+        """按 ID 返回单张卡片。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        card_id,
+                        user_id,
+                        deck_id,
+                        front_text,
+                        back_text,
+                        source_lang,
+                        target_lang,
+                        due_at,
+                        stability,
+                        difficulty,
+                        reps,
+                        lapses,
+                        created_at,
+                        updated_at
+                    FROM cards
+                    WHERE card_id = %s AND user_id = %s
+                    LIMIT 1
+                    """,
+                    (card_id, user_id),
+                )
+                row = cursor.fetchone()
+        if row is None:
+            raise CardNotFoundError("card not found")
+        return _row_to_card(row)
+
+    def update_text(self, *, user_id: str, card_id: str, front_text: str, back_text: str) -> Card:
+        """仅更新正反面文本，保留 FSRS 状态字段。"""
+        now = datetime.now(UTC)
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    UPDATE cards
+                    SET
+                        front_text = %s,
+                        back_text = %s,
+                        updated_at = %s
+                    WHERE card_id = %s AND user_id = %s
+                    RETURNING
+                        card_id,
+                        user_id,
+                        deck_id,
+                        front_text,
+                        back_text,
+                        source_lang,
+                        target_lang,
+                        due_at,
+                        stability,
+                        difficulty,
+                        reps,
+                        lapses,
+                        created_at,
+                        updated_at
+                    """,
+                    (front_text, back_text, now, card_id, user_id),
+                )
+                row = cursor.fetchone()
+        if row is None:
+            raise CardNotFoundError("card not found")
+        return _row_to_card(row)
+
+    def delete_card(self, *, user_id: str, card_id: str) -> None:
+        """删除卡片并同步 deck 统计。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    DELETE FROM cards
+                    WHERE card_id = %s AND user_id = %s
+                    RETURNING deck_id
+                    """,
+                    (card_id, user_id),
+                )
+                row = cursor.fetchone()
+                if row is None:
+                    raise CardNotFoundError("card not found")
+                self._refresh_deck_counts(cursor=cursor, deck_id=str(row["deck_id"]))
+
+    def move_card(self, *, user_id: str, card_id: str, to_deck_id: str) -> Card:
+        """移动卡片并刷新来源/目标 deck 统计。"""
+        now = datetime.now(UTC)
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        card_id,
+                        user_id,
+                        deck_id,
+                        front_text,
+                        back_text,
+                        source_lang,
+                        target_lang,
+                        due_at,
+                        stability,
+                        difficulty,
+                        reps,
+                        lapses,
+                        created_at,
+                        updated_at
+                    FROM cards
+                    WHERE card_id = %s AND user_id = %s
+                    LIMIT 1
+                    """,
+                    (card_id, user_id),
+                )
+                card_row = cursor.fetchone()
+                if card_row is None:
+                    raise CardNotFoundError("card not found")
+
+                current_deck_id = str(card_row["deck_id"])
+                self._ensure_deck_accessible(
+                    cursor=cursor,
+                    user_id=user_id,
+                    deck_id=to_deck_id,
+                )
+                if current_deck_id == to_deck_id:
+                    return _row_to_card(card_row)
+
+                cursor.execute(
+                    """
+                    UPDATE cards
+                    SET
+                        deck_id = %s,
+                        updated_at = %s
+                    WHERE card_id = %s AND user_id = %s
+                    RETURNING
+                        card_id,
+                        user_id,
+                        deck_id,
+                        front_text,
+                        back_text,
+                        source_lang,
+                        target_lang,
+                        due_at,
+                        stability,
+                        difficulty,
+                        reps,
+                        lapses,
+                        created_at,
+                        updated_at
+                    """,
+                    (to_deck_id, now, card_id, user_id),
+                )
+                moved_row = cursor.fetchone()
+                if moved_row is None:
+                    raise CardNotFoundError("card not found")
+
+                self._refresh_deck_counts(cursor=cursor, deck_id=current_deck_id)
+                self._refresh_deck_counts(cursor=cursor, deck_id=to_deck_id)
+        return _row_to_card(moved_row)
+
+    def update_fsrs_state(
+        self,
+        *,
+        user_id: str,
+        card_id: str,
+        due_at: datetime,
+        stability: float,
+        difficulty: float,
+        reps: int,
+        lapses: int,
+    ) -> Card:
+        """更新卡片 FSRS 状态并同步 deck 统计。"""
+        now = datetime.now(UTC)
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    UPDATE cards
+                    SET
+                        due_at = %s,
+                        stability = %s,
+                        difficulty = %s,
+                        reps = %s,
+                        lapses = %s,
+                        updated_at = %s
+                    WHERE card_id = %s AND user_id = %s
+                    RETURNING
+                        card_id,
+                        user_id,
+                        deck_id,
+                        front_text,
+                        back_text,
+                        source_lang,
+                        target_lang,
+                        due_at,
+                        stability,
+                        difficulty,
+                        reps,
+                        lapses,
+                        created_at,
+                        updated_at
+                    """,
+                    (
+                        due_at,
+                        stability,
+                        difficulty,
+                        reps,
+                        lapses,
+                        now,
+                        card_id,
+                        user_id,
+                    ),
+                )
+                row = cursor.fetchone()
+                if row is None:
+                    raise CardNotFoundError("card not found")
+                self._refresh_deck_counts(cursor=cursor, deck_id=str(row["deck_id"]))
+        return _row_to_card(row)
+
+    @staticmethod
+    def _ensure_deck_accessible(*, cursor: psycopg.Cursor[dict[str, object]], user_id: str, deck_id: str) -> None:
+        cursor.execute(
+            """
+            SELECT deck_id
+            FROM decks
+            WHERE deck_id = %s AND user_id = %s
+            LIMIT 1
+            """,
+            (deck_id, user_id),
+        )
+        if cursor.fetchone() is None:
+            raise DeckNotFoundError("deck not found")
+
+    @staticmethod
+    def _refresh_deck_counts(*, cursor: psycopg.Cursor[dict[str, object]], deck_id: str) -> None:
+        """按卡片实时状态回写 deck 聚合计数，保证删除约束与展示一致。"""
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*) FILTER (WHERE reps = 0) AS new_count,
+                COUNT(*) FILTER (WHERE reps > 0 AND due_at <= NOW()) AS due_count,
+                COUNT(*) FILTER (WHERE reps > 0 AND due_at > NOW()) AS learning_count
+            FROM cards
+            WHERE deck_id = %s
+            """,
+            (deck_id,),
+        )
+        counts = cursor.fetchone()
+        if counts is None:
+            new_count = 0
+            due_count = 0
+            learning_count = 0
+        else:
+            new_count_raw = cast(int | None, counts["new_count"])
+            due_count_raw = cast(int | None, counts["due_count"])
+            learning_count_raw = cast(int | None, counts["learning_count"])
+            new_count = new_count_raw or 0
+            due_count = due_count_raw or 0
+            learning_count = learning_count_raw or 0
+
+        cursor.execute(
+            """
+            UPDATE decks
+            SET
+                new_count = %s,
+                learning_count = %s,
+                due_count = %s
+            WHERE deck_id = %s
+            """,
+            (new_count, learning_count, due_count, deck_id),
+        )
+
+
+def _row_to_card(row: Mapping[str, object]) -> Card:
+    """把数据库行映射为领域实体。"""
+    return Card(
+        card_id=str(row["card_id"]),
+        user_id=str(row["user_id"]),
+        deck_id=str(row["deck_id"]),
+        front_text=str(row["front_text"]),
+        back_text=str(row["back_text"]),
+        source_lang=str(row["source_lang"]),
+        target_lang=str(row["target_lang"]),
+        due_at=cast(datetime, row["due_at"]),
+        stability=cast(float, row["stability"]),
+        difficulty=cast(float, row["difficulty"]),
+        reps=cast(int, row["reps"]),
+        lapses=cast(int, row["lapses"]),
+        created_at=cast(datetime, row["created_at"]),
+        updated_at=cast(datetime, row["updated_at"]),
+    )

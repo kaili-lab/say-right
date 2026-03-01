@@ -1,7 +1,12 @@
 """用户仓储抽象与内存实现。"""
 
+from collections.abc import Mapping
+from datetime import datetime
 from threading import Lock
-from typing import Protocol
+from typing import Protocol, cast
+
+import psycopg
+from psycopg.rows import dict_row
 
 from app.domain.models import User
 
@@ -57,3 +62,77 @@ class InMemoryUserRepository(UserRepository):
                 raise EmailAlreadyExistsError("email already exists")
             self._users_by_id[user.user_id] = user
             self._user_id_by_email[user.email] = user.user_id
+
+
+class PostgresUserRepository(UserRepository):
+    """基于 PostgreSQL 的用户仓储实现。"""
+
+    def __init__(self, *, database_url: str) -> None:
+        """初始化数据库连接信息。"""
+        self._database_url = database_url
+
+    def get_by_email(self, email: str) -> User | None:
+        """按邮箱读取用户。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT user_id, email, password_hash, created_at
+                    FROM users
+                    WHERE email = %s
+                    LIMIT 1
+                    """,
+                    (email,),
+                )
+                row = cursor.fetchone()
+        if row is None:
+            return None
+        return _row_to_user(row)
+
+    def get_by_id(self, user_id: str) -> User | None:
+        """按 ID 读取用户。"""
+        with psycopg.connect(self._database_url) as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT user_id, email, password_hash, created_at
+                    FROM users
+                    WHERE user_id = %s
+                    LIMIT 1
+                    """,
+                    (user_id,),
+                )
+                row = cursor.fetchone()
+        if row is None:
+            return None
+        return _row_to_user(row)
+
+    def add(self, user: User) -> None:
+        """新增用户并保证邮箱唯一。"""
+        try:
+            with psycopg.connect(self._database_url) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        INSERT INTO users (user_id, email, password_hash, created_at)
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                        (
+                            user.user_id,
+                            user.email,
+                            user.password_hash,
+                            user.created_at,
+                        ),
+                    )
+        except psycopg.errors.UniqueViolation as exc:
+            raise EmailAlreadyExistsError("email already exists") from exc
+
+
+def _row_to_user(row: Mapping[str, object]) -> User:
+    """把数据库行映射为领域实体。"""
+    return User(
+        user_id=str(row["user_id"]),
+        email=str(row["email"]),
+        password_hash=str(row["password_hash"]),
+        created_at=cast(datetime, row["created_at"]),
+    )

@@ -11,12 +11,12 @@ from pathlib import Path
 
 import psycopg
 
+from app.db.runtime import normalize_postgres_database_url
+
 
 def normalize_database_url(database_url: str) -> str:
     """把 SQLAlchemy 风格 DSN 归一化为 psycopg 可识别的格式。"""
-    if database_url.startswith("postgresql+asyncpg://"):
-        return database_url.replace("postgresql+asyncpg://", "postgresql://", 1)
-    return database_url
+    return normalize_postgres_database_url(database_url)
 
 
 def resolve_schema_path() -> Path:

@@ -4,18 +4,23 @@
 让 `uvicorn app.main:app` 有稳定且唯一的启动入口。
 """
 
+import os
+from collections.abc import Mapping
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.api import create_auth_router
-from app.auth.repository import InMemoryUserRepository
+from app.auth.repository import InMemoryUserRepository, PostgresUserRepository, UserRepository
 from app.auth.service import AuthService
 from app.card.api import create_card_router
-from app.card.repository import InMemoryCardRepository
+from app.card.repository import CardRepository, InMemoryCardRepository, PostgresCardRepository
 from app.card.service import CardService
 from app.dashboard.api import create_dashboard_router
 from app.dashboard.service import DashboardService
 from app.deck.api import create_deck_router
-from app.deck.repository import InMemoryDeckRepository
+from app.db.runtime import resolve_postgres_database_url, resolve_storage_backend
+from app.deck.repository import DeckRepository, InMemoryDeckRepository, PostgresDeckRepository
 from app.deck.service import DeckService
 from app.domain.models import User
 from app.record.api import create_record_router
@@ -29,6 +34,28 @@ from app.review.service import ReviewService
 from app.review.session_service import ReviewSessionService
 
 
+def build_repositories_from_env(
+    env: Mapping[str, str] | None = None,
+) -> tuple[str, UserRepository, DeckRepository, CardRepository]:
+    """按环境变量装配存储后端仓储。"""
+    env_map = env or os.environ
+    storage_backend = resolve_storage_backend(env_map)
+    user_repository: UserRepository
+    deck_repository: DeckRepository
+    card_repository: CardRepository
+    if storage_backend == "postgres":
+        database_url = resolve_postgres_database_url(env_map)
+        user_repository = PostgresUserRepository(database_url=database_url)
+        deck_repository = PostgresDeckRepository(database_url=database_url)
+        card_repository = PostgresCardRepository(database_url=database_url)
+        return storage_backend, user_repository, deck_repository, card_repository
+
+    user_repository = InMemoryUserRepository()
+    deck_repository = InMemoryDeckRepository()
+    card_repository = InMemoryCardRepository(deck_repository=deck_repository)
+    return storage_backend, user_repository, deck_repository, card_repository
+
+
 def build_health_payload() -> dict[str, str]:
     """构造健康检查响应体。"""
     return {"status": "ok"}
@@ -38,10 +65,18 @@ def create_app() -> FastAPI:
     """创建并配置 FastAPI 应用实例。"""
     application = FastAPI(title="say-right-api")
 
-    # 当前阶段先用内存仓储保证接口链路可跑通，后续再平滑替换为数据库实现。
-    user_repository = InMemoryUserRepository()
-    deck_repository = InMemoryDeckRepository()
-    card_repository = InMemoryCardRepository(deck_repository=deck_repository)
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    storage_backend, user_repository, deck_repository, card_repository = build_repositories_from_env()
 
     auth_service = AuthService(user_repository=user_repository)
     deck_service = DeckService(repository=deck_repository)
@@ -63,6 +98,7 @@ def create_app() -> FastAPI:
     )
 
     # 暴露核心依赖给测试使用，便于构造边界数据而不污染业务 API。
+    application.state.storage_backend = storage_backend
     application.state.user_repository = user_repository
     application.state.deck_repository = deck_repository
     application.state.card_repository = card_repository
