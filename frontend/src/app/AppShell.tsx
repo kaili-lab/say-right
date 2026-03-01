@@ -53,6 +53,20 @@ export function AppShell({ children }: PropsWithChildren) {
     };
   }, [isAvatarMenuOpen]);
 
+  useEffect(() => {
+    if (!menuNotice) {
+      return;
+    }
+
+    // 提示语统一自动收起，避免占位信息长期停留影响页面阅读。
+    const timer = window.setTimeout(() => {
+      setMenuNotice("");
+    }, 3000);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [menuNotice]);
+
   function handleAccountInfoClick() {
     setMenuNotice("账号信息页将在后续版本上线。");
     setIsAvatarMenuOpen(false);
@@ -60,9 +74,9 @@ export function AppShell({ children }: PropsWithChildren) {
 
   function handleLogout() {
     clearSession();
-    setMenuNotice("已退出登录。");
+    setMenuNotice("");
     setIsAvatarMenuOpen(false);
-    navigate("/", { replace: true });
+    navigate("/auth/login", { replace: true, state: { notice: "已退出登录。" } });
   }
 
   return (

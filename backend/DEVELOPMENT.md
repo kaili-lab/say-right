@@ -38,7 +38,7 @@ make -C backend dev
 ## 3. 为什么推荐 `make -C backend dev`
 
 因为它把“手动三步”封装成了一个命令：
-- 自动加载 `backend/.env`
+- 通过 `uvicorn --env-file .env` 自动加载 `backend/.env`
 - 使用固定虚拟环境里的 `uvicorn`（`../.venv/bin/uvicorn`）
 - 进入 `--reload` 开发模式
 
@@ -54,11 +54,10 @@ make -C backend dev
 ```bash
 cd backend
 source ../.venv/bin/activate
-set -a; source .env; set +a
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --env-file .env
 ```
 
-上面 4 行就是 `make dev` 做的事情，只是手动版。
+上面 3 行就是 `make dev` 做的事情，只是手动版。
 
 ## 5. venv 自动激活（你现在的场景）
 
@@ -96,6 +95,20 @@ python -V
 - `JWT_SECRET_KEY`：JWT 签名密钥（生产必须长随机串）
 - `DATABASE_URL`：数据库连接串（当前阶段全任务共用）
 
+## 7.1 schema 同步到 Neon / PostgreSQL（新增）
+
+虽然当前 API 运行态还在用内存仓储，但数据库结构已经提供了可执行同步命令，便于你先把 Neon 侧 schema 建好：
+
+```bash
+make -C backend db-sync
+```
+
+它会做两件事：
+- 读取 `backend/.env` 里的 `DATABASE_URL`
+- 执行 `backend/db/schema.sql`（`CREATE TABLE IF NOT EXISTS ...`，可重复执行）
+
+> 若 `DATABASE_URL` 是 `postgresql+asyncpg://...`，脚本会自动转换为 `psycopg` 可识别的 `postgresql://...`。
+
 建议：
 - `.env.example` 提供模板并提交 Git
 - `.env` 只放本地真实值，不提交
@@ -110,6 +123,7 @@ make -C backend test    # 运行后端测试
 make -C backend lint    # Ruff 代码规范检查
 make -C backend typecheck  # mypy 类型检查
 make -C backend check   # 一键执行 test + lint + typecheck
+make -C backend db-sync # 同步 schema 到 Neon/PostgreSQL
 ```
 
 ## 8. 常见问题
@@ -129,7 +143,7 @@ make -C backend check   # 一键执行 test + lint + typecheck
 
 ### Q3: 改了 `.env` 后没生效
 
-`make dev` 会在启动时加载 `.env`，改完后重启服务即可。
+`make dev` 会通过 `--env-file` 读取 `.env`，改完后重启服务即可。
 
 ---
 

@@ -4,9 +4,9 @@
  * WHAT: 提供邮箱密码登录入口，成功后写入本地会话并回到首页。
  * WHY: UI-011 需要最小可用账号流程，便于后续接口鉴权联调。
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { AuthApiError, loginAccount, persistSession } from "./authApi";
 
@@ -28,10 +28,33 @@ function validateCredentials(email: string, password: string) {
 
 export function AuthLoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [noticeMessage, setNoticeMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const notice = (location.state as { notice?: unknown } | null)?.notice;
+    if (typeof notice === "string" && notice.trim()) {
+      setNoticeMessage(notice);
+      return;
+    }
+    setNoticeMessage("");
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!noticeMessage) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setNoticeMessage("");
+    }, 3000);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [noticeMessage]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -100,6 +123,12 @@ export function AuthLoginPage() {
         {errorMessage ? (
           <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {errorMessage}
+          </p>
+        ) : null}
+
+        {noticeMessage ? (
+          <p role="status" className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-amber-800">
+            {noticeMessage}
           </p>
         ) : null}
 

@@ -144,3 +144,11 @@ export function readSessionEmail() {
     return null;
   }
 }
+
+export function readAccessToken() {
+  try {
+    return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}

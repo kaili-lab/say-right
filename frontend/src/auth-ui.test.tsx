@@ -108,5 +108,7 @@ describe("auth-ui", () => {
     expect(window.localStorage.getItem("say_right_refresh_token")).toBeNull();
     expect(window.localStorage.getItem("say_right_user_email")).toBeNull();
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "登录" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("已退出登录。");
   });
 });

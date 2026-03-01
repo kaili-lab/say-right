@@ -14,6 +14,7 @@
 - 单元/集成测试：`pytest -q`
 - Lint：`ruff check .`
 - 类型检查：`mypy .`
+- schema 同步：`make -C backend db-sync`
 
 ## 决策说明
 

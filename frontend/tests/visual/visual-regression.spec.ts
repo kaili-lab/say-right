@@ -9,6 +9,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { seedAuthSession } from "../support/authSession";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,6 +57,7 @@ async function compareWithMockBaseline({
   await mkdir(path.dirname(snapshotPath), { recursive: true });
   await writeFile(snapshotPath, mockBaseline);
 
+  await seedAuthSession(page);
   if (setupAppBeforeGoto) {
     await setupAppBeforeGoto(page);
   }

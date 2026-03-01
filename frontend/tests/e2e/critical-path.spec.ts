@@ -5,11 +5,12 @@
  * WHY: UI-012 要求对关键路径做可回归验收，而不是只看单元测试。
  */
 import { expect, test } from "@playwright/test";
+import { seedAuthSession } from "../support/authSession";
 
 test.describe("critical-path @critical-path", () => {
   test.beforeEach(async ({ page }, testInfo) => {
-    void page;
     test.skip(testInfo.project.name !== "desktop-chromium", "关键路径 e2e 在桌面端执行；移动端由视觉验收覆盖。");
+    await seedAuthSession(page);
   });
 
   test("记录页：生成英文并保存后可立即调整分组 @critical-path", async ({ page }) => {
