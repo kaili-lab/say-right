@@ -54,6 +54,20 @@ class CardRepository(Protocol):
         """移动卡片到目标 deck。"""
         ...
 
+    def update_fsrs_state(
+        self,
+        *,
+        user_id: str,
+        card_id: str,
+        due_at: datetime,
+        stability: float,
+        difficulty: float,
+        reps: int,
+        lapses: int,
+    ) -> Card:
+        """更新卡片 FSRS 状态。"""
+        ...
+
 
 class InMemoryCardRepository(CardRepository):
     """基于内存结构的 card 仓储实现。"""
@@ -157,6 +171,33 @@ class InMemoryCardRepository(CardRepository):
             self._refresh_deck_counts_locked(from_deck_id)
             self._refresh_deck_counts_locked(to_deck_id)
             return moved
+
+    def update_fsrs_state(
+        self,
+        *,
+        user_id: str,
+        card_id: str,
+        due_at: datetime,
+        stability: float,
+        difficulty: float,
+        reps: int,
+        lapses: int,
+    ) -> Card:
+        """更新卡片 FSRS 状态并同步 deck 统计。"""
+        with self._lock:
+            card = self._get_owned_card_locked(user_id=user_id, card_id=card_id)
+            updated = replace(
+                card,
+                due_at=due_at,
+                stability=stability,
+                difficulty=difficulty,
+                reps=reps,
+                lapses=lapses,
+                updated_at=datetime.now(UTC),
+            )
+            self._cards_by_id[card_id] = updated
+            self._refresh_deck_counts_locked(updated.deck_id)
+            return updated
 
     def _ensure_deck_accessible_locked(self, *, user_id: str, deck_id: str) -> None:
         deck = self._deck_repository.get_by_id(deck_id)

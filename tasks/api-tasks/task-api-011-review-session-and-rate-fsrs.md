@@ -75,4 +75,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已新增复习 session 主链路接口：`GET /review/decks/{deck_id}/session`、`POST /review/session/{session_id}/ai-score`、`POST /review/session/{session_id}/rate`。
+- 已实现可复现 AI 评分 stub：返回 `score/feedback/suggested_rating`，并支持 `__AI_UNAVAILABLE__` 触发 503。
+- 已实现最小 FSRS 调度器与评级提交更新：`again/hard/good/easy` 可更新 `due_at/stability/difficulty/reps/lapses`。
+- 已补充测试：`backend/tests/unit/test_fsrs_scheduler.py`、`backend/tests/integration/test_review_session_api.py`。
+- 已完成回归：`make -C backend check` 通过（含 test/lint/typecheck）。

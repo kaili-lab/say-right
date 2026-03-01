@@ -21,8 +21,10 @@ from app.record.group_agent_stub import DeterministicGroupAgent
 from app.record.save_agent_service import SaveWithAgentService
 from app.record.service import RecordGenerateService
 from app.record.stub import DeterministicEnglishGenerator
+from app.review.ai_scorer_stub import DeterministicReviewAIScorer
 from app.review.api import create_review_router
 from app.review.service import ReviewService
+from app.review.session_service import ReviewSessionService
 
 
 def build_health_payload() -> dict[str, str]:
@@ -49,6 +51,10 @@ def create_app() -> FastAPI:
         group_agent=DeterministicGroupAgent(),
     )
     review_service = ReviewService(deck_service=deck_service)
+    review_session_service = ReviewSessionService(
+        card_repository=card_repository,
+        ai_scorer=DeterministicReviewAIScorer(),
+    )
 
     # 暴露核心依赖给测试使用，便于构造边界数据而不污染业务 API。
     application.state.user_repository = user_repository
@@ -79,7 +85,11 @@ def create_app() -> FastAPI:
         ),
     )
     application.include_router(
-        create_review_router(review_service=review_service, auth_service=auth_service),
+        create_review_router(
+            review_service=review_service,
+            review_session_service=review_session_service,
+            auth_service=auth_service,
+        ),
     )
 
     @application.get("/health")
