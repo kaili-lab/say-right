@@ -72,4 +72,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已实现认证接口：`POST /auth/register`、`POST /auth/login`、`POST /auth/refresh`、`GET /me`，见 `backend/app/auth/api.py`。
+- 已新增认证服务与用户仓储：`AuthService` + `InMemoryUserRepository`，支持注册、登录、令牌刷新与当前用户解析。
+- 已覆盖契约边界：重复邮箱返回 409、非法凭证返回 401、过期 refresh token 返回 401、参数校验返回 422。
+- 已形成多租户基础用户上下文：`/me` 通过 access token 解析到当前用户（user_id/email）。
+- 已完成集成测试：`backend/tests/integration/test_auth_api.py`。

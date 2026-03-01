@@ -1,3 +1,5 @@
+"""JWT 令牌生成与校验工具。"""
+
 import os
 from datetime import UTC, datetime, timedelta
 from typing import Literal
@@ -25,11 +27,13 @@ class TokenInvalidError(TokenError):
 
 
 def _now(now: datetime | None) -> datetime:
+    """返回当前 UTC 时间，允许测试注入固定时间。"""
     return now if now is not None else datetime.now(UTC)
 
 
 def _resolve_secret(secret_key: str | None) -> str:
-    return secret_key or os.getenv("JWT_SECRET_KEY", "dev-secret-change-me")
+    """解析 JWT 密钥，优先使用显式传入值，其次读取环境变量。"""
+    return secret_key or os.getenv("JWT_SECRET_KEY", "dev-secret-change-me-at-least-32chars")
 
 
 def _build_payload(
@@ -39,6 +43,7 @@ def _build_payload(
     issued_at: datetime,
     expires_at: datetime,
 ) -> dict[str, int | str]:
+    """构造标准 JWT 载荷。"""
     return {
         "sub": user_id,
         "token_type": token_type,
@@ -54,6 +59,7 @@ def create_access_token(
     now: datetime | None = None,
     expires_delta: timedelta | None = None,
 ) -> str:
+    """生成 access token。"""
     issued_at = _now(now)
     expires_at = issued_at + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     payload = _build_payload(
@@ -72,6 +78,7 @@ def create_refresh_token(
     now: datetime | None = None,
     expires_delta: timedelta | None = None,
 ) -> str:
+    """生成 refresh token。"""
     issued_at = _now(now)
     expires_at = issued_at + (expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
     payload = _build_payload(
@@ -89,6 +96,7 @@ def decode_token(
     secret_key: str | None = None,
     expected_type: Literal["access", "refresh"],
 ) -> TokenPayload:
+    """校验并解码 JWT，返回结构化载荷。"""
     try:
         decoded = jwt.decode(token, _resolve_secret(secret_key), algorithms=[ALGORITHM])
         payload = TokenPayload.model_validate(decoded)
@@ -110,6 +118,7 @@ def create_token_pair(
     secret_key: str | None = None,
     now: datetime | None = None,
 ) -> TokenPair:
+    """一次性生成登录需要的 access/refresh 令牌对。"""
     return TokenPair(
         access_token=create_access_token(user_id=user_id, secret_key=secret_key, now=now),
         refresh_token=create_refresh_token(user_id=user_id, secret_key=secret_key, now=now),

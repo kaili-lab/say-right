@@ -1,4 +1,7 @@
-"""认证相关工具。"""
+"""认证模块公共导出。
+
+集中导出常用认证工具，减少业务侧导入路径分散。
+"""
 
 from app.auth.passwords import hash_password, verify_password
 from app.auth.tokens import (

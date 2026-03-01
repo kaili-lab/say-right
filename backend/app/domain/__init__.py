@@ -1,4 +1,4 @@
-"""领域模型与 schema。"""
+"""领域模型公共导出。"""
 
 from app.domain.models import User
 from app.domain.schemas import UserCreate, UserPublic
