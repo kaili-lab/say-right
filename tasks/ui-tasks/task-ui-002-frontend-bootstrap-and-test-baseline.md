@@ -75,4 +75,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已初始化 `frontend/` React + TypeScript + Vite 工程，并补齐统一脚本：`dev/build/test/lint/typecheck/test:e2e/test:visual`。
+- 已接入前端基础依赖与工程基线：React Router、TanStack Query、Tailwind、Vitest + RTL、Playwright。
+- 已按 TDD 落地入口测试：`frontend/src/App.test.tsx` 先红后绿，验证页面展示“应用已启动”标识。
+- 已完成最小入口页实现：`frontend/src/App.tsx`、`frontend/src/main.tsx`、`frontend/src/index.css`。
+- 已执行并通过：`pnpm test`、`pnpm lint`、`pnpm typecheck`。

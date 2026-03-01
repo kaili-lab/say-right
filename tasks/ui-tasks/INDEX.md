@@ -5,7 +5,7 @@
 | Task ID | 标题 | 状态 | 前置依赖 | paired_with | contract_version | sync_point |
 |---|---|---|---|---|---|---|
 | UI-001 | 前端技术栈冻结与工程约定 | done | - | - | - | SP-STACK |
-| UI-002 | 前端工程初始化与测试基线 | todo | UI-001 | API-002 | `docs/contracts/v0.0-bootstrap.yaml` | SP-001 |
+| UI-002 | 前端工程初始化与测试基线 | done | UI-001 | API-002 | `docs/contracts/v0.0-bootstrap.yaml` | SP-001 |
 | UI-003 | AppShell 与四 Tab 占位路由 | todo | UI-002 | - | N/A（纯前端结构） | SP-UI-001 |
 | UI-004 | 首页主路径、统计卡片与空状态 | todo | UI-003 | API-010 | `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-005 |
 | UI-005 | 记录页输入与“生成英文”流程 | todo | UI-003 | API-007A | `docs/contracts/v0.3.5-record-generate.yaml` | SP-0035 |
