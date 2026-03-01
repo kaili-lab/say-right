@@ -75,4 +75,20 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已完成组内卡片管理三项交互：`frontend/src/pages/DeckListPage.tsx`
+  - 卡片列表按需加载（点击 Deck 后请求 `GET /decks/{deck_id}/cards`）
+  - 编辑弹窗（中文/英文可编辑，校验非空，提交 `PATCH /cards/{card_id}`）
+  - 移动弹窗（选择目标组，提交 `POST /cards/{card_id}/move`）
+  - 删除确认弹窗（二次确认，提交 `DELETE /cards/{card_id}`）
+  - 成功态/失败态提示（页面状态提示 + 弹窗内错误提示）
+- 已扩展 Deck API 封装：`frontend/src/pages/decksApi.ts`
+  - `GET /decks/{deck_id}/cards`
+  - `PATCH /cards/{card_id}`
+  - `POST /cards/{card_id}/move`
+  - `DELETE /cards/{card_id}`
+- 已新增并转绿测试：`frontend/src/deck-card-management.test.tsx`
+  - 编辑流程闭环
+  - 移动后切组删除流程闭环
+- 可追溯证据（本地执行）：
+  - `pnpm test -- deck-card-management`（exit 0）
+  - `pnpm test && pnpm lint && pnpm typecheck`（exit 0）
