@@ -103,6 +103,18 @@ docs/
 ## sync_point
 （前后端联调节点标识）
 
+## execution_context（执行环境约定）
+- workdir: （命令默认在哪个目录执行，例如 `backend` / `frontend` / 仓库根）
+- runtime: （python / node / mixed）
+- env_activate: （Python 任务必填，示例：`source ../.venv/bin/activate`）
+- install_commands: （本任务开始前必须执行的安装命令）
+
+## dependency_changes（新增依赖清单）
+- package: （依赖名）
+  version: （版本约束，默认“最新稳定版”）
+  reason: （为什么要加）
+  install_command: （可直接执行的安装命令）
+
 ## 范围
 
 ## 不在范围
@@ -140,9 +152,18 @@ docs/
 | `context_files` | 解决跨 session 上下文丢失，列出 AI 必读的文件 | 任务级 |
 | `previous_task_output` | 上个任务的关键产出摘要，AI 快速理解前置状态 | 任务级 |
 | `output_summary` | 本任务完成后 AI 填写的产出记录（永久保留） | 任务级 |
+| `execution_context` | 约束命令执行目录与环境激活方式，避免路径/虚拟环境误判 | 任务级 |
+| `dependency_changes` | 记录新增依赖、版本与安装命令，保证可复现 | 任务级 |
 | `paired_with` | 仅用于共享同一接口契约的前后端任务对 | 联动标记 |
 | `contract_version` | 指向 `docs/contracts/` 下的实体文件（非纯文本标签） | 契约追溯 |
 | `不在范围` | 约束 AI 不做"创造性发挥" | 防幻觉 |
+
+### 执行环境约定（建议）
+
+- Python + 前端混合仓默认采用 monorepo；命令必须通过 `execution_context.workdir` 指定子目录，不得假设在仓库根运行。
+- `.venv` 可以放仓库根（适合共享依赖、教学脚本与后端共用），也可以放子项目目录（适合依赖隔离）；两种都可，但必须在任务里写清 `env_activate`。
+- 如果选择仓库根 `.venv`，子目录执行命令时需明确相对路径（例如 `source ../.venv/bin/activate`）。
+- 如子项目依赖冲突明显（例如后端与数据科学工具链版本冲突），优先拆分为各子项目独立虚拟环境，并在 task 模板里单独声明。
 
 ---
 

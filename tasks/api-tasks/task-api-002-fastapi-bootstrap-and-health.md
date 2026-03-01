@@ -72,4 +72,7 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已在 `backend/` 初始化 FastAPI 最小工程：`app/main.py` 提供 `create_app()` 与 `/health` 路由。
+- 已建立测试基线：`backend/tests/unit/test_health_payload.py` 与 `backend/tests/integration/test_health.py`。
+- 已验证服务可启动并返回契约响应：`GET /health` -> `200`，body 为 `{"status":"ok"}`。
+- 当前已形成后续 API 任务可复用的后端目录结构（`backend/app` + `backend/tests`）。

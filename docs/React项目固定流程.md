@@ -96,9 +96,20 @@ tasks/
 
 ## 前置依赖
 
+## 执行上下文
+- workdir: （例如 `frontend`）
+- runtime: （node）
+- env/setup: （例如 `pnpm install`、Node 版本要求）
+
 ## 输入基线
 - HTML: ...
 - UI规范: ...
+
+## 依赖变更（若有）
+- package:
+  version:
+  reason:
+  install_command:
 
 ## 实现范围
 
@@ -112,6 +123,8 @@ tasks/
 
 ## 实施记录（完成后填写）
 ```
+
+> 补充约束：命令执行目录以 `执行上下文.workdir` 为准；若项目是 monorepo，不要默认在仓库根执行安装/测试命令。
 
 ---
 
@@ -158,4 +171,3 @@ tasks/
 3. 三个状态文件模板（`INDEX/DECISIONS/HANDOFF`）  
 4. task 模板  
 5. 固定视口截图验收规则
-

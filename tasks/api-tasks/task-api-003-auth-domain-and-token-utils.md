@@ -70,4 +70,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已新增认证基础工具：`backend/app/auth/passwords.py`（密码哈希/校验）与 `backend/app/auth/tokens.py`（access/refresh token 生成与校验）。
+- 已新增认证 schema：`backend/app/auth/schemas.py`，包含 `TokenPayload` 与 `TokenPair`。
+- 已新增用户领域模型与基础 schema：`backend/app/domain/models.py`（`User`）与 `backend/app/domain/schemas.py`（`UserCreate`/`UserPublic`）。
+- 已完成边界行为测试：过期 token、篡改 token、token 类型不匹配均返回可预测的领域异常。
+- 已补充依赖：`PyJWT`、`pwdlib[argon2]`（见 `backend/pyproject.toml`）。
