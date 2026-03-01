@@ -74,4 +74,17 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已实现卡片组页面基础能力：`frontend/src/pages/DeckListPage.tsx`
+  - 卡片组列表展示（来源 `GET /decks`）
+  - 默认组禁删态（“删除卡片组”按钮 disabled + 规则提示）
+  - 创建组弹窗（开关、表单校验、创建请求、创建后选中）
+  - 空状态（`/decks?state=empty`）与“创建卡片组/去记录新内容”入口
+- 已新增卡片组契约 API 封装：`frontend/src/pages/decksApi.ts`
+  - `GET /decks`
+  - `POST /decks`
+  - 字段映射对齐 `v0.2-deck-basic`
+- 已将 `/decks` 路由替换为真实页面：`frontend/src/App.tsx`
+- 已新增测试：`frontend/src/deck-list-create.test.tsx`
+- 可追溯证据（本地执行）：
+  - `pnpm test -- deck-list-create`（exit 0）
+  - `pnpm test && pnpm lint && pnpm typecheck`（exit 0）

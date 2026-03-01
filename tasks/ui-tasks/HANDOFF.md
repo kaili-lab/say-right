@@ -2,8 +2,8 @@
 
 ## 最近一次交接
 
-- 当前阶段：UI-008 已完成，复习 Session 与总结页状态流已可用
-- 本次变更：接入 session/ai-score/rate 三个契约接口，实现单卡复习、AI 建议与手动评级并行、下一张推进与完成总结
-- 关键产出：`frontend/src/pages/ReviewSessionPage.tsx`、`frontend/src/pages/reviewApi.ts`、`frontend/src/review-session.test.tsx`
-- 可追溯证据：`pnpm test -- review-session`（passed）；`pnpm test/lint/typecheck`（passed）
-- 下一步建议：执行 UI-009（卡片组列表与创建组弹窗）
+- 当前阶段：UI-009 已完成，卡片组列表与创建组弹窗已可用
+- 本次变更：接入 `GET /decks` 与 `POST /decks`，实现列表展示、默认组禁删态、创建组弹窗与空状态入口
+- 关键产出：`frontend/src/pages/DeckListPage.tsx`、`frontend/src/pages/decksApi.ts`、`frontend/src/deck-list-create.test.tsx`
+- 可追溯证据：`pnpm test -- deck-list-create`（passed）；`pnpm test/lint/typecheck`（passed）
+- 下一步建议：执行 UI-010（组内卡片编辑/移动/删除交互）
