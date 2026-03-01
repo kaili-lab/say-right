@@ -42,10 +42,27 @@ describe("review-deck-list", () => {
     expect(within(deckItems[1]).getByText(/工作沟通/)).toBeInTheDocument();
     expect(within(deckItems[2]).getByText(/英文会议/)).toBeInTheDocument();
 
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          session_id: "session-from-list",
+          cards: [
+            {
+              card_id: "card-from-list",
+              front_text: "这个我再想想。",
+              back_text: "Let me think about this.",
+              fsrs_state: {},
+            },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
     await user.click(screen.getByRole("link", { name: "进入 Deck 日常口语" }));
 
-    expect(await screen.findByRole("heading", { name: "复习 Session（占位）" })).toBeInTheDocument();
-    expect(screen.getByText("当前 Deck：deck-daily")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "复习 Session" })).toBeInTheDocument();
+    expect(screen.getByText("Deck：deck-daily")).toBeInTheDocument();
 
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(

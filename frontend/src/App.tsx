@@ -4,7 +4,7 @@ import { AppShell } from "./app/AppShell";
 import { HomePage } from "./pages/HomePage";
 import { RecordPage } from "./pages/RecordPage";
 import { ReviewDeckListPage } from "./pages/ReviewDeckListPage";
-import { ReviewSessionPlaceholderPage } from "./pages/ReviewSessionPlaceholderPage";
+import { ReviewSessionPage } from "./pages/ReviewSessionPage";
 import { TabPlaceholderPage } from "./pages/TabPlaceholderPage";
 
 /**
@@ -18,7 +18,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/record" element={<RecordPage />} />
         <Route path="/review" element={<ReviewDeckListPage />} />
-        <Route path="/review/session/:deckId" element={<ReviewSessionPlaceholderPage />} />
+        <Route path="/review/session/:deckId" element={<ReviewSessionPage />} />
         <Route path="/decks" element={<TabPlaceholderPage title="卡片组" description="卡片组页占位路由。" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

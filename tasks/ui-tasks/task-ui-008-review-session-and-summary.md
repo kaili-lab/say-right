@@ -74,4 +74,19 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已实现复习 Session 主流程与总结页：`frontend/src/pages/ReviewSessionPage.tsx`
+  - 单卡展示（正面/背面、答案输入）
+  - AI 评分入口与手动评级入口并行
+  - 评级后推进下一张，完成后进入总结页
+  - 冲突处理：当手动评级与 AI 建议不一致时，按手动结果提交（`rating_source=manual`）
+- 已补全复习 API 封装：`frontend/src/pages/reviewApi.ts`
+  - `GET /review/decks/{deck_id}/session`
+  - `POST /review/session/{session_id}/ai-score`
+  - `POST /review/session/{session_id}/rate`
+- 已将 `/review/session/:deckId` 路由替换为真实 Session 页面：`frontend/src/App.tsx`
+- 已新增/更新测试：
+  - 新增：`frontend/src/review-session.test.tsx`
+  - 更新：`frontend/src/review-deck-list.test.tsx`
+- 可追溯证据（本地执行）：
+  - `pnpm test -- review-session`（exit 0）
+  - `pnpm test && pnpm lint && pnpm typecheck`（exit 0）
