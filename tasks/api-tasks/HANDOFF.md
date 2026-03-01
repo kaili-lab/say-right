@@ -2,8 +2,8 @@
 
 ## 最近一次交接
 
-- 当前阶段：API-008 已完成，save-with-agent 命中已有组分支可用
-- 本次变更：新增 `POST /records/save-with-agent` 并接入 Group Agent stub，在命中已有组时创建卡片并返回契约字段
-- 关键产出：`backend/app/record/save_agent_service.py`、`backend/app/record/group_agent_stub.py`、`backend/tests/integration/test_save_with_agent_hit.py`
-- 可追溯证据：`pytest -q tests/integration/test_save_with_agent_hit.py`（4 passed）；`make -C backend check`（51 passed + lint/typecheck passed）
-- 下一步建议：执行 API-009（未命中建组 + 默认组兜底）
+- 当前阶段：API-009 已完成，save-with-agent 未命中建组与默认组兜底已可用
+- 本次变更：扩展 save-with-agent 编排，支持未命中自动建组、Agent/建组失败回退默认组、重复输入复用已建组
+- 关键产出：`backend/app/record/save_agent_service.py`、`backend/app/record/group_agent_stub.py`、`backend/tests/integration/test_save_with_agent_fallback.py`
+- 可追溯证据：`pytest -q tests/integration/test_save_with_agent_fallback.py`（4 passed）；`make -C backend check`（55 passed + lint/typecheck passed）
+- 下一步建议：执行 API-010（复习 Deck 列表与到期统计查询）

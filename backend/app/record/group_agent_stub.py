@@ -19,6 +19,8 @@ class DeterministicGroupAgent:
         """根据输入文本返回目标组名，未命中时返回空结果。"""
         if "__AGENT_ERROR__" in source_text or "__AGENT_ERROR__" in generated_text:
             raise AgentUnavailableError("group agent unavailable")
+        if "__INVALID_DECK_NAME__" in source_text or "__INVALID_DECK_NAME__" in generated_text:
+            return GroupDecision(deck_name="   ")
 
         normalized = f"{source_text} {generated_text}".lower()
         if "travel" in normalized or "旅行" in source_text:

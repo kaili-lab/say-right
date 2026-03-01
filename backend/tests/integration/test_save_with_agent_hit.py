@@ -71,8 +71,8 @@ def test_save_with_agent_validation_error_returns_422() -> None:
     assert response.status_code == 422
 
 
-def test_save_with_agent_no_hit_returns_422_in_stage_one() -> None:
-    """API-008 阶段未命中分支暂未开放，应返回 422。"""
+def test_save_with_agent_no_hit_creates_new_deck_after_stage_two() -> None:
+    """未命中分支在后续阶段应自动建组并返回成功。"""
     client = build_client()
     token = _register_and_login(client, "save-hit-no-match@example.com")
 
@@ -87,7 +87,10 @@ def test_save_with_agent_no_hit_returns_422_in_stage_one() -> None:
         },
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 201
+    body = response.json()
+    assert body["deck_created"] is True
+    assert body["fallback_used"] is False
 
 
 def test_save_with_agent_requires_authentication() -> None:

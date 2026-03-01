@@ -71,4 +71,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已完成未命中建组分支：`/records/save-with-agent` 在无命中组时会自动创建分组并建卡，返回 `deck_created=true`。
+- 已完成兜底分支：当 Agent 不可用或返回非法组名导致建组失败时，自动回退默认组并返回 `fallback_used=true`。
+- 已补齐重复组名边界：同一未命中输入重复请求时，第二次复用已存在组并返回 `deck_created=false`。
+- 已补充集成测试：`backend/tests/integration/test_save_with_agent_fallback.py`。
+- 已完成回归：`make -C backend check` 通过（含 test/lint/typecheck）。
