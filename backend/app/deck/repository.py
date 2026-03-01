@@ -1,5 +1,6 @@
 """Deck 仓储抽象与内存实现。"""
 
+from dataclasses import replace
 from threading import Lock
 from typing import Protocol
 
@@ -10,6 +11,18 @@ DEFAULT_DECK_NAME = "默认组"
 
 class DuplicateDeckNameError(ValueError):
     """同一用户下 deck 名称重复。"""
+
+
+class DeckNotFoundError(ValueError):
+    """Deck 不存在或不属于当前用户。"""
+
+
+class DefaultDeckDeleteForbiddenError(ValueError):
+    """默认组不可删除。"""
+
+
+class DeckNotEmptyError(ValueError):
+    """Deck 内仍有卡片，不允许删除。"""
 
 
 class DeckRepository(Protocol):
@@ -25,6 +38,10 @@ class DeckRepository(Protocol):
 
     def add_custom_deck(self, user_id: str, name: str) -> Deck:
         """为用户新增自定义 deck。"""
+        ...
+
+    def delete_deck(self, user_id: str, deck_id: str) -> None:
+        """删除 deck。"""
         ...
 
 
@@ -65,6 +82,39 @@ class InMemoryDeckRepository(DeckRepository):
             self._deck_ids_by_user.setdefault(user_id, []).append(deck.deck_id)
             names.add(normalized_name)
             return deck
+
+    def delete_deck(self, user_id: str, deck_id: str) -> None:
+        """删除用户 deck 并校验业务约束。"""
+        with self._lock:
+            deck = self._decks_by_id.get(deck_id)
+            if deck is None or deck.user_id != user_id:
+                raise DeckNotFoundError("deck not found")
+
+            if deck.is_default:
+                raise DefaultDeckDeleteForbiddenError("default deck cannot be deleted")
+
+            if deck.new_count + deck.learning_count + deck.due_count > 0:
+                raise DeckNotEmptyError("deck is not empty")
+
+            del self._decks_by_id[deck_id]
+            self._deck_ids_by_user.setdefault(user_id, []).remove(deck_id)
+            self._normalized_names_by_user.setdefault(user_id, set()).discard(
+                self._normalize_name(deck.name),
+            )
+
+    def update_counts(self, *, deck_id: str, new_count: int, learning_count: int, due_count: int) -> None:
+        """更新 deck 计数（当前用于测试与后续卡片模块联动）。"""
+        with self._lock:
+            deck = self._decks_by_id.get(deck_id)
+            if deck is None:
+                raise DeckNotFoundError("deck not found")
+
+            self._decks_by_id[deck_id] = replace(
+                deck,
+                new_count=new_count,
+                learning_count=learning_count,
+                due_count=due_count,
+            )
 
     def _ensure_default_deck_locked(self, user_id: str) -> Deck:
         default_id = self._default_deck_id_by_user.get(user_id)

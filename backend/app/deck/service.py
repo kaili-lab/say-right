@@ -32,3 +32,7 @@ class DeckService:
 
         self.repository.ensure_default_deck(user_id)
         return self.repository.add_custom_deck(user_id=user_id, name=name)
+
+    def delete_deck(self, user_id: str, deck_id: str) -> None:
+        """删除指定 deck。"""
+        self.repository.delete_deck(user_id=user_id, deck_id=deck_id)

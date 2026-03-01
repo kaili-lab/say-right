@@ -31,6 +31,10 @@ def create_app() -> FastAPI:
     auth_service = AuthService(user_repository=user_repository)
     deck_service = DeckService(repository=deck_repository)
 
+    # 暴露核心依赖给测试使用，便于构造边界数据而不污染业务 API。
+    application.state.user_repository = user_repository
+    application.state.deck_repository = deck_repository
+
     def bootstrap_default_deck(user: User) -> None:
         """在账号创建时立即补齐默认组，避免后续流程出现空组状态。"""
         deck_service.ensure_default_deck(user.user_id)

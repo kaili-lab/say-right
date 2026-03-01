@@ -2,12 +2,17 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field, field_validator
 
 from app.auth.api import extract_bearer_token
 from app.auth.service import AuthService, UnauthorizedError
-from app.deck.repository import DuplicateDeckNameError
+from app.deck.repository import (
+    DeckNotEmptyError,
+    DeckNotFoundError,
+    DefaultDeckDeleteForbiddenError,
+    DuplicateDeckNameError,
+)
 from app.deck.service import DeckService, InvalidDeckNameError
 from app.domain.models import Deck, User
 
@@ -108,5 +113,25 @@ def create_deck_router(deck_service: DeckService, auth_service: AuthService) -> 
             ) from exc
 
         return _to_create_response(deck)
+
+    @router.delete("/decks/{deck_id}", status_code=status.HTTP_204_NO_CONTENT)
+    def delete_deck(
+        deck_id: str,
+        current_user: Annotated[User, Depends(current_user_dependency)],
+    ) -> Response:
+        try:
+            deck_service.delete_deck(user_id=current_user.user_id, deck_id=deck_id)
+        except DeckNotFoundError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="deck not found",
+            ) from exc
+        except (DefaultDeckDeleteForbiddenError, DeckNotEmptyError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="deck cannot be deleted",
+            ) from exc
+
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     return router

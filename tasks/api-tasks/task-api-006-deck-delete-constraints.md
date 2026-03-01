@@ -60,6 +60,13 @@
 
 - `pytest -q tests/integration/test_deck_delete_rules.py`
 
+## test_data_strategy（前置模块未就绪时）
+
+- upstream_status: `not_ready`
+- gap: API-007（Card 模块）尚未交付，当前无法通过真实卡片接口制造“组内有卡片”状态。
+- strategy: 在集成测试中通过 `app.state.deck_repository.update_counts(...)` 注入计数，验证删除约束与错误码映射。
+- rollback_plan: API-007 完成后，替换为“创建卡片 -> 删除 deck”真实链路测试，并移除直接注入计数步骤。
+
 ## DoD
 
 - 删除规则符合需求
@@ -69,4 +76,9 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已新增删除能力：`DELETE /decks/{deck_id}`，并在路由层映射业务约束错误码。
+- 已实现删除规则：默认组不可删（409）、有卡组不可删（409）、空组可删（204）。
+- 已补充并发重复删除场景：第一次删除成功后，第二次删除返回 404（资源不存在）。
+- 已补充测试：`backend/tests/integration/test_deck_delete_rules.py` 与 `backend/tests/unit/test_deck_repository.py`。
+- 已声明 `test_data_strategy`：在 API-007 未就绪前，使用 `update_counts(...)` 进行可复现造数；API-007 完成后回归真实链路测试。
+- 为后续卡片模块联动预留计数更新能力：`InMemoryDeckRepository.update_counts(...)`（用于临时造数与后续模块衔接）。
