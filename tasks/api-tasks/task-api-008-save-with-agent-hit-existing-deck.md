@@ -72,4 +72,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已新增 `POST /records/save-with-agent` 基础路由，支持鉴权、参数校验与契约返回字段。
+- 已实现 API-008 范围内编排：Group Agent 命中已有组时直接创建卡片并返回 `deck_created=false`、`fallback_used=false`。
+- 已实现可复现 Group Agent stub（关键词命中），为后续 API-009 的“未命中/兜底”分支预留扩展位。
+- 已补充集成测试：`backend/tests/integration/test_save_with_agent_hit.py`（命中成功、参数校验、未命中阶段性 422、未认证 401）。
+- 已完成回归：`make -C backend check` 通过（含 test/lint/typecheck）。

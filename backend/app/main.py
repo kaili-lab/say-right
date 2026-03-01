@@ -17,6 +17,8 @@ from app.deck.repository import InMemoryDeckRepository
 from app.deck.service import DeckService
 from app.domain.models import User
 from app.record.api import create_record_router
+from app.record.group_agent_stub import DeterministicGroupAgent
+from app.record.save_agent_service import SaveWithAgentService
 from app.record.service import RecordGenerateService
 from app.record.stub import DeterministicEnglishGenerator
 
@@ -39,6 +41,11 @@ def create_app() -> FastAPI:
     deck_service = DeckService(repository=deck_repository)
     card_service = CardService(repository=card_repository)
     record_generate_service = RecordGenerateService(generator=DeterministicEnglishGenerator())
+    save_with_agent_service = SaveWithAgentService(
+        deck_service=deck_service,
+        card_service=card_service,
+        group_agent=DeterministicGroupAgent(),
+    )
 
     # 暴露核心依赖给测试使用，便于构造边界数据而不污染业务 API。
     application.state.user_repository = user_repository
@@ -62,7 +69,11 @@ def create_app() -> FastAPI:
         create_card_router(card_service=card_service, auth_service=auth_service),
     )
     application.include_router(
-        create_record_router(record_service=record_generate_service, auth_service=auth_service),
+        create_record_router(
+            record_service=record_generate_service,
+            save_with_agent_service=save_with_agent_service,
+            auth_service=auth_service,
+        ),
     )
 
     @application.get("/health")
