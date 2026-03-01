@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./app/AppShell";
 import { HomePage } from "./pages/HomePage";
 import { RecordPage } from "./pages/RecordPage";
+import { ReviewDeckListPage } from "./pages/ReviewDeckListPage";
+import { ReviewSessionPlaceholderPage } from "./pages/ReviewSessionPlaceholderPage";
 import { TabPlaceholderPage } from "./pages/TabPlaceholderPage";
 
 /**
@@ -15,7 +17,8 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/record" element={<RecordPage />} />
-        <Route path="/review" element={<TabPlaceholderPage title="复习" description="复习页占位路由。" />} />
+        <Route path="/review" element={<ReviewDeckListPage />} />
+        <Route path="/review/session/:deckId" element={<ReviewSessionPlaceholderPage />} />
         <Route path="/decks" element={<TabPlaceholderPage title="卡片组" description="卡片组页占位路由。" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

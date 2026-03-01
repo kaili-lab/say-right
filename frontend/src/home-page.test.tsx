@@ -20,7 +20,7 @@ describe("home-page", () => {
 
     await user.click(screen.getByRole("link", { name: "开始复习" }));
 
-    expect(screen.getByRole("heading", { name: "复习" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "今日复习总览" })).toBeInTheDocument();
   });
 
   it("首页空状态应展示创建第一张卡片入口", () => {

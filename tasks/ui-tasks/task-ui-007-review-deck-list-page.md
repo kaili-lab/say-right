@@ -74,4 +74,18 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已实现复习 Deck 列表页面：`frontend/src/pages/ReviewDeckListPage.tsx`
+  - 调用 `GET /review/decks` 并渲染列表
+  - 按 `due_count` 降序展示 Deck
+  - 支持空状态（`/review?state=empty`）与“去记录新内容”入口
+  - 首页“开始复习”已自然承接到该列表页
+- 已新增复习接口封装：`frontend/src/pages/reviewApi.ts`
+  - 契约字段映射：`deck_id`、`deck_name`、`due_count`
+- 已提供进入 Session 的过渡路由占位：`frontend/src/pages/ReviewSessionPlaceholderPage.tsx`
+  - 路由：`/review/session/:deckId`（供 UI-008 替换）
+- 已新增/更新测试：
+  - 新增：`frontend/src/review-deck-list.test.tsx`
+  - 更新：`frontend/src/home-page.test.tsx`、`frontend/src/App.tsx`
+- 可追溯证据（本地执行）：
+  - `pnpm test -- review-deck-list`（exit 0）
+  - `pnpm test && pnpm lint && pnpm typecheck`（exit 0）
