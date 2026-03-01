@@ -83,6 +83,25 @@ test.describe("visual-regression @visual", () => {
       mockFile: "v3-c-warm-orange-home.html",
       snapshotName: "home.png",
       maxDiffPixelRatio: 0.7,
+      setupAppBeforeGoto: async (appPage) => {
+        await appPage.route("**/dashboard/home-summary", async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              study_days: 5,
+              mastered_count: 28,
+              total_cards: 40,
+              total_due: 21,
+              recent_decks: [
+                { id: "deck-travel", name: "Travel", due_count: 12 },
+                { id: "deck-daily", name: "Daily Conversation", due_count: 6 },
+                { id: "deck-work", name: "Work Email", due_count: 3 },
+              ],
+            }),
+          });
+        });
+      },
     });
   });
 
@@ -94,6 +113,19 @@ test.describe("visual-regression @visual", () => {
       mockFile: "v3-c-warm-orange-record.html",
       snapshotName: "record.png",
       maxDiffPixelRatio: 0.9,
+      setupAppBeforeGoto: async (appPage) => {
+        await appPage.route("**/decks", async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify([
+              { id: "deck-default", name: "默认组", is_default: true, new_count: 0, learning_count: 0, due_count: 0 },
+              { id: "deck-work", name: "工作沟通", is_default: false, new_count: 1, learning_count: 1, due_count: 2 },
+              { id: "deck-travel", name: "旅行应急", is_default: false, new_count: 0, learning_count: 1, due_count: 5 },
+            ]),
+          });
+        });
+      },
     });
   });
 

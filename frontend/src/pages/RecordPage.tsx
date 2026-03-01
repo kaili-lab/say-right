@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { fetchDecks } from "./decksApi";
 import { RecordGenerateApiError, generateRecordEnglish, saveRecordWithAgent } from "./recordApi";
 
 const MAX_SOURCE_TEXT_LENGTH = 200;
@@ -7,28 +8,13 @@ const DEFAULT_DECK_LABEL = "待保存";
 
 type GenerateStatus = "idle" | "loading" | "success" | "error";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
+type DeckLoadStatus = "loading" | "ready" | "error";
 
 type DeckOption = {
   id: string;
   name: string;
   dueCount: number;
 };
-
-const DECK_OPTIONS: DeckOption[] = [
-  { id: "deck-work", name: "工作沟通", dueCount: 6 },
-  { id: "deck-daily", name: "日常口语", dueCount: 10 },
-  { id: "deck-meeting", name: "英文会议", dueCount: 3 },
-  { id: "deck-travel", name: "旅行应急", dueCount: 5 },
-  { id: "deck-phone", name: "电话沟通", dueCount: 4 },
-  { id: "deck-interview", name: "面试表达", dueCount: 7 },
-  { id: "deck-product", name: "产品讨论", dueCount: 3 },
-  { id: "deck-email", name: "英文邮件", dueCount: 8 },
-  { id: "deck-demo", name: "客户演示", dueCount: 2 },
-  { id: "deck-team", name: "团队协作", dueCount: 5 },
-  { id: "deck-project", name: "项目管理", dueCount: 6 },
-  { id: "deck-review", name: "复盘总结", dueCount: 4 },
-  { id: "deck-default", name: "默认组", dueCount: 2 },
-];
 
 export function RecordPage() {
   const [sourceText, setSourceText] = useState("");
@@ -43,7 +29,53 @@ export function RecordPage() {
   const [currentDeckId, setCurrentDeckId] = useState<string | null>(null);
   const [currentDeckName, setCurrentDeckName] = useState(DEFAULT_DECK_LABEL);
   const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
-  const [selectedDeckId, setSelectedDeckId] = useState(DECK_OPTIONS[0]?.id ?? "");
+  const [selectedDeckId, setSelectedDeckId] = useState("");
+  const [deckOptions, setDeckOptions] = useState<DeckOption[]>([]);
+  const [deckLoadStatus, setDeckLoadStatus] = useState<DeckLoadStatus>("loading");
+  const [deckLoadError, setDeckLoadError] = useState("");
+
+  useEffect(() => {
+    let disposed = false;
+
+    async function loadDeckOptions() {
+      setDeckLoadStatus("loading");
+      setDeckLoadError("");
+      try {
+        const decks = await fetchDecks();
+        if (disposed) {
+          return;
+        }
+        const nextOptions = decks.map((deck) => ({
+          id: deck.id,
+          name: deck.name,
+          dueCount: deck.dueCount,
+        }));
+        setDeckOptions(nextOptions);
+        setSelectedDeckId((previous) => {
+          if (previous && nextOptions.some((deck) => deck.id === previous)) {
+            return previous;
+          }
+          return currentDeckId ?? nextOptions[0]?.id ?? "";
+        });
+        setDeckLoadStatus("ready");
+      } catch (error) {
+        if (disposed) {
+          return;
+        }
+        setDeckLoadStatus("error");
+        if (error instanceof Error) {
+          setDeckLoadError(error.message);
+          return;
+        }
+        setDeckLoadError("卡片组加载失败，请稍后重试");
+      }
+    }
+
+    void loadDeckOptions();
+    return () => {
+      disposed = true;
+    };
+  }, [currentDeckId]);
 
   const canGenerate = sourceText.trim().length > 0 && generateStatus !== "loading";
   const canSave = generateStatus === "success" && generatedText.trim().length > 0 && saveStatus !== "saving";
@@ -103,6 +135,21 @@ export function RecordPage() {
       setCurrentDeckId(result.deckId);
       setCurrentDeckName(result.deckName);
       setSelectedDeckId(result.deckId);
+      setDeckOptions((previous) => {
+        const existing = previous.find((deck) => deck.id === result.deckId);
+        if (existing) {
+          return previous.map((deck) =>
+            deck.id === result.deckId
+              ? {
+                  ...deck,
+                  name: result.deckName,
+                  dueCount: deck.dueCount + 1,
+                }
+              : deck,
+          );
+        }
+        return [...previous, { id: result.deckId, name: result.deckName, dueCount: 1 }];
+      });
 
       const fallbackTip = result.fallbackUsed ? "（已启用默认组兜底）" : "";
       setSaveMessage(`已保存到 ${result.deckName}${fallbackTip}`);
@@ -117,13 +164,17 @@ export function RecordPage() {
   }
 
   function openDeckModal() {
-    setSelectedDeckId(currentDeckId ?? DECK_OPTIONS[0]?.id ?? "");
+    if (deckOptions.length === 0) {
+      setSaveMessage("暂无可调整卡片组，请先在卡片组页面创建。");
+      return;
+    }
+    setSelectedDeckId(currentDeckId ?? deckOptions[0]?.id ?? "");
     setIsDeckModalOpen(true);
   }
 
   // 保存后只更新前端分组展示，不额外触发接口，保持操作即时反馈。
   function confirmDeckSelection() {
-    const selectedDeck = DECK_OPTIONS.find((deck) => deck.id === selectedDeckId);
+    const selectedDeck = deckOptions.find((deck) => deck.id === selectedDeckId);
     if (!selectedDeck) {
       return;
     }
@@ -226,8 +277,9 @@ export function RecordPage() {
                 <span>{saveMessage}</span>
                 <button
                   type="button"
+                  disabled={deckOptions.length === 0}
                   onClick={openDeckModal}
-                  className="h-11 rounded-lg px-3 text-sm font-semibold text-orange-600 underline-offset-2 hover:underline"
+                  className="h-11 rounded-lg px-3 text-sm font-semibold text-orange-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-stone-400"
                 >
                   立即调整分组
                 </button>
@@ -269,7 +321,16 @@ export function RecordPage() {
             </header>
 
             <div data-testid="deck-modal-list" className="max-h-72 overflow-y-auto px-4 py-2">
-              {DECK_OPTIONS.map((deck) => (
+              {deckLoadStatus === "loading" ? <p className="px-2 py-4 text-sm text-stone-500">正在加载卡片组...</p> : null}
+              {deckLoadStatus === "error" ? (
+                <p role="alert" className="px-2 py-4 text-sm text-red-700">
+                  加载失败：{deckLoadError}
+                </p>
+              ) : null}
+              {deckLoadStatus === "ready" && deckOptions.length === 0 ? (
+                <p className="px-2 py-4 text-sm text-stone-500">暂无可选卡片组。</p>
+              ) : null}
+              {deckOptions.map((deck) => (
                 <label
                   key={deck.id}
                   className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-orange-50"

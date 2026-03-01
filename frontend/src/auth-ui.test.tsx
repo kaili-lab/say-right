@@ -67,6 +67,18 @@ describe("auth-ui", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     );
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          study_days: 0,
+          mastered_count: 0,
+          total_cards: 0,
+          total_due: 0,
+          recent_decks: [],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
     vi.stubGlobal("fetch", mockFetch);
 
     render(
@@ -91,6 +103,19 @@ describe("auth-ui", () => {
     window.localStorage.setItem("say_right_access_token", "access-token-demo");
     window.localStorage.setItem("say_right_refresh_token", "refresh-token-demo");
     window.localStorage.setItem("say_right_user_email", "kai@example.com");
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          study_days: 0,
+          mastered_count: 0,
+          total_cards: 0,
+          total_due: 0,
+          recent_decks: [],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    vi.stubGlobal("fetch", mockFetch);
 
     render(
       <MemoryRouter initialEntries={["/"]}>

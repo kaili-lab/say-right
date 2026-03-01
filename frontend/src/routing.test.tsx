@@ -1,10 +1,25 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { afterEach, vi } from "vitest";
 
 import App from "./App";
 
 describe("routing", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("路由切换到记录页时显示记录页标题", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>(() => {
+            // 本用例只验证路由切换展示，不关心异步数据加载结果，保持请求挂起可避免无关状态更新噪音。
+          }),
+      ),
+    );
+
     render(
       <MemoryRouter initialEntries={["/record"]}>
         <App />

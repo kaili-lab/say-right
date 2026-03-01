@@ -14,6 +14,18 @@ test.describe("critical-path @critical-path", () => {
   });
 
   test("记录页：生成英文并保存后可立即调整分组 @critical-path", async ({ page }) => {
+    await page.route("**/decks", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          { id: "deck-default", name: "默认组", is_default: true, new_count: 0, learning_count: 0, due_count: 0 },
+          { id: "deck-work", name: "工作沟通", is_default: false, new_count: 1, learning_count: 1, due_count: 2 },
+          { id: "deck-travel", name: "旅行应急", is_default: false, new_count: 0, learning_count: 1, due_count: 5 },
+        ]),
+      });
+    });
+
     await page.route("**/records/generate", async (route) => {
       await route.fulfill({
         status: 200,

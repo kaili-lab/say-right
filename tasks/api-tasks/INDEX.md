@@ -18,3 +18,4 @@
 | API-011 | Session 拉取、AI 评分与评级提交（FSRS） | done | API-010 | UI-008 | `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-006 |
 | API-012 | 契约回归与关键链路集成测试收口 | done | API-004, API-009, API-011 | UI-012 | `docs/contracts/v0.1-auth-basic.yaml` + `docs/contracts/v0.4-record-save-agent.yaml` + `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-FINAL |
 | API-013 | Neon Schema 同步基线 | done | API-001 | - | - | SP-DB-BASELINE |
+| API-014 | 首页概览聚合接口（去静态数据） | done | API-012 | - | - | SP-HOME-DASHBOARD |

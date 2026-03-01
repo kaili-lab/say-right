@@ -12,6 +12,8 @@ from app.auth.service import AuthService
 from app.card.api import create_card_router
 from app.card.repository import InMemoryCardRepository
 from app.card.service import CardService
+from app.dashboard.api import create_dashboard_router
+from app.dashboard.service import DashboardService
 from app.deck.api import create_deck_router
 from app.deck.repository import InMemoryDeckRepository
 from app.deck.service import DeckService
@@ -55,6 +57,10 @@ def create_app() -> FastAPI:
         card_repository=card_repository,
         ai_scorer=DeterministicReviewAIScorer(),
     )
+    dashboard_service = DashboardService(
+        deck_service=deck_service,
+        card_repository=card_repository,
+    )
 
     # 暴露核心依赖给测试使用，便于构造边界数据而不污染业务 API。
     application.state.user_repository = user_repository
@@ -88,6 +94,12 @@ def create_app() -> FastAPI:
         create_review_router(
             review_service=review_service,
             review_session_service=review_session_service,
+            auth_service=auth_service,
+        ),
+    )
+    application.include_router(
+        create_dashboard_router(
+            dashboard_service=dashboard_service,
             auth_service=auth_service,
         ),
     )

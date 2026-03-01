@@ -38,6 +38,10 @@ class CardRepository(Protocol):
         """按 deck 查询卡片。"""
         ...
 
+    def list_by_user(self, *, user_id: str) -> list[Card]:
+        """按用户查询全部卡片。"""
+        ...
+
     def get_by_id(self, *, user_id: str, card_id: str) -> Card:
         """按 ID 查询卡片。"""
         ...
@@ -122,6 +126,12 @@ class InMemoryCardRepository(CardRepository):
             self._ensure_deck_accessible_locked(user_id=user_id, deck_id=deck_id)
             card_ids = self._card_ids_by_deck.get(deck_id, [])
             return [self._cards_by_id[card_id] for card_id in card_ids]
+
+    def list_by_user(self, *, user_id: str) -> list[Card]:
+        """按创建时间返回用户全部卡片。"""
+        with self._lock:
+            cards = [card for card in self._cards_by_id.values() if card.user_id == user_id]
+            return sorted(cards, key=lambda item: item.created_at)
 
     def get_by_id(self, *, user_id: str, card_id: str) -> Card:
         """按 ID 返回单张卡片。"""

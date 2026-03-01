@@ -16,29 +16,53 @@ describe("record-save-feedback", () => {
   it("保存成功后应展示分组反馈与立即调整入口", async () => {
     const user = userEvent.setup();
 
-    mockFetch
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            generated_text: "I need to double-check the time for this meeting.",
-            model_hint: "stub-v1",
-            trace_id: "trace-save-001",
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            card_id: "card-001",
-            deck_id: "deck-work",
-            deck_name: "工作沟通",
-            deck_created: false,
-            fallback_used: false,
-          }),
-          { status: 201, headers: { "Content-Type": "application/json" } },
-        ),
+    mockFetch.mockImplementation((input) => {
+      const url = typeof input === "string" ? input : input.url;
+      if (url.endsWith("/decks")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify([
+              { id: "deck-default", name: "默认组", is_default: true, new_count: 0, learning_count: 0, due_count: 0 },
+              { id: "deck-work", name: "工作沟通", is_default: false, new_count: 1, learning_count: 1, due_count: 2 },
+              { id: "deck-travel", name: "旅行应急", is_default: false, new_count: 0, learning_count: 1, due_count: 5 },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      if (url.endsWith("/records/generate")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              generated_text: "I need to double-check the time for this meeting.",
+              model_hint: "stub-v1",
+              trace_id: "trace-save-001",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      if (url.endsWith("/records/save-with-agent")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              card_id: "card-001",
+              deck_id: "deck-work",
+              deck_name: "工作沟通",
+              deck_created: false,
+              fallback_used: false,
+            }),
+            { status: 201, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ detail: "unexpected request" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }),
       );
+    });
 
     vi.stubGlobal("fetch", mockFetch);
 
@@ -58,8 +82,7 @@ describe("record-save-feedback", () => {
     expect(screen.getByRole("button", { name: "立即调整分组" })).toBeInTheDocument();
 
     await waitFor(() =>
-      expect(mockFetch).toHaveBeenNthCalledWith(
-        2,
+      expect(mockFetch).toHaveBeenCalledWith(
         "http://127.0.0.1:8000/records/save-with-agent",
         expect.objectContaining({
           method: "POST",
@@ -77,29 +100,53 @@ describe("record-save-feedback", () => {
   it("应支持打开分组弹窗并更新前端分组状态", async () => {
     const user = userEvent.setup();
 
-    mockFetch
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            generated_text: "I need to double-check the time for this meeting.",
-            model_hint: "stub-v1",
-            trace_id: "trace-save-002",
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            card_id: "card-002",
-            deck_id: "deck-work",
-            deck_name: "工作沟通",
-            deck_created: false,
-            fallback_used: false,
-          }),
-          { status: 201, headers: { "Content-Type": "application/json" } },
-        ),
+    mockFetch.mockImplementation((input) => {
+      const url = typeof input === "string" ? input : input.url;
+      if (url.endsWith("/decks")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify([
+              { id: "deck-default", name: "默认组", is_default: true, new_count: 0, learning_count: 0, due_count: 0 },
+              { id: "deck-work", name: "工作沟通", is_default: false, new_count: 1, learning_count: 1, due_count: 2 },
+              { id: "deck-travel", name: "旅行应急", is_default: false, new_count: 0, learning_count: 1, due_count: 5 },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      if (url.endsWith("/records/generate")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              generated_text: "I need to double-check the time for this meeting.",
+              model_hint: "stub-v1",
+              trace_id: "trace-save-002",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      if (url.endsWith("/records/save-with-agent")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              card_id: "card-002",
+              deck_id: "deck-work",
+              deck_name: "工作沟通",
+              deck_created: false,
+              fallback_used: false,
+            }),
+            { status: 201, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ detail: "unexpected request" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }),
       );
+    });
 
     vi.stubGlobal("fetch", mockFetch);
 

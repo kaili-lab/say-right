@@ -15,14 +15,30 @@ describe("record-generate", () => {
 
   it("应支持输入中文后生成英文，并展示可编辑结果", async () => {
     const user = userEvent.setup();
-    let resolveRequest: ((value: Response) => void) | undefined;
+    let resolveGenerateRequest: ((value: Response) => void) | undefined;
 
-    mockFetch.mockImplementationOnce(
-      () =>
-        new Promise<Response>((resolve) => {
-          resolveRequest = resolve;
+    mockFetch.mockImplementation((input) => {
+      const url = typeof input === "string" ? input : input.url;
+      if (url.endsWith("/decks")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify([{ id: "deck-default", name: "默认组", is_default: true, new_count: 0, learning_count: 0, due_count: 0 }]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      if (url.endsWith("/records/generate")) {
+        return new Promise<Response>((resolve) => {
+          resolveGenerateRequest = resolve;
+        });
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ detail: "unexpected request" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
         }),
-    );
+      );
+    });
     vi.stubGlobal("fetch", mockFetch);
 
     render(
@@ -39,7 +55,7 @@ describe("record-generate", () => {
 
     expect(screen.getByRole("button", { name: "生成中..." })).toBeDisabled();
 
-    resolveRequest?.(
+    resolveGenerateRequest?.(
       new Response(
         JSON.stringify({
           generated_text: "I need to double-check the time for this meeting.",
@@ -77,12 +93,31 @@ describe("record-generate", () => {
   it("接口失败时应显示错误态", async () => {
     const user = userEvent.setup();
 
-    mockFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ detail: "llm unavailable" }), {
-        status: 503,
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
+    mockFetch.mockImplementation((input) => {
+      const url = typeof input === "string" ? input : input.url;
+      if (url.endsWith("/decks")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify([{ id: "deck-default", name: "默认组", is_default: true, new_count: 0, learning_count: 0, due_count: 0 }]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      if (url.endsWith("/records/generate")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ detail: "llm unavailable" }), {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ detail: "unexpected request" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    });
     vi.stubGlobal("fetch", mockFetch);
 
     render(

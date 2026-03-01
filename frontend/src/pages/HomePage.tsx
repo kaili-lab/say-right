@@ -1,22 +1,54 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
-type DeckPreview = {
-  id: string;
-  name: string;
-  dueCount: number;
-};
+import { fetchHomeSummary } from "./homeApi";
+import type { HomeSummary } from "./homeApi";
 
-const DECK_PREVIEW: DeckPreview[] = [
-  { id: "travel", name: "Travel", dueCount: 12 },
-  { id: "daily", name: "Daily Conversation", dueCount: 6 },
-  { id: "work", name: "Work Email", dueCount: 3 },
-];
+type HomeLoadStatus = "loading" | "ready" | "error";
 
 export function HomePage() {
-  const [searchParams] = useSearchParams();
-  // 通过 URL 参数强制空状态，既便于联调也便于测试覆盖首次使用场景。
-  const isEmpty = searchParams.get("state") === "empty";
-  const totalDue = isEmpty ? 0 : DECK_PREVIEW.reduce((sum, deck) => sum + deck.dueCount, 0);
+  const [status, setStatus] = useState<HomeLoadStatus>("loading");
+  const [summary, setSummary] = useState<HomeSummary | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let disposed = false;
+
+    async function loadSummary() {
+      setStatus("loading");
+      setErrorMessage("");
+      try {
+        const result = await fetchHomeSummary();
+        if (disposed) {
+          return;
+        }
+        setSummary(result);
+        setStatus("ready");
+      } catch (error) {
+        if (disposed) {
+          return;
+        }
+        setStatus("error");
+        if (error instanceof Error) {
+          setErrorMessage(error.message);
+          return;
+        }
+        setErrorMessage("加载失败，请稍后重试");
+      }
+    }
+
+    void loadSummary();
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  const totalDue = summary?.totalDue ?? 0;
+  const studyDays = summary?.studyDays ?? 0;
+  const masteredCount = summary?.masteredCount ?? 0;
+  const totalCards = summary?.totalCards ?? 0;
+  const recentDecks = useMemo(() => summary?.recentDecks ?? [], [summary]);
+  const isEmpty = status === "ready" && totalCards === 0;
 
   return (
     <div className="grid gap-4 lg:grid-cols-12">
@@ -27,11 +59,11 @@ export function HomePage() {
         <h2 className="mt-6 text-base font-semibold text-stone-700">Welcome Stats</h2>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-stone-200 bg-orange-50/60 p-3 text-center">
-            <p className="text-2xl font-bold text-amber-700">{isEmpty ? 0 : 5}</p>
+            <p className="text-2xl font-bold text-amber-700">{studyDays}</p>
             <p className="mt-1 text-xs text-stone-500">已学习天数</p>
           </div>
           <div className="rounded-xl border border-stone-200 bg-orange-50/60 p-3 text-center">
-            <p className="text-2xl font-bold text-amber-700">{isEmpty ? 0 : 28}</p>
+            <p className="text-2xl font-bold text-amber-700">{masteredCount}</p>
             <p className="mt-1 text-xs text-stone-500">已掌握卡片数</p>
           </div>
         </div>
@@ -58,6 +90,21 @@ export function HomePage() {
         </div>
       </article>
 
+      {status === "loading" ? (
+        <article className="rounded-2xl border border-orange-100 bg-white p-6 text-sm text-stone-500 shadow-sm lg:col-span-12">
+          正在加载首页数据...
+        </article>
+      ) : null}
+
+      {status === "error" ? (
+        <article
+          role="alert"
+          className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm lg:col-span-12"
+        >
+          首页数据加载失败：{errorMessage}
+        </article>
+      ) : null}
+
       {isEmpty ? (
         <article className="rounded-2xl border border-dashed border-orange-200 bg-white p-8 text-center shadow-sm lg:col-span-12">
           <h2 className="text-2xl font-bold text-amber-800">还没有学习卡片</h2>
@@ -69,7 +116,9 @@ export function HomePage() {
             创建第一张卡片
           </Link>
         </article>
-      ) : (
+      ) : null}
+
+      {status === "ready" && !isEmpty ? (
         <>
           <article className="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm lg:col-span-7">
             <div className="mb-4 flex items-center justify-between">
@@ -79,10 +128,10 @@ export function HomePage() {
               </Link>
             </div>
             <ul className="grid gap-2">
-              {DECK_PREVIEW.map((deck) => (
+              {recentDecks.map((deck) => (
                 <li key={deck.id}>
                   <Link
-                    to="/review"
+                    to={`/review/session/${deck.id}`}
                     className="flex items-center justify-between rounded-xl border border-stone-200 px-4 py-3 transition hover:border-orange-200"
                   >
                     <span className="text-sm font-semibold text-stone-700">{deck.name}</span>
@@ -100,7 +149,7 @@ export function HomePage() {
             </p>
           </article>
         </>
-      )}
+      ) : null}
     </div>
   );
 }
