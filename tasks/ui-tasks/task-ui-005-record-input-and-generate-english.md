@@ -74,4 +74,19 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已实现记录页核心流程：`frontend/src/pages/RecordPage.tsx`
+  - 中文输入区（200 字限制）
+  - “生成英文”按钮与 loading/success/error 三态
+  - 成功后结果卡片展示（`generated_text`、`model_hint`、`trace_id`）
+  - 英文结果可直接编辑
+- 已接入生成英文契约调用：`frontend/src/pages/recordApi.ts`
+  - `POST /records/generate`
+  - 请求字段：`source_text`、`source_lang=zh`、`target_lang=en`
+  - 错误响应统一映射为可展示文案
+- 已将 `/record` 路由从占位页替换为真实记录页：`frontend/src/App.tsx`
+- 已新增/更新测试：
+  - 新增：`frontend/src/record-generate.test.tsx`
+  - 更新：`frontend/src/routing.test.tsx`
+- 可追溯证据（本地执行）：
+  - `pnpm test -- record-generate`（exit 0）
+  - `pnpm test && pnpm lint && pnpm typecheck`（exit 0）

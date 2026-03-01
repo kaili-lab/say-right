@@ -2,8 +2,8 @@
 
 ## 最近一次交接
 
-- 当前阶段：UI-004 已完成，首页主路径与空状态已接入
-- 本次变更：新增首页 `HomePage`，实现今日待复习、Welcome Stats、Insight、“开始复习/去记录”入口与空状态（`/?state=empty`）
-- 关键产出：`frontend/src/pages/HomePage.tsx`、`frontend/src/home-page.test.tsx`、`frontend/src/App.tsx`
-- 可追溯证据：`pnpm test -- home-page`（passed）；`pnpm test/lint/typecheck`（passed）
-- 下一步建议：执行 UI-005（记录页输入与“生成英文”流程）
+- 当前阶段：UI-005 已完成，记录页“生成英文”主流程已接入
+- 本次变更：新增记录页真实交互（输入、生成 loading/success/error、结果可编辑），并按契约接入 `POST /records/generate`
+- 关键产出：`frontend/src/pages/RecordPage.tsx`、`frontend/src/pages/recordApi.ts`、`frontend/src/record-generate.test.tsx`
+- 可追溯证据：`pnpm test -- record-generate`（passed）；`pnpm test/lint/typecheck`（passed）
+- 下一步建议：执行 UI-006（保存反馈与分组选择弹窗）
