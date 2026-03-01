@@ -72,4 +72,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已新增 `GET /review/decks`，返回用户可复习 deck 列表及 `due_count` 聚合字段。
+- 已实现排序规则：按 `due_count` 降序返回，满足复习入口优先展示待复习多的组。
+- 已补齐多租户隔离：接口仅返回当前用户的 deck 统计数据。
+- 已补充集成测试：`backend/tests/integration/test_review_decks_api.py`（排序、隔离、鉴权）。
+- 已完成回归：`make -C backend check` 通过（含 test/lint/typecheck）。
