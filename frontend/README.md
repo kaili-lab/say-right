@@ -1,5 +1,13 @@
 # React + TypeScript + Vite
 
+## 当前页面数据来源说明（2026-03-01）
+
+- 首页（`/`）与记录页中的部分统计/分组展示仍为前端示例数据（用于 UI 占位）
+- 复习页（`/review`）、复习会话（`/review/session/:deckId`）、卡片组页（`/decks`）走后端 API
+- 认证与会话状态（注册/登录/退出）已走后端接口 + localStorage
+
+> 若需“所有页面都只展示真实后端数据”，可在下一任务把首页/记录页示例数据改为接口驱动。
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
