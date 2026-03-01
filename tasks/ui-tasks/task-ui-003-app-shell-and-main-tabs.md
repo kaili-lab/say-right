@@ -76,4 +76,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已实现 `AppShell`：桌面顶部导航、移动底部导航、统一主内容容器宽度（`max-width: 1100px`）。
+- 已实现四个主 Tab 占位路由：`/`、`/record`、`/review`、`/decks`，并支持当前 Tab 高亮。
+- 已补充滚动稳定策略：全局启用 `scrollbar-gutter: stable`，降低页面切换横向抖动风险。
+- 已新增测试：`frontend/src/app-shell.test.tsx`、`frontend/src/routing.test.tsx`，覆盖导航入口、高亮、路由占位与移动导航存在性。
+- 已执行并通过：`pnpm test -- app-shell`、`pnpm test -- routing`，并完成 `pnpm test/lint/typecheck` 全量回归。

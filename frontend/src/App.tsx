@@ -1,15 +1,26 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+
+import { AppShell } from "./app/AppShell";
+import { TabPlaceholderPage } from "./pages/TabPlaceholderPage";
+
 /**
- * 前端应用入口占位页。
- * UI-002 仅需验证工程已启动，业务壳层在 UI-003 再引入。
+ * 应用根组件。
+ * UI-003 阶段先搭好 AppShell 和四个 Tab 占位路由，后续任务逐页替换成真实业务页。
  */
 function App() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6">
-      <section className="rounded-2xl border border-orange-200 bg-white px-10 py-8 text-center shadow-sm">
-        <h1 className="text-2xl font-semibold text-orange-700">应用已启动</h1>
-        <p className="mt-3 text-sm text-slate-600">React 前端工程与测试基线初始化完成。</p>
-      </section>
-    </main>
+    <AppShell>
+      <Routes>
+        <Route
+          path="/"
+          element={<TabPlaceholderPage title="首页" description="应用已启动 · 首页占位路由已就绪。" />}
+        />
+        <Route path="/record" element={<TabPlaceholderPage title="记录" description="记录页占位路由。" />} />
+        <Route path="/review" element={<TabPlaceholderPage title="复习" description="复习页占位路由。" />} />
+        <Route path="/decks" element={<TabPlaceholderPage title="卡片组" description="卡片组页占位路由。" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AppShell>
   );
 }
 
