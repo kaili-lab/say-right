@@ -75,4 +75,16 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已在 `frontend/src/pages/RecordPage.tsx` 实现保存反馈与分组调整交互：
+  - “保存卡片”按钮与保存中/成功/失败状态
+  - 保存成功反馈条（“已保存到 XX 组”）与“立即调整分组”入口
+  - 分组选择弹窗（`role="dialog"`）与可滚动分组列表（`overflow-y-auto`）
+  - 确认分组后前端状态即时更新（当前分组与反馈文案）
+- 已按契约接入保存接口：`frontend/src/pages/recordApi.ts`
+  - `POST /records/save-with-agent`
+  - 请求字段：`source_text`、`generated_text`、`source_lang=zh`、`target_lang=en`
+  - 响应字段映射：`card_id`、`deck_id`、`deck_name`、`deck_created`、`fallback_used`
+- 已新增测试：`frontend/src/record-save-feedback.test.tsx`
+- 可追溯证据（本地执行）：
+  - `pnpm test -- record-save-feedback`（exit 0）
+  - `pnpm test && pnpm lint && pnpm typecheck`（exit 0）

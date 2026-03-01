@@ -9,7 +9,7 @@
 | UI-003 | AppShell 与四 Tab 占位路由 | done | UI-002 | - | N/A（纯前端结构） | SP-UI-001 |
 | UI-004 | 首页主路径、统计卡片与空状态 | done | UI-003 | API-010 | `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-005 |
 | UI-005 | 记录页输入与“生成英文”流程 | done | UI-003 | API-007A | `docs/contracts/v0.3.5-record-generate.yaml` | SP-0035 |
-| UI-006 | 记录页保存反馈与分组选择弹窗 | todo | UI-005 | API-008, API-009 | `docs/contracts/v0.4-record-save-agent.yaml` | SP-004 |
+| UI-006 | 记录页保存反馈与分组选择弹窗 | done | UI-005 | API-008, API-009 | `docs/contracts/v0.4-record-save-agent.yaml` | SP-004 |
 | UI-007 | 复习 Deck 列表页 | todo | UI-003 | API-010 | `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-005 |
 | UI-008 | 复习 Session 与总结页状态流 | todo | UI-007 | API-011 | `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-006 |
 | UI-009 | 卡片组页列表与创建组弹窗 | todo | UI-003 | API-005 | `docs/contracts/v0.2-deck-basic.yaml` | SP-003 |
