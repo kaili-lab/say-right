@@ -75,4 +75,16 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已新增首页页面组件 `frontend/src/pages/HomePage.tsx`，包含：
+  - 主路径卡片（今日待复习 + 开始复习入口）
+  - Welcome Stats（已学习天数、已掌握卡片数）
+  - Insight 卡片（“你知道吗？”）
+  - 记录入口（去记录新内容）
+  - 空状态（`/?state=empty`）与“创建第一张卡片”入口
+- 已将 `/` 路由接入真实首页：`frontend/src/App.tsx`
+- 已补充并通过测试：
+  - 新增：`frontend/src/home-page.test.tsx`
+  - 更新：`frontend/src/App.test.tsx`
+- 可追溯证据（本地执行）：
+  - `pnpm test -- home-page`（exit 0）
+  - `pnpm test && pnpm lint && pnpm typecheck`（exit 0）
