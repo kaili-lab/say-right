@@ -6,6 +6,7 @@
 - 把领域异常映射为 HTTP 状态码
 """
 
+from collections.abc import Callable
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -14,6 +15,7 @@ from pydantic import BaseModel, Field
 from app.auth.repository import EmailAlreadyExistsError
 from app.auth.schemas import TokenPair
 from app.auth.service import AuthService, InvalidCredentialsError, UnauthorizedError
+from app.domain.models import User
 
 
 class AuthCredentialsRequest(BaseModel):
@@ -64,7 +66,10 @@ def extract_bearer_token(
     return token
 
 
-def create_auth_router(auth_service: AuthService) -> APIRouter:
+def create_auth_router(
+    auth_service: AuthService,
+    on_user_registered: Callable[[User], None] | None = None,
+) -> APIRouter:
     """构建认证路由集合。"""
     router = APIRouter(tags=["auth"])
 
@@ -82,6 +87,9 @@ def create_auth_router(auth_service: AuthService) -> APIRouter:
                 status_code=status.HTTP_409_CONFLICT,
                 detail="email already exists",
             ) from exc
+
+        if on_user_registered is not None:
+            on_user_registered(user)
 
         return RegisterResponse(user_id=user.user_id, email=user.email)
 

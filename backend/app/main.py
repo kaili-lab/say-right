@@ -9,6 +9,10 @@ from fastapi import FastAPI
 from app.auth.api import create_auth_router
 from app.auth.repository import InMemoryUserRepository
 from app.auth.service import AuthService
+from app.deck.api import create_deck_router
+from app.deck.repository import InMemoryDeckRepository
+from app.deck.service import DeckService
+from app.domain.models import User
 
 
 def build_health_payload() -> dict[str, str]:
@@ -22,8 +26,24 @@ def create_app() -> FastAPI:
 
     # 当前阶段先用内存仓储保证接口链路可跑通，后续再平滑替换为数据库实现。
     user_repository = InMemoryUserRepository()
+    deck_repository = InMemoryDeckRepository()
+
     auth_service = AuthService(user_repository=user_repository)
-    application.include_router(create_auth_router(auth_service=auth_service))
+    deck_service = DeckService(repository=deck_repository)
+
+    def bootstrap_default_deck(user: User) -> None:
+        """在账号创建时立即补齐默认组，避免后续流程出现空组状态。"""
+        deck_service.ensure_default_deck(user.user_id)
+
+    application.include_router(
+        create_auth_router(
+            auth_service=auth_service,
+            on_user_registered=bootstrap_default_deck,
+        ),
+    )
+    application.include_router(
+        create_deck_router(deck_service=deck_service, auth_service=auth_service),
+    )
 
     @application.get("/health")
     async def health() -> dict[str, str]:

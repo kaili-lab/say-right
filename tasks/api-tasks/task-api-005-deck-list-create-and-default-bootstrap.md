@@ -73,4 +73,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已新增 Deck 模块：`backend/app/deck/repository.py`、`backend/app/deck/service.py`、`backend/app/deck/api.py`，实现 `GET /decks` 与 `POST /decks`。
+- 已实现默认组存在性策略：账号注册成功后通过回调立即创建默认组；列表/创建流程中也有 `ensure_default_deck` 兜底。
+- 已覆盖重复名称与非法输入边界：重复 deck 名称返回 409、空白名称返回 422。
+- 已补充测试：`backend/tests/unit/test_deck_repository.py`、`backend/tests/integration/test_deck_api.py`。
+- 当前 Deck 数据采用内存仓储，后续可无缝替换为数据库仓储实现。

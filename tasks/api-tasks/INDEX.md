@@ -8,7 +8,7 @@
 | API-002 | FastAPI 骨架与健康检查 | done | API-001 | UI-002 | `docs/contracts/v0.0-bootstrap.yaml` | SP-001 |
 | API-003 | 认证领域模型与密码/令牌工具 | done | API-002 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-API-001 |
 | API-004 | 注册/登录/刷新/当前用户接口 | done | API-003 | UI-011 | `docs/contracts/v0.1-auth-basic.yaml` | SP-002 |
-| API-005 | Deck 列表与创建（含默认组存在性） | todo | API-004 | UI-009 | `docs/contracts/v0.2-deck-basic.yaml` | SP-003 |
+| API-005 | Deck 列表与创建（含默认组存在性） | done | API-004 | UI-009 | `docs/contracts/v0.2-deck-basic.yaml` | SP-003 |
 | API-006 | Deck 删除约束与校验规则 | todo | API-005 | UI-010 | `docs/contracts/v0.2-deck-basic.yaml` | SP-007 |
 | API-007 | Card 查询/编辑/删除与跨组移动 | todo | API-005 | UI-010 | `docs/contracts/v0.3-card-management.yaml` | SP-007 |
 | API-007A | 记录生成英文（LLM stub） | todo | API-007 | UI-005 | `docs/contracts/v0.3.5-record-generate.yaml` | SP-0035 |
