@@ -77,4 +77,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已新增关键契约回归测试：`backend/tests/integration/test_contract_regression.py`，覆盖 auth / save-with-agent / review 核心字段与状态码。
+- 已新增主链路 e2e：`backend/tests/e2e/test_main_flow.py`，覆盖 auth -> save-with-agent -> review -> ai-score -> rate。
+- 已完成全量集成测试收口：`pytest -q tests/integration` 全通过。
+- 已完成 e2e 收口：`pytest -q tests/e2e/test_main_flow.py` 全通过。
+- 已完成最终质量回归：`make -C backend check` 通过（含 test/lint/typecheck）。
