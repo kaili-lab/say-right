@@ -1,6 +1,14 @@
+/**
+ * 应用主导航壳层。
+ *
+ * WHAT: 提供统一顶部/底部导航与桌面端头像菜单。
+ * WHY: 保证四个主 Tab 的布局一致，并把账号菜单行为集中在一个入口维护。
+ */
 import type { PropsWithChildren } from "react";
-import { NavLink } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 
+import { clearSession, readSessionEmail } from "../pages/authApi";
 import { MAIN_TABS } from "./navigation";
 
 const navBase =
@@ -8,6 +16,55 @@ const navBase =
 const navActive = "bg-orange-50 text-orange-500 font-semibold";
 
 export function AppShell({ children }: PropsWithChildren) {
+  const navigate = useNavigate();
+  const avatarMenuRef = useRef<HTMLDivElement | null>(null);
+  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
+  const [menuNotice, setMenuNotice] = useState("");
+
+  const sessionEmail = readSessionEmail();
+  const avatarText = useMemo(() => {
+    const normalizedEmail = sessionEmail?.trim() ?? "";
+    return normalizedEmail ? normalizedEmail[0]!.toUpperCase() : "K";
+  }, [sessionEmail]);
+
+  useEffect(() => {
+    if (!isAvatarMenuOpen) {
+      return;
+    }
+
+    // 仅在菜单打开时监听全局事件，避免长期挂载无效监听器。
+    function handleOutsideClick(event: MouseEvent) {
+      if (!avatarMenuRef.current?.contains(event.target as Node)) {
+        setIsAvatarMenuOpen(false);
+      }
+    }
+
+    function handleEscClose(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsAvatarMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("click", handleOutsideClick);
+    document.addEventListener("keydown", handleEscClose);
+    return () => {
+      document.removeEventListener("click", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscClose);
+    };
+  }, [isAvatarMenuOpen]);
+
+  function handleAccountInfoClick() {
+    setMenuNotice("账号信息页将在后续版本上线。");
+    setIsAvatarMenuOpen(false);
+  }
+
+  function handleLogout() {
+    clearSession();
+    setMenuNotice("已退出登录。");
+    setIsAvatarMenuOpen(false);
+    navigate("/", { replace: true });
+  }
+
   return (
     <div className="min-h-screen bg-[#faf9f6] text-stone-800">
       <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-[#faf9f6]/90 backdrop-blur">
@@ -32,13 +89,53 @@ export function AppShell({ children }: PropsWithChildren) {
             ))}
           </nav>
 
-          <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-amber-800 md:flex">
-            K
+          <div ref={avatarMenuRef} className="relative hidden md:block">
+            <button
+              type="button"
+              aria-label="用户菜单"
+              aria-haspopup="menu"
+              aria-expanded={isAvatarMenuOpen}
+              onClick={() => setIsAvatarMenuOpen((previous) => !previous)}
+              className="grid h-8 w-8 place-items-center rounded-full bg-orange-100 text-xs font-semibold text-amber-800 transition hover:bg-orange-200"
+            >
+              {avatarText}
+            </button>
+
+            {isAvatarMenuOpen ? (
+              <div
+                role="menu"
+                className="absolute right-0 top-[42px] min-w-[190px] rounded-xl border border-stone-200 bg-white p-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleAccountInfoClick}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-stone-700 transition hover:bg-orange-50"
+                >
+                  账号信息（即将上线）
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleLogout}
+                  className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-sm text-red-700 transition hover:bg-red-50"
+                >
+                  退出登录
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1100px] px-4 pb-24 pt-6 md:px-6 md:pb-8">{children}</main>
+      <main className="mx-auto w-full max-w-[1100px] px-4 pb-24 pt-6 md:px-6 md:pb-8">
+        {menuNotice ? (
+          <p role="status" className="mb-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-amber-800">
+            {menuNotice}
+          </p>
+        ) : null}
+        {children}
+      </main>
 
       <nav
         aria-label="移动端主导航"
@@ -50,9 +147,7 @@ export function AppShell({ children }: PropsWithChildren) {
             key={`mobile-${tab.path}`}
             to={tab.path}
             className={({ isActive }) =>
-              `rounded-lg px-2 py-2 text-center text-xs font-medium ${
-                isActive ? "text-orange-500" : "text-stone-500"
-              }`
+              `rounded-lg px-2 py-2 text-center text-xs font-medium ${isActive ? "text-orange-500" : "text-stone-500"}`
             }
             end={tab.path === "/"}
           >

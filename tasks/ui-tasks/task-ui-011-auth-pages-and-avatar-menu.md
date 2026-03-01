@@ -72,4 +72,21 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已实现登录/注册页面：`frontend/src/pages/AuthLoginPage.tsx`、`frontend/src/pages/AuthRegisterPage.tsx`
+  - 邮箱/密码基础校验（空值、邮箱格式、最小密码长度）
+  - 注册提交流程（`POST /auth/register`）与成功/失败提示
+  - 登录提交流程（`POST /auth/login`），成功后回到首页
+- 已新增认证 API 与会话封装：`frontend/src/pages/authApi.ts`
+  - 接口：`/auth/register`、`/auth/login`
+  - 会话：access token / refresh token / email 本地持久化与清理
+- 已实现桌面端头像下拉菜单：`frontend/src/app/AppShell.tsx`
+  - 点击头像展开菜单（账号信息占位 + 退出登录）
+  - 支持点击外部与 `Esc` 关闭
+  - 退出登录会清理本地会话并回到首页
+- 已更新路由结构：`frontend/src/App.tsx`
+  - 新增 `/auth/login`、`/auth/register`
+  - 认证页与主导航壳层分离，主业务页统一挂载在 `AppShell`
+- 已新增测试：`frontend/src/auth-ui.test.tsx`
+- 可追溯证据（本地执行）：
+  - `pnpm test -- auth-ui`（exit 0）
+  - `pnpm test && pnpm lint && pnpm typecheck`（exit 0）

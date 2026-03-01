@@ -2,8 +2,8 @@
 
 ## 最近一次交接
 
-- 当前阶段：UI-010 已完成，组内卡片编辑/移动/删除流程已可用
-- 本次变更：在卡片组页接入卡片管理契约，新增三类弹窗交互与成功/失败提示
-- 关键产出：`frontend/src/pages/DeckListPage.tsx`、`frontend/src/pages/decksApi.ts`、`frontend/src/deck-card-management.test.tsx`
-- 可追溯证据：`pnpm test -- deck-card-management`（passed）；`pnpm test/lint/typecheck`（passed）
-- 下一步建议：执行 UI-011（登录注册页与头像下拉菜单）
+- 当前阶段：UI-011 已完成，认证页与头像下拉菜单已可用
+- 本次变更：新增登录/注册页、认证 API 封装、本地会话读写，以及桌面端头像菜单（账号占位 + 退出登录）
+- 关键产出：`frontend/src/pages/AuthLoginPage.tsx`、`frontend/src/pages/AuthRegisterPage.tsx`、`frontend/src/pages/authApi.ts`、`frontend/src/app/AppShell.tsx`、`frontend/src/auth-ui.test.tsx`
+- 可追溯证据：`pnpm test -- auth-ui`（passed）；`pnpm test/lint/typecheck`（passed）
+- 下一步建议：执行 UI-012（视觉回归与响应式验收）
