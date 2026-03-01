@@ -107,6 +107,9 @@ python -V
 ```bash
 make -C backend dev     # 启动开发服务
 make -C backend test    # 运行后端测试
+make -C backend lint    # Ruff 代码规范检查
+make -C backend typecheck  # mypy 类型检查
+make -C backend check   # 一键执行 test + lint + typecheck
 ```
 
 ## 8. 常见问题

@@ -9,6 +9,9 @@ from fastapi import FastAPI
 from app.auth.api import create_auth_router
 from app.auth.repository import InMemoryUserRepository
 from app.auth.service import AuthService
+from app.card.api import create_card_router
+from app.card.repository import InMemoryCardRepository
+from app.card.service import CardService
 from app.deck.api import create_deck_router
 from app.deck.repository import InMemoryDeckRepository
 from app.deck.service import DeckService
@@ -27,13 +30,16 @@ def create_app() -> FastAPI:
     # 当前阶段先用内存仓储保证接口链路可跑通，后续再平滑替换为数据库实现。
     user_repository = InMemoryUserRepository()
     deck_repository = InMemoryDeckRepository()
+    card_repository = InMemoryCardRepository(deck_repository=deck_repository)
 
     auth_service = AuthService(user_repository=user_repository)
     deck_service = DeckService(repository=deck_repository)
+    card_service = CardService(repository=card_repository)
 
     # 暴露核心依赖给测试使用，便于构造边界数据而不污染业务 API。
     application.state.user_repository = user_repository
     application.state.deck_repository = deck_repository
+    application.state.card_repository = card_repository
 
     def bootstrap_default_deck(user: User) -> None:
         """在账号创建时立即补齐默认组，避免后续流程出现空组状态。"""
@@ -47,6 +53,9 @@ def create_app() -> FastAPI:
     )
     application.include_router(
         create_deck_router(deck_service=deck_service, auth_service=auth_service),
+    )
+    application.include_router(
+        create_card_router(card_service=card_service, auth_service=auth_service),
     )
 
     @application.get("/health")

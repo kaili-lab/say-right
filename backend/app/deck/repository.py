@@ -36,12 +36,20 @@ class DeckRepository(Protocol):
         """按用户返回 deck 列表。"""
         ...
 
+    def get_by_id(self, deck_id: str) -> Deck | None:
+        """按 deck_id 查询 deck。"""
+        ...
+
     def add_custom_deck(self, user_id: str, name: str) -> Deck:
         """为用户新增自定义 deck。"""
         ...
 
     def delete_deck(self, user_id: str, deck_id: str) -> None:
         """删除 deck。"""
+        ...
+
+    def update_counts(self, *, deck_id: str, new_count: int, learning_count: int, due_count: int) -> None:
+        """更新 deck 聚合计数。"""
         ...
 
 
@@ -65,6 +73,10 @@ class InMemoryDeckRepository(DeckRepository):
         """按创建顺序返回该用户 deck。"""
         deck_ids = self._deck_ids_by_user.get(user_id, [])
         return [self._decks_by_id[deck_id] for deck_id in deck_ids]
+
+    def get_by_id(self, deck_id: str) -> Deck | None:
+        """按 deck_id 读取 deck。"""
+        return self._decks_by_id.get(deck_id)
 
     def add_custom_deck(self, user_id: str, name: str) -> Deck:
         """新增自定义组并保证名称唯一。"""

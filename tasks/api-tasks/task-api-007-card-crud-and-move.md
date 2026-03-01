@@ -65,6 +65,13 @@
 
 - `pytest -q tests/integration/test_card_api.py`
 
+## test_data_strategy（前置模块未就绪时）
+
+- upstream_status: `not_ready`
+- gap: API-008/API-009 的 Agent 创建链路尚未交付，本任务范围内也不包含独立 `POST /cards`。
+- strategy: 在集成测试里通过 `app.state.card_repository.create_card(...)` 造数，聚焦验证查询/编辑/删除/移动契约。
+- rollback_plan: API-008/API-009 完成后，替换为“通过保存链路创建卡片 -> 再执行管理操作”的真实链路回归测试。
+
 ## DoD
 
 - Card 管理能力可用
@@ -74,4 +81,8 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
-- （待填写）
+- 已新增 Card 领域模型与内存仓储：支持列表、编辑、删除、跨组移动，并包含 FSRS 字段（`due_at`、`stability`、`difficulty`、`reps`、`lapses`）。
+- 已新增接口并完成权限约束：`GET /decks/{deck_id}/cards`、`PATCH /cards/{card_id}`、`DELETE /cards/{card_id}`、`POST /cards/{card_id}/move`。
+- 已实现关键业务规则：编辑不重置 FSRS 状态、跨用户操作返回 404、目标组不存在返回 404。
+- 已补充测试：`backend/tests/integration/test_card_api.py`（7 用例）与 `backend/tests/unit/test_card_repository.py`（4 用例）。
+- 已声明 `test_data_strategy`：在 API-008/API-009 未就绪前通过仓储造数，后续回归真实创建链路。

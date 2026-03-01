@@ -33,7 +33,14 @@ def _now(now: datetime | None) -> datetime:
 
 def _resolve_secret(secret_key: str | None) -> str:
     """解析 JWT 密钥，优先使用显式传入值，其次读取环境变量。"""
-    return secret_key or os.getenv("JWT_SECRET_KEY", "dev-secret-change-me-at-least-32chars")
+    if secret_key:
+        return secret_key
+
+    env_secret = os.getenv("JWT_SECRET_KEY")
+    if env_secret:
+        return env_secret
+
+    return "dev-secret-change-me-at-least-32chars"
 
 
 def _build_payload(
