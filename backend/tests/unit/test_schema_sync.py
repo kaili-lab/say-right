@@ -25,6 +25,8 @@ def test_load_schema_sql_should_contain_core_tables() -> None:
     assert "CREATE TABLE IF NOT EXISTS users" in schema_sql
     assert "CREATE TABLE IF NOT EXISTS decks" in schema_sql
     assert "CREATE TABLE IF NOT EXISTS cards" in schema_sql
+    assert "CREATE TABLE IF NOT EXISTS review_sessions" in schema_sql
+    assert "CREATE TABLE IF NOT EXISTS review_logs" in schema_sql
 
 
 def test_read_database_url_from_env_file_should_parse_full_url(tmp_path: Path) -> None:

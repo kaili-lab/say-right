@@ -93,8 +93,13 @@ python -V
 
 - `APP_ENV`：环境标识（如 `dev`）
 - `APP_STORAGE_BACKEND`：运行态存储后端（`memory` / `postgres`）
+- `APP_CORS_ALLOW_ORIGINS`：CORS 白名单（逗号分隔）
 - `JWT_SECRET_KEY`：JWT 签名密钥（生产必须长随机串）
 - `DATABASE_URL`：数据库连接串（当前阶段全任务共用）
+- `LLM_MODE`：`deterministic`（默认）或 `provider`
+- `LLM_MODEL`：provider 模式下使用的模型名
+- `LLM_API_KEY`：provider 模式必填
+- `LLM_BASE_URL`：可选的 OpenAI-compatible 网关地址
 
 ### 6.1 存储后端如何生效
 
@@ -158,7 +163,17 @@ make -C backend db-sync # 同步 schema 到 Neon/PostgreSQL
 
 这是 CORS 预检失败。前端（`localhost:5173`）与后端（`localhost:8000`）端口不同，属于跨域。浏览器会先发 OPTIONS 预检请求，后端必须配置 `CORSMiddleware` 才能正确响应。
 
-当前已在 `app/main.py` 的 `create_app()` 中配置。如果部署到生产环境，需要把 `allow_origins` 改为实际域名。
+当前已在 `app/main.py` 的 `create_app()` 中配置。生产环境通过 `APP_CORS_ALLOW_ORIGINS` 设置实际域名（逗号分隔）。
+
+### Q5: 为什么我改成 provider 后仍然是 stub 结果？
+
+请确认 `.env` 同时满足：
+
+- `LLM_MODE=provider`
+- `LLM_API_KEY` 非空
+- （可选）`LLM_BASE_URL` 指向 OpenAI-compatible 网关
+
+若任何条件不满足，建议先用 `deterministic` 模式保证本地测试可复现。
 
 ---
 

@@ -20,6 +20,8 @@ describe("home-page", () => {
       if (url.endsWith("/dashboard/home-summary")) {
         return new Response(
           JSON.stringify({
+            display_name: "Kai",
+            insight: "每天复习一点点，记得更久。",
             study_days: 5,
             mastered_count: 28,
             total_cards: 40,
@@ -65,6 +67,8 @@ describe("home-page", () => {
     mockFetch.mockResolvedValue(
       new Response(
         JSON.stringify({
+          display_name: "Kai",
+          insight: "每天复习一点点，记得更久。",
           study_days: 0,
           mastered_count: 0,
           total_cards: 0,

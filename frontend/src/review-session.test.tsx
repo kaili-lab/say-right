@@ -56,6 +56,22 @@ describe("review-session", () => {
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            session_id: "session-001",
+            reviewed_count: 2,
+            accuracy: 50,
+            rating_distribution: {
+              again: 1,
+              hard: 0,
+              good: 1,
+              easy: 0,
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
       );
 
     vi.stubGlobal("fetch", mockFetch);
@@ -119,6 +135,22 @@ describe("review-session", () => {
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            session_id: "session-002",
+            reviewed_count: 1,
+            accuracy: 0,
+            rating_distribution: {
+              again: 1,
+              hard: 0,
+              good: 0,
+              easy: 0,
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
       );
 
     vi.stubGlobal("fetch", mockFetch);
@@ -140,7 +172,7 @@ describe("review-session", () => {
     await user.click(screen.getByRole("button", { name: "下一张" }));
 
     await waitFor(() =>
-      expect(mockFetch).toHaveBeenLastCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         "http://127.0.0.1:8000/review/session/session-002/rate",
         expect.objectContaining({
           method: "POST",

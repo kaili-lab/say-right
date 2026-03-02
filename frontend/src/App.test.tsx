@@ -15,6 +15,8 @@ describe("应用入口", () => {
       vi.fn().mockResolvedValue(
         new Response(
           JSON.stringify({
+            display_name: "Kai",
+            insight: "每天复习一点点，记得更久。",
             study_days: 0,
             mastered_count: 0,
             total_cards: 0,

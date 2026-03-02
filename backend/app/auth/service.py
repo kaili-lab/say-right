@@ -30,11 +30,16 @@ class AuthService:
     user_repository: UserRepository
     jwt_secret: str | None = None
 
-    def register(self, *, email: str, password: str) -> User:
+    def register(self, *, email: str, password: str, nickname: str | None = None) -> User:
         """注册用户并返回新建用户实体。"""
         normalized_email = self._normalize_email(email)
+        normalized_nickname = self._normalize_nickname(nickname)
         password_hash = hash_password(password)
-        user = User.create(email=normalized_email, password_hash=password_hash)
+        user = User.create(
+            email=normalized_email,
+            password_hash=password_hash,
+            nickname=normalized_nickname,
+        )
         self.user_repository.add(user)
         return user
 
@@ -86,3 +91,11 @@ class AuthService:
         """统一邮箱规格，避免大小写和前后空格导致账号重复。"""
         # 登录、注册都按同一规格处理邮箱，避免大小写/空格导致“看起来相同却无法命中”的问题。
         return email.strip().lower()
+
+    @staticmethod
+    def _normalize_nickname(nickname: str | None) -> str | None:
+        """统一昵称规格，空白值按未设置处理。"""
+        if nickname is None:
+            return None
+        normalized = nickname.strip()
+        return normalized or None

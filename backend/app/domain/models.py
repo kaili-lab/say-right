@@ -13,15 +13,31 @@ class User:
     email: str
     password_hash: str
     created_at: datetime
+    nickname: str | None = None
+
+    @property
+    def display_name(self) -> str:
+        """返回用于 UI 展示的昵称。"""
+        if self.nickname is not None and self.nickname.strip():
+            return self.nickname.strip()
+        return self.email.split("@", 1)[0]
 
     @classmethod
-    def create(cls, *, email: str, password_hash: str, now: datetime | None = None) -> "User":
+    def create(
+        cls,
+        *,
+        email: str,
+        password_hash: str,
+        nickname: str | None = None,
+        now: datetime | None = None,
+    ) -> "User":
         """创建新用户实体并生成唯一用户 ID。"""
         return cls(
             user_id=str(uuid4()),
             email=email,
             password_hash=password_hash,
             created_at=now or datetime.now(UTC),
+            nickname=nickname.strip() if nickname is not None and nickname.strip() else None,
         )
 
 

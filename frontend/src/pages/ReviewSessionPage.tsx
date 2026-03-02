@@ -7,13 +7,16 @@ import {
   type ReviewRatingSource,
   type ReviewRatingValue,
   type ReviewSessionCard,
+  type ReviewSessionSummary,
   fetchReviewSession,
+  fetchReviewSessionSummary,
   rateReviewCard,
   scoreReviewAnswer,
 } from "./reviewApi";
 
 type LoadStatus = "loading" | "ready" | "error";
 type PendingAction = "idle" | "scoring" | "submitting";
+type SummaryStatus = "idle" | "loading" | "ready" | "error";
 
 type RatingStats = Record<ReviewRatingValue, number>;
 
@@ -38,6 +41,8 @@ export function ReviewSessionPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [sessionId, setSessionId] = useState("");
+  const [summaryStatus, setSummaryStatus] = useState<SummaryStatus>("idle");
+  const [sessionSummary, setSessionSummary] = useState<ReviewSessionSummary | null>(null);
   const [cards, setCards] = useState<ReviewSessionCard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
@@ -64,6 +69,8 @@ export function ReviewSessionPage() {
         setShowAnswer(false);
         setSelectedRating(null);
         setAiResult(null);
+        setSummaryStatus("idle");
+        setSessionSummary(null);
         setRatingStats(createInitialStats());
         setLoadStatus("ready");
       } catch (error) {
@@ -118,6 +125,48 @@ export function ReviewSessionPage() {
       { label: "Easy", value: String(ratingStats.easy) },
     ];
   }, [cards.length, ratingStats]);
+  const serverSummary = useMemo(() => {
+    if (!sessionSummary) {
+      return null;
+    }
+    return [
+      { label: "总卡片", value: String(sessionSummary.reviewedCount) },
+      { label: "正确率", value: `${sessionSummary.accuracy}%` },
+      { label: "Again", value: String(sessionSummary.ratingDistribution.again) },
+      { label: "Hard", value: String(sessionSummary.ratingDistribution.hard) },
+      { label: "Good", value: String(sessionSummary.ratingDistribution.good) },
+      { label: "Easy", value: String(sessionSummary.ratingDistribution.easy) },
+    ];
+  }, [sessionSummary]);
+
+  useEffect(() => {
+    if (!isDone || !sessionId) {
+      return;
+    }
+
+    let disposed = false;
+    async function loadSummary() {
+      setSummaryStatus("loading");
+      try {
+        const result = await fetchReviewSessionSummary(sessionId);
+        if (disposed) {
+          return;
+        }
+        setSessionSummary(result);
+        setSummaryStatus("ready");
+      } catch {
+        if (disposed) {
+          return;
+        }
+        setSummaryStatus("error");
+      }
+    }
+
+    void loadSummary();
+    return () => {
+      disposed = true;
+    };
+  }, [isDone, sessionId]);
 
   async function handleAiScore() {
     if (!currentCard) {
@@ -242,15 +291,19 @@ export function ReviewSessionPage() {
         {isDone ? (
           <div>
             <h1 className="text-2xl font-bold text-amber-800">本轮复习完成</h1>
-            <p className="mt-2 text-sm text-stone-600">你已完成本轮复习，AI 建议与手动评级记录已收敛。</p>
+            <p className="mt-2 text-sm text-stone-600">你已完成本轮复习，以下数据来自本次会话统计。</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {summary.map((item) => (
+              {(serverSummary ?? summary).map((item) => (
                 <div key={item.label} className="rounded-xl border border-stone-200 px-3 py-2 text-center">
                   <p className="text-2xl font-extrabold text-amber-800">{item.value}</p>
                   <p className="mt-1 text-xs text-stone-500">{item.label}</p>
                 </div>
               ))}
             </div>
+            {summaryStatus === "loading" ? <p className="mt-3 text-xs text-stone-500">正在加载会话总结...</p> : null}
+            {summaryStatus === "error" ? (
+              <p className="mt-3 text-xs text-orange-600">会话总结接口暂不可用，已回退展示本地统计。</p>
+            ) : null}
             <Link
               to="/review"
               className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-orange-50 px-4 text-sm font-semibold text-orange-600 transition hover:bg-orange-100"

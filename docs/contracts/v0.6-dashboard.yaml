@@ -1,0 +1,22 @@
+version: v0.6-dashboard
+endpoints:
+  - method: GET
+    path: /dashboard/home-summary
+    auth: required
+    response:
+      status: 200
+      body:
+        display_name: string
+        insight: string
+        study_days: integer
+        mastered_count: integer
+        total_cards: integer
+        total_due: integer
+        recent_decks:
+          - id: string
+            name: string
+            due_count: integer
+rules:
+  - study_days 基于 review_logs 的复习自然日去重
+  - mastered_count 基于每张卡片最近一次评级（Good/Easy）
+  - insight 为每日学习提示，可由静态池稳定抽样

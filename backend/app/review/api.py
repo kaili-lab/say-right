@@ -11,7 +11,7 @@ from app.deck.api import build_current_user_dependency
 from app.domain.models import User
 from app.review.errors import ReviewAIUnavailableError, ReviewCardNotInSessionError, ReviewSessionNotFoundError
 from app.review.service import ReviewDeckSummary, ReviewService
-from app.review.session_service import ReviewCardItem, ReviewSessionService, ReviewSessionSnapshot
+from app.review.session_service import ReviewCardItem, ReviewSessionService, ReviewSessionSnapshot, SessionSummary
 
 
 class ReviewDeckSummaryResponse(BaseModel):
@@ -95,6 +95,15 @@ class RateResponse(BaseModel):
     updated_fsrs_state: FSRSStateResponse
 
 
+class SessionSummaryResponse(BaseModel):
+    """复习会话总结响应体。"""
+
+    session_id: str
+    reviewed_count: int
+    accuracy: int
+    rating_distribution: dict[Literal["again", "hard", "good", "easy"], int]
+
+
 def _to_deck_response(item: ReviewDeckSummary) -> ReviewDeckSummaryResponse:
     return ReviewDeckSummaryResponse(
         deck_id=item.deck_id,
@@ -122,6 +131,20 @@ def _to_session_response(snapshot: ReviewSessionSnapshot) -> ReviewSessionRespon
     return ReviewSessionResponse(
         session_id=snapshot.session_id,
         cards=[_to_card_response(card) for card in snapshot.cards],
+    )
+
+
+def _to_summary_response(summary: SessionSummary) -> SessionSummaryResponse:
+    return SessionSummaryResponse(
+        session_id=summary.session_id,
+        reviewed_count=summary.reviewed_count,
+        accuracy=summary.accuracy,
+        rating_distribution={
+            "again": summary.rating_distribution["again"],
+            "hard": summary.rating_distribution["hard"],
+            "good": summary.rating_distribution["good"],
+            "easy": summary.rating_distribution["easy"],
+        },
     )
 
 
@@ -186,6 +209,7 @@ def create_review_router(
                 user_id=current_user.user_id,
                 session_id=session_id,
                 card_id=payload.card_id,
+                rating_source=payload.rating_source,
                 rating_value=payload.rating_value,
             )
         except ReviewSessionNotFoundError as exc:
@@ -203,5 +227,19 @@ def create_review_router(
                 lapses=result.updated_fsrs_state.lapses,
             ),
         )
+
+    @router.get("/review/session/{session_id}/summary", response_model=SessionSummaryResponse)
+    def get_session_summary(
+        session_id: str,
+        current_user: Annotated[User, Depends(current_user_dependency)],
+    ) -> SessionSummaryResponse:
+        try:
+            summary = review_session_service.get_session_summary(
+                user_id=current_user.user_id,
+                session_id=session_id,
+            )
+        except ReviewSessionNotFoundError as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="session not found") from exc
+        return _to_summary_response(summary)
 
     return router

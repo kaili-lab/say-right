@@ -20,3 +20,8 @@
 | API-013 | Neon Schema 同步基线 | done | API-001 | - | - | SP-DB-BASELINE |
 | API-014 | 首页概览聚合接口（去静态数据） | done | API-012 | - | - | SP-HOME-DASHBOARD |
 | API-015 | 运行态仓储切换（InMemory -> PostgreSQL） | done | API-013, API-014 | - | - | SP-STORAGE-CUTOVER |
+| API-016 | 复习日志持久化、会话总结与每日上限 | done | API-015 | UI-013 | `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-REVIEW-PERSISTENCE |
+| API-017 | Dashboard 洞察、昵称/登出、CORS 环境化与契约补齐 | done | API-016 | UI-013 | `docs/contracts/v0.6-dashboard.yaml` | SP-DASHBOARD-IDENTITY |
+| API-018 | LangChain LLM 适配层与三处 Stub 替换 | done | API-017 | - | `docs/contracts/v0.3.5-record-generate.yaml` + `docs/contracts/v0.4-record-save-agent.yaml` + `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-LLM-REAL |
+| API-019 | 异步数据库仓储迁移评估（架构债跟踪） | todo | API-018 | - | - | SP-DB-ASYNC |
+| API-020 | 密码找回（v2 Backlog） | todo | - | UI-014（待创建） | - | SP-AUTH-RESET |

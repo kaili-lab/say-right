@@ -25,6 +25,13 @@ type ReviewAiScoreApiResponse = {
   suggested_rating: ReviewRatingValue;
 };
 
+type ReviewSessionSummaryApiResponse = {
+  session_id: string;
+  reviewed_count: number;
+  accuracy: number;
+  rating_distribution: Record<ReviewRatingValue, number>;
+};
+
 type ReviewRateApiResponse = {
   next_due_at: string;
   updated_fsrs_state: Record<string, unknown>;
@@ -60,6 +67,13 @@ export type ReviewAiScoreResult = {
 export type ReviewRateResult = {
   nextDueAt: string;
   updatedFsrsState: Record<string, unknown>;
+};
+
+export type ReviewSessionSummary = {
+  sessionId: string;
+  reviewedCount: number;
+  accuracy: number;
+  ratingDistribution: Record<ReviewRatingValue, number>;
 };
 
 export class ReviewApiError extends Error {
@@ -158,6 +172,29 @@ export async function fetchReviewSession(deckId: string, fetchImpl: typeof fetch
       backText: card.back_text,
       fsrsState: card.fsrs_state,
     })),
+  };
+}
+
+export async function fetchReviewSessionSummary(
+  sessionId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReviewSessionSummary> {
+  const payload = await requestReviewJson<ReviewSessionSummaryApiResponse>(
+    `/review/session/${sessionId}/summary`,
+    { method: "GET" },
+    fetchImpl,
+  );
+
+  return {
+    sessionId: payload.session_id,
+    reviewedCount: payload.reviewed_count,
+    accuracy: payload.accuracy,
+    ratingDistribution: {
+      again: payload.rating_distribution.again ?? 0,
+      hard: payload.rating_distribution.hard ?? 0,
+      good: payload.rating_distribution.good ?? 0,
+      easy: payload.rating_distribution.easy ?? 0,
+    },
   };
 }
 

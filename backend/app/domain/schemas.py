@@ -15,3 +15,5 @@ class UserPublic(BaseModel):
 
     user_id: str
     email: str
+    nickname: str | None = None
+    display_name: str

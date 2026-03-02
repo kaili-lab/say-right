@@ -15,6 +15,8 @@ type HomeRecentDeckApiItem = {
 };
 
 type HomeSummaryApiResponse = {
+  display_name?: string;
+  insight?: string;
   study_days: number;
   mastered_count: number;
   total_cards: number;
@@ -29,6 +31,8 @@ export type HomeRecentDeck = {
 };
 
 export type HomeSummary = {
+  displayName: string;
+  insight: string;
   studyDays: number;
   masteredCount: number;
   totalCards: number;
@@ -86,7 +90,17 @@ export async function fetchHomeSummary(fetchImpl: typeof fetch = fetch): Promise
   }
 
   const payload = (await response.json()) as HomeSummaryApiResponse;
+  const displayName =
+    typeof payload.display_name === "string" && payload.display_name.trim()
+      ? payload.display_name.trim()
+      : "Learner";
+  const insight =
+    typeof payload.insight === "string" && payload.insight.trim()
+      ? payload.insight.trim()
+      : "每天 10 分钟复习，比一周突击 2 小时更容易长期记住表达。";
   return {
+    displayName,
+    insight,
     studyDays: payload.study_days,
     masteredCount: payload.mastered_count,
     totalCards: payload.total_cards,

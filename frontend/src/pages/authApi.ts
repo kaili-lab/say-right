@@ -152,3 +152,22 @@ export function readAccessToken() {
     return null;
   }
 }
+
+export async function logoutAccount(fetchImpl: typeof fetch = fetch) {
+  const accessToken = readAccessToken();
+  if (!accessToken) {
+    return;
+  }
+
+  const response = await fetchImpl(`${getApiBaseUrl()}/auth/logout`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok && response.status !== 401) {
+    const detail = await parseErrorMessage(response);
+    throw new AuthApiError(detail, response.status);
+  }
+}

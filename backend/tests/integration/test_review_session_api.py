@@ -82,6 +82,22 @@ def test_review_session_get_ai_score_and_rate_flow() -> None:
     assert "next_due_at" in rate_body
     assert rate_body["updated_fsrs_state"]["reps"] == 2
 
+    summary_response = client.get(
+        f"/review/session/{session_id}/summary",
+        headers=headers,
+    )
+    assert summary_response.status_code == 200
+    summary_body = summary_response.json()
+    assert summary_body["session_id"] == session_id
+    assert summary_body["reviewed_count"] == 1
+    assert summary_body["accuracy"] == 100
+    assert summary_body["rating_distribution"] == {
+        "again": 0,
+        "hard": 0,
+        "good": 1,
+        "easy": 0,
+    }
+
 
 def test_review_ai_score_unavailable_returns_503() -> None:
     """AI 评分不可用时应返回 503。"""
@@ -108,6 +124,7 @@ def test_review_session_requires_authentication() -> None:
 
     session_response = client.get("/review/decks/any/session")
     ai_score_response = client.post("/review/session/any/ai-score", json={"card_id": "x", "user_answer": "y"})
+    summary_response = client.get("/review/session/any/summary")
     rate_response = client.post(
         "/review/session/any/rate",
         json={"card_id": "x", "rating_source": "manual", "rating_value": "good"},
@@ -115,4 +132,53 @@ def test_review_session_requires_authentication() -> None:
 
     assert session_response.status_code == 401
     assert ai_score_response.status_code == 401
+    assert summary_response.status_code == 401
     assert rate_response.status_code == 401
+
+
+def test_review_session_applies_default_new_card_limit() -> None:
+    """新卡数量超过默认上限时，session 仅返回上限内卡片。"""
+    client, app = build_client()
+    headers, user_id = _register_and_login(client, "review-new-limit@example.com")
+    deck_id = _create_deck(client, headers, "NewCardDeck")
+    for index in range(25):
+        app.state.card_repository.create_card(
+            user_id=user_id,
+            deck_id=deck_id,
+            front_text=f"新卡-{index}",
+            back_text=f"New-{index}",
+            due_at=datetime.now(UTC) - timedelta(minutes=1),
+            reps=0,
+            stability=0.0,
+            difficulty=0.0,
+            lapses=0,
+        )
+
+    response = client.get(f"/review/decks/{deck_id}/session", headers=headers)
+
+    assert response.status_code == 200
+    assert len(response.json()["cards"]) == 20
+
+
+def test_review_session_applies_default_review_limit() -> None:
+    """复习卡数量超过默认上限时，session 仅返回上限内卡片。"""
+    client, app = build_client()
+    headers, user_id = _register_and_login(client, "review-due-limit@example.com")
+    deck_id = _create_deck(client, headers, "DueDeck")
+    for index in range(110):
+        app.state.card_repository.create_card(
+            user_id=user_id,
+            deck_id=deck_id,
+            front_text=f"旧卡-{index}",
+            back_text=f"Due-{index}",
+            due_at=datetime.now(UTC) - timedelta(days=1),
+            reps=1,
+            stability=2.0,
+            difficulty=5.0,
+            lapses=0,
+        )
+
+    response = client.get(f"/review/decks/{deck_id}/session", headers=headers)
+
+    assert response.status_code == 200
+    assert len(response.json()["cards"]) == 100

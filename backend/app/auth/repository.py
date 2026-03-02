@@ -77,7 +77,7 @@ class PostgresUserRepository(UserRepository):
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
-                    SELECT user_id, email, password_hash, created_at
+                    SELECT user_id, email, password_hash, created_at, nickname
                     FROM users
                     WHERE email = %s
                     LIMIT 1
@@ -95,7 +95,7 @@ class PostgresUserRepository(UserRepository):
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
-                    SELECT user_id, email, password_hash, created_at
+                    SELECT user_id, email, password_hash, created_at, nickname
                     FROM users
                     WHERE user_id = %s
                     LIMIT 1
@@ -114,14 +114,15 @@ class PostgresUserRepository(UserRepository):
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """
-                        INSERT INTO users (user_id, email, password_hash, created_at)
-                        VALUES (%s, %s, %s, %s)
+                        INSERT INTO users (user_id, email, password_hash, created_at, nickname)
+                        VALUES (%s, %s, %s, %s, %s)
                         """,
                         (
                             user.user_id,
                             user.email,
                             user.password_hash,
                             user.created_at,
+                            user.nickname,
                         ),
                     )
         except psycopg.errors.UniqueViolation as exc:
@@ -135,4 +136,5 @@ def _row_to_user(row: Mapping[str, object]) -> User:
         email=str(row["email"]),
         password_hash=str(row["password_hash"]),
         created_at=cast(datetime, row["created_at"]),
+        nickname=cast(str | None, row.get("nickname")) if isinstance(row, Mapping) else None,
     )

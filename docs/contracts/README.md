@@ -13,3 +13,4 @@
 - `v0.3.5-record-generate.yaml`：记录页生成英文
 - `v0.4-record-save-agent.yaml`：记录保存 + Group Agent 编排
 - `v0.5-review-flow-fsrs.yaml`：复习拉取、AI 评分、评级提交（FSRS）
+- `v0.6-dashboard.yaml`：首页概览（显示名、洞察与学习统计）

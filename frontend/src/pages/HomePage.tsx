@@ -44,6 +44,8 @@ export function HomePage() {
   }, []);
 
   const totalDue = summary?.totalDue ?? 0;
+  const displayName = summary?.displayName ?? "Learner";
+  const insight = summary?.insight ?? "每天 10 分钟复习，比一周突击 2 小时更容易长期记住表达。";
   const studyDays = summary?.studyDays ?? 0;
   const masteredCount = summary?.masteredCount ?? 0;
   const totalCards = summary?.totalCards ?? 0;
@@ -53,7 +55,7 @@ export function HomePage() {
   return (
     <div className="grid gap-4 lg:grid-cols-12">
       <article className="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm lg:col-span-7">
-        <h1 className="text-2xl font-bold text-amber-800">Hi, Kai 👋</h1>
+        <h1 className="text-2xl font-bold text-amber-800">Hi, {displayName} 👋</h1>
         <p className="mt-2 text-sm text-stone-600">比起一次学很多，持续复习和记录更容易形成长期记忆。</p>
 
         <h2 className="mt-6 text-base font-semibold text-stone-700">Welcome Stats</h2>
@@ -144,9 +146,7 @@ export function HomePage() {
 
           <article className="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm lg:col-span-5">
             <h2 className="text-base font-semibold text-stone-700">你知道吗？</h2>
-            <p className="mt-3 text-sm leading-6 text-stone-600">
-              每天 10 分钟复习，比一周突击 2 小时更容易长期记住表达。
-            </p>
+            <p className="mt-3 text-sm leading-6 text-stone-600">{insight}</p>
           </article>
         </>
       ) : null}

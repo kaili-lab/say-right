@@ -39,6 +39,19 @@ def test_auth_contract_regression() -> None:
     assert refresh_response.status_code == 200
     assert {"access_token", "token_type"}.issubset(refresh_response.json())
 
+    me_response = client.get(
+        "/me",
+        headers={"Authorization": f"Bearer {login_body['access_token']}"},
+    )
+    assert me_response.status_code == 200
+    assert {"user_id", "email", "nickname", "display_name"}.issubset(me_response.json())
+
+    logout_response = client.post(
+        "/auth/logout",
+        headers={"Authorization": f"Bearer {login_body['access_token']}"},
+    )
+    assert logout_response.status_code == 204
+
 
 def test_record_save_agent_contract_regression() -> None:
     """回归 v0.4 save-with-agent 契约关键字段。"""
@@ -105,3 +118,27 @@ def test_review_contract_regression() -> None:
     )
     assert rate_response.status_code == 200
     assert {"next_due_at", "updated_fsrs_state"}.issubset(rate_response.json())
+
+    summary_response = client.get(f"/review/session/{session_id}/summary", headers=headers)
+    assert summary_response.status_code == 200
+    assert {"session_id", "reviewed_count", "accuracy", "rating_distribution"}.issubset(summary_response.json())
+
+
+def test_dashboard_contract_regression() -> None:
+    """回归 v0.6 dashboard 契约关键字段。"""
+    client = TestClient(create_app())
+    headers = _register_and_login(client, "contract-dashboard@example.com")
+
+    response = client.get("/dashboard/home-summary", headers=headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert {
+        "display_name",
+        "insight",
+        "study_days",
+        "mastered_count",
+        "total_cards",
+        "total_due",
+        "recent_decks",
+    }.issubset(body)

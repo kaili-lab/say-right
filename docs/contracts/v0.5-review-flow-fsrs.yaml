@@ -49,6 +49,21 @@ endpoints:
       body:
         next_due_at: datetime
         updated_fsrs_state: object
+  - method: GET
+    path: /review/session/{session_id}/summary
+    auth: required
+    response:
+      status: 200
+      body:
+        session_id: string
+        reviewed_count: integer
+        accuracy: integer_percent
+        rating_distribution:
+          again: integer
+          hard: integer
+          good: integer
+          easy: integer
 rules:
   - 未完成今日复习的卡，次日仍参与到期查询
   - AI 评分仅提供建议档位，最终评级以用户点击为准
+  - 默认每日上限：新卡 20、复习卡 100（可后续参数化）

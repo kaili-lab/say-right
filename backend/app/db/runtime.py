@@ -14,6 +14,12 @@ StorageBackend = Literal["memory", "postgres"]
 
 _STORAGE_ENV_KEY = "APP_STORAGE_BACKEND"
 _DATABASE_URL_ENV_KEY = "DATABASE_URL"
+_CORS_ALLOW_ORIGINS_ENV_KEY = "APP_CORS_ALLOW_ORIGINS"
+
+_DEFAULT_CORS_ALLOW_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 
 def resolve_storage_backend(env: Mapping[str, str] | None = None) -> StorageBackend:
@@ -49,3 +55,13 @@ def normalize_postgres_database_url(database_url: str) -> str:
     if database_url.startswith("postgres://"):
         return database_url.replace("postgres://", "postgresql://", 1)
     return database_url
+
+
+def resolve_cors_allow_origins(env: Mapping[str, str] | None = None) -> list[str]:
+    """解析 CORS 白名单，支持逗号分隔配置。"""
+    env_map = env or os.environ
+    raw_origins = env_map.get(_CORS_ALLOW_ORIGINS_ENV_KEY, "")
+    configured = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+    if configured:
+        return configured
+    return _DEFAULT_CORS_ALLOW_ORIGINS.copy()

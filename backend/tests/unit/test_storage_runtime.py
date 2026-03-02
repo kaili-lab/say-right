@@ -4,6 +4,7 @@ import pytest
 
 from app.db.runtime import (
     normalize_postgres_database_url,
+    resolve_cors_allow_origins,
     resolve_postgres_database_url,
     resolve_storage_backend,
 )
@@ -62,3 +63,21 @@ def test_resolve_postgres_database_url_requires_database_url() -> None:
 def test_normalize_postgres_database_url(raw_url: str, expected: str) -> None:
     """常见 DSN 变体应转换为 psycopg 可识别格式。"""
     assert normalize_postgres_database_url(raw_url) == expected
+
+
+def test_resolve_cors_allow_origins_uses_default_localhost_when_not_configured() -> None:
+    """未配置时应回退本地开发域名。"""
+    assert resolve_cors_allow_origins({}) == [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+
+def test_resolve_cors_allow_origins_supports_comma_separated_values() -> None:
+    """应支持通过逗号分隔配置多个 origin。"""
+    assert resolve_cors_allow_origins(
+        {"APP_CORS_ALLOW_ORIGINS": "https://app.example.com, https://admin.example.com "},
+    ) == [
+        "https://app.example.com",
+        "https://admin.example.com",
+    ]

@@ -8,7 +8,7 @@ import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
-import { clearSession, readSessionEmail } from "../pages/authApi";
+import { clearSession, logoutAccount, readSessionEmail } from "../pages/authApi";
 import { MAIN_TABS } from "./navigation";
 
 const navBase =
@@ -72,11 +72,17 @@ export function AppShell({ children }: PropsWithChildren) {
     setIsAvatarMenuOpen(false);
   }
 
-  function handleLogout() {
-    clearSession();
-    setMenuNotice("");
-    setIsAvatarMenuOpen(false);
-    navigate("/auth/login", { replace: true, state: { notice: "已退出登录。" } });
+  async function handleLogout() {
+    try {
+      await logoutAccount();
+    } catch {
+      // 登出端点失败不阻断本地会话清理，保证用户可立即退出。
+    } finally {
+      clearSession();
+      setMenuNotice("");
+      setIsAvatarMenuOpen(false);
+      navigate("/auth/login", { replace: true, state: { notice: "已退出登录。" } });
+    }
   }
 
   return (
@@ -131,7 +137,7 @@ export function AppShell({ children }: PropsWithChildren) {
                 <button
                   type="button"
                   role="menuitem"
-                  onClick={handleLogout}
+                  onClick={() => void handleLogout()}
                   className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-sm text-red-700 transition hover:bg-red-50"
                 >
                   退出登录

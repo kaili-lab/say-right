@@ -16,3 +16,4 @@
 | UI-010 | 组内卡片编辑/移动/删除交互 | done | UI-009 | API-006, API-007 | `docs/contracts/v0.3-card-management.yaml` | SP-007 |
 | UI-011 | 登录注册页与头像下拉菜单 | done | UI-003 | API-004 | `docs/contracts/v0.1-auth-basic.yaml` | SP-002 |
 | UI-012 | 视觉回归与响应式验收（含 iPhone 13） | done | UI-004, UI-006, UI-008, UI-010, UI-011 | API-012 | N/A（验收任务） | SP-FINAL |
+| UI-013 | 首页昵称/洞察与复习总结接口接入 | done | UI-012 | API-016, API-017 | `docs/contracts/v0.5-review-flow-fsrs.yaml` + `docs/contracts/v0.6-dashboard.yaml` | SP-UI-DASHBOARD-REVIEW-SUMMARY |

@@ -6,11 +6,13 @@ endpoints:
     request:
       email: string
       password: string
+      nickname: string?
     response:
       status: 201
       body:
         user_id: string
         email: string
+        nickname: string?
     errors:
       - 409_email_exists
       - 422_validation
@@ -44,3 +46,10 @@ endpoints:
       body:
         user_id: string
         email: string
+        nickname: string?
+        display_name: string
+  - method: POST
+    path: /auth/logout
+    auth: access_token
+    response:
+      status: 204

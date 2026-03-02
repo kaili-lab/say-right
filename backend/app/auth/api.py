@@ -9,8 +9,8 @@
 from collections.abc import Callable
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
+from pydantic import BaseModel, Field, field_validator
 
 from app.auth.repository import EmailAlreadyExistsError
 from app.auth.schemas import TokenPair
@@ -18,8 +18,24 @@ from app.auth.service import AuthService, InvalidCredentialsError, UnauthorizedE
 from app.domain.models import User
 
 
-class AuthCredentialsRequest(BaseModel):
-    """登录/注册共用请求体。"""
+class AuthRegisterRequest(BaseModel):
+    """注册请求体。"""
+
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=8, max_length=128)
+    nickname: str | None = Field(default=None, max_length=50)
+
+    @field_validator("nickname")
+    @classmethod
+    def validate_nickname(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
+
+class AuthLoginRequest(BaseModel):
+    """登录请求体。"""
 
     email: str = Field(min_length=3, max_length=320)
     password: str = Field(min_length=8, max_length=128)
@@ -30,6 +46,7 @@ class RegisterResponse(BaseModel):
 
     user_id: str
     email: str
+    nickname: str | None
 
 
 class AccessTokenResponse(BaseModel):
@@ -44,6 +61,8 @@ class MeResponse(BaseModel):
 
     user_id: str
     email: str
+    nickname: str | None
+    display_name: str
 
 
 def extract_bearer_token(
@@ -78,10 +97,14 @@ def create_auth_router(
         status_code=status.HTTP_201_CREATED,
         response_model=RegisterResponse,
     )
-    def register(payload: AuthCredentialsRequest) -> RegisterResponse:
+    def register(payload: AuthRegisterRequest) -> RegisterResponse:
         """注册新用户。"""
         try:
-            user = auth_service.register(email=payload.email, password=payload.password)
+            user = auth_service.register(
+                email=payload.email,
+                password=payload.password,
+                nickname=payload.nickname,
+            )
         except EmailAlreadyExistsError as exc:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -91,10 +114,10 @@ def create_auth_router(
         if on_user_registered is not None:
             on_user_registered(user)
 
-        return RegisterResponse(user_id=user.user_id, email=user.email)
+        return RegisterResponse(user_id=user.user_id, email=user.email, nickname=user.nickname)
 
     @router.post("/auth/login", response_model=TokenPair)
-    def login(payload: AuthCredentialsRequest) -> TokenPair:
+    def login(payload: AuthLoginRequest) -> TokenPair:
         """用户登录并返回令牌对。"""
         try:
             return auth_service.login(email=payload.email, password=payload.password)
@@ -128,6 +151,23 @@ def create_auth_router(
                 detail="invalid access token",
             ) from exc
 
-        return MeResponse(user_id=user.user_id, email=user.email)
+        return MeResponse(
+            user_id=user.user_id,
+            email=user.email,
+            nickname=user.nickname,
+            display_name=user.display_name,
+        )
+
+    @router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+    def logout(token: Annotated[str, Depends(extract_bearer_token)]) -> Response:
+        """无状态登出：仅校验 access token 并交由前端清理本地会话。"""
+        try:
+            auth_service.get_current_user(access_token=token)
+        except UnauthorizedError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="invalid access token",
+            ) from exc
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     return router

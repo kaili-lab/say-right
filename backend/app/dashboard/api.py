@@ -22,6 +22,8 @@ class HomeRecentDeckSummaryResponse(BaseModel):
 class HomeSummaryResponse(BaseModel):
     """首页概览响应体。"""
 
+    display_name: str
+    insight: str
     study_days: int
     mastered_count: int
     total_cards: int
@@ -39,6 +41,8 @@ def _to_recent_deck_response(item: HomeRecentDeckSummary) -> HomeRecentDeckSumma
 
 def _to_home_summary_response(summary: HomeSummary) -> HomeSummaryResponse:
     return HomeSummaryResponse(
+        display_name=summary.display_name,
+        insight=summary.insight,
         study_days=summary.study_days,
         mastered_count=summary.mastered_count,
         total_cards=summary.total_cards,
