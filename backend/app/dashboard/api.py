@@ -63,7 +63,7 @@ def create_dashboard_router(
     def get_home_summary(
         current_user: Annotated[User, Depends(current_user_dependency)],
     ) -> HomeSummaryResponse:
-        summary = dashboard_service.get_home_summary(user_id=current_user.user_id)
+        summary = dashboard_service.get_home_summary(user=current_user)
         return _to_home_summary_response(summary)
 
     return router

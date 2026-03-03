@@ -22,8 +22,11 @@ class DeckService:
 
     def list_decks(self, user_id: str) -> list[Deck]:
         """列出用户全部 deck。"""
-        self.repository.ensure_default_deck(user_id)
-        return self.repository.list_by_user(user_id)
+        decks = self.repository.list_by_user(user_id)
+        if not decks:
+            self.repository.ensure_default_deck(user_id)
+            decks = self.repository.list_by_user(user_id)
+        return decks
 
     def create_deck(self, user_id: str, name: str) -> Deck:
         """创建自定义 deck。"""

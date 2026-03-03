@@ -219,7 +219,6 @@ def create_app() -> FastAPI:
         deck_service=deck_service,
         card_repository=card_repository,
         review_log_repository=review_log_repository,
-        user_repository=user_repository,
     )
 
     # 暴露核心依赖给测试使用，便于构造边界数据而不污染业务 API。

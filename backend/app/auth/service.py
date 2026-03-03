@@ -6,7 +6,10 @@
 - 保持路由层与仓储层解耦
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from threading import Lock
+
+from cachetools import TTLCache
 
 from app.auth.passwords import hash_password, verify_password
 from app.auth.repository import UserRepository
@@ -29,6 +32,10 @@ class AuthService:
 
     user_repository: UserRepository
     jwt_secret: str | None = None
+    _user_cache: TTLCache[str, User] = field(
+        default_factory=lambda: TTLCache(maxsize=256, ttl=60),
+    )
+    _user_cache_lock: Lock = field(default_factory=Lock)
 
     def register(self, *, email: str, password: str, nickname: str | None = None) -> User:
         """注册用户并返回新建用户实体。"""
@@ -80,10 +87,17 @@ class AuthService:
         except TokenError as exc:
             raise UnauthorizedError("invalid token") from exc
 
+        with self._user_cache_lock:
+            cached = self._user_cache.get(payload.sub)
+        if cached is not None:
+            return cached
+
         user = self.user_repository.get_by_id(payload.sub)
         if user is None:
             raise UnauthorizedError("invalid token")
 
+        with self._user_cache_lock:
+            self._user_cache[payload.sub] = user
         return user
 
     @staticmethod
