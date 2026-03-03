@@ -12,6 +12,7 @@ import pytest
 from app import main as app_main
 from app.auth.repository import InMemoryUserRepository, PostgresUserRepository
 from app.card.repository import InMemoryCardRepository, PostgresCardRepository
+from app.db import pool as db_pool_module
 from app.deck.repository import InMemoryDeckRepository, PostgresDeckRepository
 from app.record.group_agent_stub import DeterministicGroupAgent
 from app.record.stub import DeterministicEnglishGenerator
@@ -53,6 +54,7 @@ class _FakeCursor:
 class _FakeConnection:
     def __init__(self, cursor: _FakeCursor) -> None:
         self._cursor = cursor
+        self.autocommit = False
 
     def __enter__(self) -> "_FakeConnection":
         return self
@@ -168,3 +170,25 @@ def test_postgres_review_session_create_session_should_use_executemany_for_cards
     assert len(cursor.executemany_calls) == 1
     _, params_list = cursor.executemany_calls[0]
     assert len(params_list) == 3
+
+
+def test_create_connection_pool_should_not_enable_health_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    """连接池不应启用出池探活，由 retry 机制处理过期连接。"""
+    captured_kwargs: dict[str, object] = {}
+
+    class FakeConnectionPool:
+        check_connection = object()
+
+        def __init__(self, **kwargs: object) -> None:
+            captured_kwargs.update(kwargs)
+
+    monkeypatch.setattr(db_pool_module, "ConnectionPool", FakeConnectionPool)
+    created = db_pool_module.create_connection_pool(
+        database_url="postgresql://user:pass@localhost:5432/demo",
+        min_size=2,
+        max_size=10,
+    )
+
+    assert isinstance(created, FakeConnectionPool)
+    assert "check" not in captured_kwargs
+    assert captured_kwargs["open"] is True

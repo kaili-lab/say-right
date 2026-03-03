@@ -3,12 +3,14 @@
 from collections.abc import Mapping
 from datetime import datetime
 from threading import Lock
-from typing import Protocol, cast
+from typing import Any, Protocol, cast
 
 import psycopg
+from psycopg import Connection
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
+from app.db.helpers import run_readonly, run_with_retry
 from app.domain.models import User
 
 
@@ -33,11 +35,7 @@ class UserRepository(Protocol):
 
 
 class InMemoryUserRepository(UserRepository):
-    """基于内存字典的用户仓储实现。
-
-    该实现用于早期迭代，优先保证接口联调速度，
-    便于在数据库层落地前先完成认证链路。
-    """
+    """基于内存字典的用户仓储实现。"""
 
     def __init__(self) -> None:
         """初始化内存索引与线程锁。"""
@@ -74,7 +72,7 @@ class PostgresUserRepository(UserRepository):
 
     def get_by_email(self, email: str) -> User | None:
         """按邮箱读取用户。"""
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[Any]) -> Mapping[str, object] | None:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -85,14 +83,18 @@ class PostgresUserRepository(UserRepository):
                     """,
                     (email,),
                 )
-                row = cursor.fetchone()
+                return cast(Mapping[str, object] | None, cursor.fetchone())
+
+        row = run_readonly(
+            pool=self._pool, operation_name="get_by_email", operation=_query,
+        )
         if row is None:
             return None
         return _row_to_user(row)
 
     def get_by_id(self, user_id: str) -> User | None:
         """按 ID 读取用户。"""
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[Any]) -> Mapping[str, object] | None:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -103,7 +105,11 @@ class PostgresUserRepository(UserRepository):
                     """,
                     (user_id,),
                 )
-                row = cursor.fetchone()
+                return cast(Mapping[str, object] | None, cursor.fetchone())
+
+        row = run_readonly(
+            pool=self._pool, operation_name="get_by_id", operation=_query,
+        )
         if row is None:
             return None
         return _row_to_user(row)
@@ -111,7 +117,7 @@ class PostgresUserRepository(UserRepository):
     def add(self, user: User) -> None:
         """新增用户并保证邮箱唯一。"""
         try:
-            with self._pool.connection() as connection:
+            def _insert(connection: Connection[Any]) -> None:
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """
@@ -126,6 +132,10 @@ class PostgresUserRepository(UserRepository):
                             user.nickname,
                         ),
                     )
+
+            run_with_retry(
+                pool=self._pool, operation_name="add", operation=_insert,
+            )
         except psycopg.errors.UniqueViolation as exc:
             raise EmailAlreadyExistsError("email already exists") from exc
 

@@ -10,8 +10,11 @@ from threading import Lock
 from typing import Literal, Protocol, cast
 from uuid import uuid4
 
+from psycopg import Connection
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
+
+from app.db.helpers import run_readonly, run_with_retry
 
 RatingSource = Literal["manual", "ai"]
 RatingValue = Literal["again", "hard", "good", "easy"]
@@ -179,19 +182,15 @@ class PostgresReviewSessionRepository(ReviewSessionRepository):
             deck_id=deck_id,
             created_at=datetime.now(UTC),
         )
-        with self._pool.connection() as connection:
+
+        def _op(connection: Connection[object]) -> None:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
                     INSERT INTO review_sessions (session_id, user_id, deck_id, created_at)
                     VALUES (%s, %s, %s, %s)
                     """,
-                    (
-                        session.session_id,
-                        session.user_id,
-                        session.deck_id,
-                        session.created_at,
-                    ),
+                    (session.session_id, session.user_id, session.deck_id, session.created_at),
                 )
                 rows = [
                     (session.session_id, card_id, index)
@@ -205,10 +204,12 @@ class PostgresReviewSessionRepository(ReviewSessionRepository):
                         """,
                         rows,
                     )
+
+        run_with_retry(pool=self._pool, operation_name="create_session", operation=_op)
         return session
 
     def get_session(self, *, session_id: str) -> ReviewSessionRecord | None:
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[object]) -> dict[str, object] | None:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -219,13 +220,15 @@ class PostgresReviewSessionRepository(ReviewSessionRepository):
                     """,
                     (session_id,),
                 )
-                row = cursor.fetchone()
+                return cursor.fetchone()
+
+        row = run_readonly(pool=self._pool, operation_name="get_session", operation=_query)
         if row is None:
             return None
         return _row_to_review_session(row)
 
     def list_session_card_ids(self, *, session_id: str) -> list[str]:
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[object]) -> list[dict[str, object]]:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -236,7 +239,9 @@ class PostgresReviewSessionRepository(ReviewSessionRepository):
                     """,
                     (session_id,),
                 )
-                rows = cursor.fetchall()
+                return cursor.fetchall()
+
+        rows = run_readonly(pool=self._pool, operation_name="list_session_card_ids", operation=_query)
         return [str(row["card_id"]) for row in rows]
 
 
@@ -247,62 +252,48 @@ class PostgresReviewLogRepository(ReviewLogRepository):
         self._pool = pool
 
     def add_log(self, entry: ReviewLogEntry) -> None:
-        with self._pool.connection() as connection:
+        def _op(connection: Connection[object]) -> None:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
                     INSERT INTO review_logs (
-                        review_log_id,
-                        user_id,
-                        card_id,
-                        session_id,
-                        rating_source,
-                        final_rating,
-                        is_new_card,
-                        rated_at,
-                        fsrs_snapshot
+                        review_log_id, user_id, card_id, session_id,
+                        rating_source, final_rating, is_new_card,
+                        rated_at, fsrs_snapshot
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
                     """,
                     (
-                        entry.review_log_id,
-                        entry.user_id,
-                        entry.card_id,
-                        entry.session_id,
-                        entry.rating_source,
-                        entry.final_rating,
-                        entry.is_new_card,
-                        entry.rated_at,
+                        entry.review_log_id, entry.user_id, entry.card_id,
+                        entry.session_id, entry.rating_source, entry.final_rating,
+                        entry.is_new_card, entry.rated_at,
                         json.dumps(entry.fsrs_snapshot, ensure_ascii=False),
                     ),
                 )
 
+        run_with_retry(pool=self._pool, operation_name="add_log", operation=_op)
+
     def list_by_session(self, *, user_id: str, session_id: str) -> list[ReviewLogEntry]:
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[object]) -> list[dict[str, object]]:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
-                    SELECT
-                        review_log_id,
-                        user_id,
-                        card_id,
-                        session_id,
-                        rating_source,
-                        final_rating,
-                        is_new_card,
-                        rated_at,
-                        fsrs_snapshot
+                    SELECT review_log_id, user_id, card_id, session_id,
+                           rating_source, final_rating, is_new_card,
+                           rated_at, fsrs_snapshot
                     FROM review_logs
                     WHERE user_id = %s AND session_id = %s
                     ORDER BY rated_at ASC, review_log_id ASC
                     """,
                     (user_id, session_id),
                 )
-                rows = cursor.fetchall()
+                return cursor.fetchall()
+
+        rows = run_readonly(pool=self._pool, operation_name="list_by_session", operation=_query)
         return [_row_to_review_log(row) for row in rows]
 
     def count_daily_by_kind(self, *, user_id: str, target_date: date, is_new_card: bool) -> int:
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[object]) -> int:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -315,32 +306,27 @@ class PostgresReviewLogRepository(ReviewLogRepository):
                     (user_id, is_new_card, target_date),
                 )
                 row = cursor.fetchone()
-        if row is None:
-            return 0
-        return cast(int, row["total"])
+            return cast(int, row["total"]) if row else 0
+
+        return run_readonly(pool=self._pool, operation_name="count_daily_by_kind", operation=_query)
 
     def list_by_user(self, *, user_id: str) -> list[ReviewLogEntry]:
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[object]) -> list[dict[str, object]]:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
-                    SELECT
-                        review_log_id,
-                        user_id,
-                        card_id,
-                        session_id,
-                        rating_source,
-                        final_rating,
-                        is_new_card,
-                        rated_at,
-                        fsrs_snapshot
+                    SELECT review_log_id, user_id, card_id, session_id,
+                           rating_source, final_rating, is_new_card,
+                           rated_at, fsrs_snapshot
                     FROM review_logs
                     WHERE user_id = %s
                     ORDER BY rated_at DESC, review_log_id DESC
                     """,
                     (user_id,),
                 )
-                rows = cursor.fetchall()
+                return cursor.fetchall()
+
+        rows = run_readonly(pool=self._pool, operation_name="list_by_user", operation=_query)
         return [_row_to_review_log(row) for row in rows]
 
 

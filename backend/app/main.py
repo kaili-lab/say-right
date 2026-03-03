@@ -8,11 +8,14 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from collections.abc import Mapping
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+import psycopg
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
 
 from app.auth.api import create_auth_router
@@ -181,6 +184,19 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @application.exception_handler(psycopg.OperationalError)
+    async def handle_postgres_operational_error(
+        request: Request,
+        exc: psycopg.OperationalError,
+    ) -> JSONResponse:
+        """将数据库临时故障映射为 503，避免接口向客户端暴露 500。"""
+        _ = request
+        logger.exception("PostgreSQL operational error: %s", exc)
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "database temporarily unavailable"},
+        )
+
     llm_mode, english_generator, group_agent, ai_scorer = build_ai_dependencies()
 
     auth_service = AuthService(user_repository=user_repository)
@@ -252,6 +268,14 @@ def create_app() -> FastAPI:
             auth_service=auth_service,
         ),
     )
+
+    @application.middleware("http")
+    async def timing_middleware(request: Request, call_next):  # type: ignore[no-untyped-def]
+        start = time.perf_counter()
+        response = await call_next(request)
+        ms = (time.perf_counter() - start) * 1000
+        logger.info("%s %s → %.0fms", request.method, request.url.path, ms)
+        return response
 
     @application.get("/health")
     async def health() -> dict[str, str]:

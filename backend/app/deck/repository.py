@@ -7,9 +7,11 @@ from threading import Lock
 from typing import Protocol, cast
 
 import psycopg
+from psycopg import Connection
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
+from app.db.helpers import run_readonly, run_with_retry
 from app.domain.models import Deck
 
 DEFAULT_DECK_NAME = "默认组"
@@ -214,50 +216,44 @@ class PostgresDeckRepository(DeckRepository):
 
     def list_by_user(self, user_id: str) -> list[Deck]:
         """按创建顺序返回该用户 deck。"""
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[object]) -> list[dict[str, object]]:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
-                    SELECT
-                        deck_id,
-                        user_id,
-                        name,
-                        is_default,
-                        new_count,
-                        learning_count,
-                        due_count,
-                        created_at
+                    SELECT deck_id, user_id, name, is_default,
+                           new_count, learning_count, due_count, created_at
                     FROM decks
                     WHERE user_id = %s
                     ORDER BY created_at ASC, deck_id ASC
                     """,
                     (user_id,),
                 )
-                rows = cursor.fetchall()
+                return cursor.fetchall()
+
+        rows = run_readonly(
+            pool=self._pool, operation_name="list_by_user", operation=_query,
+        )
         return [_row_to_deck(row) for row in rows]
 
     def get_by_id(self, deck_id: str) -> Deck | None:
         """按 deck_id 读取 deck。"""
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[object]) -> dict[str, object] | None:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
-                    SELECT
-                        deck_id,
-                        user_id,
-                        name,
-                        is_default,
-                        new_count,
-                        learning_count,
-                        due_count,
-                        created_at
+                    SELECT deck_id, user_id, name, is_default,
+                           new_count, learning_count, due_count, created_at
                     FROM decks
                     WHERE deck_id = %s
                     LIMIT 1
                     """,
                     (deck_id,),
                 )
-                row = cursor.fetchone()
+                return cursor.fetchone()
+
+        row = run_readonly(
+            pool=self._pool, operation_name="get_by_id", operation=_query,
+        )
         if row is None:
             return None
         return _row_to_deck(row)
@@ -270,52 +266,36 @@ class PostgresDeckRepository(DeckRepository):
             is_default=False,
         )
         try:
-            with self._pool.connection() as connection:
+            def _op(connection: Connection[object]) -> None:
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """
                         INSERT INTO decks (
-                            deck_id,
-                            user_id,
-                            name,
-                            is_default,
-                            new_count,
-                            learning_count,
-                            due_count,
-                            created_at
+                            deck_id, user_id, name, is_default,
+                            new_count, learning_count, due_count, created_at
                         )
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                         """,
                         (
-                            deck.deck_id,
-                            deck.user_id,
-                            deck.name,
-                            deck.is_default,
-                            deck.new_count,
-                            deck.learning_count,
-                            deck.due_count,
+                            deck.deck_id, deck.user_id, deck.name, deck.is_default,
+                            deck.new_count, deck.learning_count, deck.due_count,
                             deck.created_at,
                         ),
                     )
+
+            run_with_retry(pool=self._pool, operation_name="add_custom_deck", operation=_op)
         except psycopg.errors.UniqueViolation as exc:
             raise DuplicateDeckNameError("duplicate deck name") from exc
         return deck
 
     def delete_deck(self, user_id: str, deck_id: str) -> None:
         """删除用户 deck 并校验业务约束。"""
-        with self._pool.connection() as connection:
+        def _op(connection: Connection[object]) -> None:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
-                    SELECT
-                        deck_id,
-                        user_id,
-                        name,
-                        is_default,
-                        new_count,
-                        learning_count,
-                        due_count,
-                        created_at
+                    SELECT deck_id, user_id, name, is_default,
+                           new_count, learning_count, due_count, created_at
                     FROM decks
                     WHERE deck_id = %s
                     LIMIT 1
@@ -337,31 +317,26 @@ class PostgresDeckRepository(DeckRepository):
                 ):
                     raise DeckNotEmptyError("deck is not empty")
 
-                cursor.execute(
-                    """
-                    DELETE FROM decks
-                    WHERE deck_id = %s
-                    """,
-                    (deck_id,),
-                )
+                cursor.execute("DELETE FROM decks WHERE deck_id = %s", (deck_id,))
+
+        run_with_retry(pool=self._pool, operation_name="delete_deck", operation=_op)
 
     def update_counts(self, *, deck_id: str, new_count: int, learning_count: int, due_count: int) -> None:
         """更新 deck 聚合计数。"""
-        with self._pool.connection() as connection:
+        def _op(connection: Connection[object]) -> None:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
                     UPDATE decks
-                    SET
-                        new_count = %s,
-                        learning_count = %s,
-                        due_count = %s
+                    SET new_count = %s, learning_count = %s, due_count = %s
                     WHERE deck_id = %s
                     """,
                     (new_count, learning_count, due_count, deck_id),
                 )
                 if cursor.rowcount == 0:
                     raise DeckNotFoundError("deck not found")
+
+        run_with_retry(pool=self._pool, operation_name="update_counts", operation=_op)
 
     @staticmethod
     def _find_default_deck(*, cursor: psycopg.Cursor[dict[str, object]], user_id: str) -> dict[str, object] | None:

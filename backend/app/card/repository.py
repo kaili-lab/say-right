@@ -7,9 +7,11 @@ from threading import Lock
 from typing import Protocol, cast
 
 import psycopg
+from psycopg import Connection
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
+from app.db.helpers import run_readonly, run_with_retry
 from app.deck.repository import DeckNotFoundError, DeckRepository
 from app.domain.models import Card
 
@@ -267,151 +269,104 @@ class PostgresCardRepository(CardRepository):
         lapses: int = 0,
     ) -> Card:
         """创建并落盘卡片，同时刷新 deck 统计。"""
-        with self._pool.connection() as connection:
+        card = Card.create(
+            user_id=user_id,
+            deck_id=deck_id,
+            front_text=front_text,
+            back_text=back_text,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            due_at=due_at,
+            stability=stability,
+            difficulty=difficulty,
+            reps=reps,
+            lapses=lapses,
+        )
+
+        def _op(connection: Connection[object]) -> None:
             with connection.cursor(row_factory=dict_row) as cursor:
                 self._ensure_deck_accessible(cursor=cursor, user_id=user_id, deck_id=deck_id)
-                card = Card.create(
-                    user_id=user_id,
-                    deck_id=deck_id,
-                    front_text=front_text,
-                    back_text=back_text,
-                    source_lang=source_lang,
-                    target_lang=target_lang,
-                    due_at=due_at,
-                    stability=stability,
-                    difficulty=difficulty,
-                    reps=reps,
-                    lapses=lapses,
-                )
                 cursor.execute(
                     """
                     INSERT INTO cards (
-                        card_id,
-                        user_id,
-                        deck_id,
-                        front_text,
-                        back_text,
-                        source_lang,
-                        target_lang,
-                        due_at,
-                        stability,
-                        difficulty,
-                        reps,
-                        lapses,
-                        created_at,
-                        updated_at
+                        card_id, user_id, deck_id, front_text, back_text,
+                        source_lang, target_lang, due_at, stability, difficulty,
+                        reps, lapses, created_at, updated_at
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
-                        card.card_id,
-                        card.user_id,
-                        card.deck_id,
-                        card.front_text,
-                        card.back_text,
-                        card.source_lang,
-                        card.target_lang,
-                        card.due_at,
-                        card.stability,
-                        card.difficulty,
-                        card.reps,
-                        card.lapses,
-                        card.created_at,
-                        card.updated_at,
+                        card.card_id, card.user_id, card.deck_id,
+                        card.front_text, card.back_text,
+                        card.source_lang, card.target_lang, card.due_at,
+                        card.stability, card.difficulty, card.reps, card.lapses,
+                        card.created_at, card.updated_at,
                     ),
                 )
                 self._refresh_deck_counts(cursor=cursor, deck_id=deck_id)
+
+        run_with_retry(pool=self._pool, operation_name="create_card", operation=_op)
         return card
 
     def list_by_deck(self, *, user_id: str, deck_id: str) -> list[Card]:
         """按插入顺序返回 deck 下的卡片。"""
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[object]) -> list[dict[str, object]]:
             with connection.cursor(row_factory=dict_row) as cursor:
                 self._ensure_deck_accessible(cursor=cursor, user_id=user_id, deck_id=deck_id)
                 cursor.execute(
                     """
-                    SELECT
-                        card_id,
-                        user_id,
-                        deck_id,
-                        front_text,
-                        back_text,
-                        source_lang,
-                        target_lang,
-                        due_at,
-                        stability,
-                        difficulty,
-                        reps,
-                        lapses,
-                        created_at,
-                        updated_at
+                    SELECT card_id, user_id, deck_id, front_text, back_text,
+                           source_lang, target_lang, due_at, stability, difficulty,
+                           reps, lapses, created_at, updated_at
                     FROM cards
                     WHERE user_id = %s AND deck_id = %s
                     ORDER BY created_at ASC, card_id ASC
                     """,
                     (user_id, deck_id),
                 )
-                rows = cursor.fetchall()
+                return cursor.fetchall()
+
+        rows = run_readonly(pool=self._pool, operation_name="list_by_deck", operation=_query)
         return [_row_to_card(row) for row in rows]
 
     def list_by_user(self, *, user_id: str) -> list[Card]:
         """按创建时间返回用户全部卡片。"""
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[object]) -> list[dict[str, object]]:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
-                    SELECT
-                        card_id,
-                        user_id,
-                        deck_id,
-                        front_text,
-                        back_text,
-                        source_lang,
-                        target_lang,
-                        due_at,
-                        stability,
-                        difficulty,
-                        reps,
-                        lapses,
-                        created_at,
-                        updated_at
+                    SELECT card_id, user_id, deck_id, front_text, back_text,
+                           source_lang, target_lang, due_at, stability, difficulty,
+                           reps, lapses, created_at, updated_at
                     FROM cards
                     WHERE user_id = %s
                     ORDER BY created_at ASC, card_id ASC
                     """,
                     (user_id,),
                 )
-                rows = cursor.fetchall()
+                return cursor.fetchall()
+
+        rows = run_readonly(pool=self._pool, operation_name="list_by_user", operation=_query)
         return [_row_to_card(row) for row in rows]
 
     def get_by_id(self, *, user_id: str, card_id: str) -> Card:
         """按 ID 返回单张卡片。"""
-        with self._pool.connection() as connection:
+        def _query(connection: Connection[object]) -> dict[str, object] | None:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
-                    SELECT
-                        card_id,
-                        user_id,
-                        deck_id,
-                        front_text,
-                        back_text,
-                        source_lang,
-                        target_lang,
-                        due_at,
-                        stability,
-                        difficulty,
-                        reps,
-                        lapses,
-                        created_at,
-                        updated_at
+                    SELECT card_id, user_id, deck_id, front_text, back_text,
+                           source_lang, target_lang, due_at, stability, difficulty,
+                           reps, lapses, created_at, updated_at
                     FROM cards
                     WHERE card_id = %s AND user_id = %s
                     LIMIT 1
                     """,
                     (card_id, user_id),
                 )
-                row = cursor.fetchone()
+                return cursor.fetchone()
+
+        row = run_readonly(pool=self._pool, operation_name="get_by_id", operation=_query)
         if row is None:
             raise CardNotFoundError("card not found")
         return _row_to_card(row)
@@ -419,42 +374,31 @@ class PostgresCardRepository(CardRepository):
     def update_text(self, *, user_id: str, card_id: str, front_text: str, back_text: str) -> Card:
         """仅更新正反面文本，保留 FSRS 状态字段。"""
         now = datetime.now(UTC)
-        with self._pool.connection() as connection:
+
+        def _op(connection: Connection[object]) -> dict[str, object] | None:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
                     UPDATE cards
-                    SET
-                        front_text = %s,
-                        back_text = %s,
-                        updated_at = %s
+                    SET front_text = %s, back_text = %s, updated_at = %s
                     WHERE card_id = %s AND user_id = %s
                     RETURNING
-                        card_id,
-                        user_id,
-                        deck_id,
-                        front_text,
-                        back_text,
-                        source_lang,
-                        target_lang,
-                        due_at,
-                        stability,
-                        difficulty,
-                        reps,
-                        lapses,
-                        created_at,
-                        updated_at
+                        card_id, user_id, deck_id, front_text, back_text,
+                        source_lang, target_lang, due_at, stability, difficulty,
+                        reps, lapses, created_at, updated_at
                     """,
                     (front_text, back_text, now, card_id, user_id),
                 )
-                row = cursor.fetchone()
+                return cursor.fetchone()
+
+        row = run_with_retry(pool=self._pool, operation_name="update_text", operation=_op)
         if row is None:
             raise CardNotFoundError("card not found")
         return _row_to_card(row)
 
     def delete_card(self, *, user_id: str, card_id: str) -> None:
         """删除卡片并同步 deck 统计。"""
-        with self._pool.connection() as connection:
+        def _op(connection: Connection[object]) -> None:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -469,28 +413,21 @@ class PostgresCardRepository(CardRepository):
                     raise CardNotFoundError("card not found")
                 self._refresh_deck_counts(cursor=cursor, deck_id=str(row["deck_id"]))
 
+        run_with_retry(pool=self._pool, operation_name="delete_card", operation=_op)
+
     def move_card(self, *, user_id: str, card_id: str, to_deck_id: str) -> Card:
         """移动卡片并刷新来源/目标 deck 统计。"""
         now = datetime.now(UTC)
-        with self._pool.connection() as connection:
+        result: dict[str, object] | None = None
+
+        def _op(connection: Connection[object]) -> dict[str, object]:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
                     SELECT
-                        card_id,
-                        user_id,
-                        deck_id,
-                        front_text,
-                        back_text,
-                        source_lang,
-                        target_lang,
-                        due_at,
-                        stability,
-                        difficulty,
-                        reps,
-                        lapses,
-                        created_at,
-                        updated_at
+                        card_id, user_id, deck_id, front_text, back_text,
+                        source_lang, target_lang, due_at, stability, difficulty,
+                        reps, lapses, created_at, updated_at
                     FROM cards
                     WHERE card_id = %s AND user_id = %s
                     LIMIT 1
@@ -502,36 +439,19 @@ class PostgresCardRepository(CardRepository):
                     raise CardNotFoundError("card not found")
 
                 current_deck_id = str(card_row["deck_id"])
-                self._ensure_deck_accessible(
-                    cursor=cursor,
-                    user_id=user_id,
-                    deck_id=to_deck_id,
-                )
+                self._ensure_deck_accessible(cursor=cursor, user_id=user_id, deck_id=to_deck_id)
                 if current_deck_id == to_deck_id:
-                    return _row_to_card(card_row)
+                    return card_row
 
                 cursor.execute(
                     """
                     UPDATE cards
-                    SET
-                        deck_id = %s,
-                        updated_at = %s
+                    SET deck_id = %s, updated_at = %s
                     WHERE card_id = %s AND user_id = %s
                     RETURNING
-                        card_id,
-                        user_id,
-                        deck_id,
-                        front_text,
-                        back_text,
-                        source_lang,
-                        target_lang,
-                        due_at,
-                        stability,
-                        difficulty,
-                        reps,
-                        lapses,
-                        created_at,
-                        updated_at
+                        card_id, user_id, deck_id, front_text, back_text,
+                        source_lang, target_lang, due_at, stability, difficulty,
+                        reps, lapses, created_at, updated_at
                     """,
                     (to_deck_id, now, card_id, user_id),
                 )
@@ -541,7 +461,10 @@ class PostgresCardRepository(CardRepository):
 
                 self._refresh_deck_counts(cursor=cursor, deck_id=current_deck_id)
                 self._refresh_deck_counts(cursor=cursor, deck_id=to_deck_id)
-        return _row_to_card(moved_row)
+                return moved_row
+
+        row = run_with_retry(pool=self._pool, operation_name="move_card", operation=_op)
+        return _row_to_card(row)
 
     def update_fsrs_state(
         self,
@@ -556,50 +479,29 @@ class PostgresCardRepository(CardRepository):
     ) -> Card:
         """更新卡片 FSRS 状态并同步 deck 统计。"""
         now = datetime.now(UTC)
-        with self._pool.connection() as connection:
+
+        def _op(connection: Connection[object]) -> dict[str, object]:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
                     UPDATE cards
-                    SET
-                        due_at = %s,
-                        stability = %s,
-                        difficulty = %s,
-                        reps = %s,
-                        lapses = %s,
-                        updated_at = %s
+                    SET due_at = %s, stability = %s, difficulty = %s,
+                        reps = %s, lapses = %s, updated_at = %s
                     WHERE card_id = %s AND user_id = %s
                     RETURNING
-                        card_id,
-                        user_id,
-                        deck_id,
-                        front_text,
-                        back_text,
-                        source_lang,
-                        target_lang,
-                        due_at,
-                        stability,
-                        difficulty,
-                        reps,
-                        lapses,
-                        created_at,
-                        updated_at
+                        card_id, user_id, deck_id, front_text, back_text,
+                        source_lang, target_lang, due_at, stability, difficulty,
+                        reps, lapses, created_at, updated_at
                     """,
-                    (
-                        due_at,
-                        stability,
-                        difficulty,
-                        reps,
-                        lapses,
-                        now,
-                        card_id,
-                        user_id,
-                    ),
+                    (due_at, stability, difficulty, reps, lapses, now, card_id, user_id),
                 )
                 row = cursor.fetchone()
                 if row is None:
                     raise CardNotFoundError("card not found")
                 self._refresh_deck_counts(cursor=cursor, deck_id=str(row["deck_id"]))
+                return row
+
+        row = run_with_retry(pool=self._pool, operation_name="update_fsrs_state", operation=_op)
         return _row_to_card(row)
 
     @staticmethod
