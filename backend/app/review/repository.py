@@ -10,8 +10,8 @@ from threading import Lock
 from typing import Literal, Protocol, cast
 from uuid import uuid4
 
-import psycopg
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 RatingSource = Literal["manual", "ai"]
 RatingValue = Literal["again", "hard", "good", "easy"]
@@ -169,8 +169,8 @@ class InMemoryReviewLogRepository(ReviewLogRepository):
 class PostgresReviewSessionRepository(ReviewSessionRepository):
     """PostgreSQL 版复习 session 仓储。"""
 
-    def __init__(self, *, database_url: str) -> None:
-        self._database_url = database_url
+    def __init__(self, *, pool: ConnectionPool) -> None:
+        self._pool = pool
 
     def create_session(self, *, user_id: str, deck_id: str, card_ids: list[str]) -> ReviewSessionRecord:
         session = ReviewSessionRecord(
@@ -179,7 +179,7 @@ class PostgresReviewSessionRepository(ReviewSessionRepository):
             deck_id=deck_id,
             created_at=datetime.now(UTC),
         )
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
@@ -193,18 +193,22 @@ class PostgresReviewSessionRepository(ReviewSessionRepository):
                         session.created_at,
                     ),
                 )
-                for index, card_id in enumerate(card_ids):
-                    cursor.execute(
+                rows = [
+                    (session.session_id, card_id, index)
+                    for index, card_id in enumerate(card_ids)
+                ]
+                if rows:
+                    cursor.executemany(
                         """
                         INSERT INTO review_session_cards (session_id, card_id, ord)
                         VALUES (%s, %s, %s)
                         """,
-                        (session.session_id, card_id, index),
+                        rows,
                     )
         return session
 
     def get_session(self, *, session_id: str) -> ReviewSessionRecord | None:
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -221,7 +225,7 @@ class PostgresReviewSessionRepository(ReviewSessionRepository):
         return _row_to_review_session(row)
 
     def list_session_card_ids(self, *, session_id: str) -> list[str]:
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -239,11 +243,11 @@ class PostgresReviewSessionRepository(ReviewSessionRepository):
 class PostgresReviewLogRepository(ReviewLogRepository):
     """PostgreSQL 版复习日志仓储。"""
 
-    def __init__(self, *, database_url: str) -> None:
-        self._database_url = database_url
+    def __init__(self, *, pool: ConnectionPool) -> None:
+        self._pool = pool
 
     def add_log(self, entry: ReviewLogEntry) -> None:
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
@@ -274,7 +278,7 @@ class PostgresReviewLogRepository(ReviewLogRepository):
                 )
 
     def list_by_session(self, *, user_id: str, session_id: str) -> list[ReviewLogEntry]:
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -298,7 +302,7 @@ class PostgresReviewLogRepository(ReviewLogRepository):
         return [_row_to_review_log(row) for row in rows]
 
     def count_daily_by_kind(self, *, user_id: str, target_date: date, is_new_card: bool) -> int:
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -316,7 +320,7 @@ class PostgresReviewLogRepository(ReviewLogRepository):
         return cast(int, row["total"])
 
     def list_by_user(self, *, user_id: str) -> list[ReviewLogEntry]:
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """

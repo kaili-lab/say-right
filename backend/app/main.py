@@ -6,11 +6,14 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import Mapping
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from psycopg_pool import ConnectionPool
 
 from app.auth.api import create_auth_router
 from app.auth.repository import InMemoryUserRepository, PostgresUserRepository, UserRepository
@@ -20,8 +23,10 @@ from app.card.repository import CardRepository, InMemoryCardRepository, Postgres
 from app.card.service import CardService
 from app.dashboard.api import create_dashboard_router
 from app.dashboard.service import DashboardService
+from app.db.pool import create_connection_pool
 from app.db.runtime import (
     resolve_cors_allow_origins,
+    resolve_db_pool_size,
     resolve_postgres_database_url,
     resolve_storage_backend,
 )
@@ -49,6 +54,8 @@ from app.review.repository import (
 from app.review.service import ReviewService
 from app.review.session_service import ReviewSessionService
 
+logger = logging.getLogger(__name__)
+
 
 def build_repositories_from_env(
     env: Mapping[str, str] | None = None,
@@ -59,6 +66,7 @@ def build_repositories_from_env(
     CardRepository,
     ReviewSessionRepository,
     ReviewLogRepository,
+    ConnectionPool | None,
 ]:
     """按环境变量装配存储后端仓储。"""
     env_map = env or os.environ
@@ -68,14 +76,21 @@ def build_repositories_from_env(
     card_repository: CardRepository
     review_session_repository: ReviewSessionRepository
     review_log_repository: ReviewLogRepository
+    postgres_pool: ConnectionPool | None = None
 
     if storage_backend == "postgres":
         database_url = resolve_postgres_database_url(env_map)
-        user_repository = PostgresUserRepository(database_url=database_url)
-        deck_repository = PostgresDeckRepository(database_url=database_url)
-        card_repository = PostgresCardRepository(database_url=database_url)
-        review_session_repository = PostgresReviewSessionRepository(database_url=database_url)
-        review_log_repository = PostgresReviewLogRepository(database_url=database_url)
+        min_size, max_size = resolve_db_pool_size(env_map)
+        postgres_pool = create_connection_pool(
+            database_url=database_url,
+            min_size=min_size,
+            max_size=max_size,
+        )
+        user_repository = PostgresUserRepository(pool=postgres_pool)
+        deck_repository = PostgresDeckRepository(pool=postgres_pool)
+        card_repository = PostgresCardRepository(pool=postgres_pool)
+        review_session_repository = PostgresReviewSessionRepository(pool=postgres_pool)
+        review_log_repository = PostgresReviewLogRepository(pool=postgres_pool)
         return (
             storage_backend,
             user_repository,
@@ -83,6 +98,7 @@ def build_repositories_from_env(
             card_repository,
             review_session_repository,
             review_log_repository,
+            postgres_pool,
         )
 
     user_repository = InMemoryUserRepository()
@@ -97,6 +113,7 @@ def build_repositories_from_env(
         card_repository,
         review_session_repository,
         review_log_repository,
+        postgres_pool,
     )
 
 
@@ -135,16 +152,6 @@ def build_ai_dependencies(
 
 def create_app() -> FastAPI:
     """创建并配置 FastAPI 应用实例。"""
-    application = FastAPI(title="say-right-api")
-
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=resolve_cors_allow_origins(),
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
     (
         storage_backend,
         user_repository,
@@ -152,7 +159,27 @@ def create_app() -> FastAPI:
         card_repository,
         review_session_repository,
         review_log_repository,
+        db_connection_pool,
     ) = build_repositories_from_env()
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        try:
+            yield
+        finally:
+            if db_connection_pool is None:
+                return
+            logger.info("Closing PostgreSQL connection pool")
+            db_connection_pool.close()
+
+    application = FastAPI(title="say-right-api", lifespan=lifespan)
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=resolve_cors_allow_origins(),
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     llm_mode, english_generator, group_agent, ai_scorer = build_ai_dependencies()
 
@@ -187,6 +214,7 @@ def create_app() -> FastAPI:
     application.state.card_repository = card_repository
     application.state.review_session_repository = review_session_repository
     application.state.review_log_repository = review_log_repository
+    application.state.db_connection_pool = db_connection_pool
 
     def bootstrap_default_deck(user: User) -> None:
         """在账号创建时立即补齐默认组，避免后续流程出现空组状态。"""

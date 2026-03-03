@@ -93,6 +93,7 @@ python -V
 
 - `APP_ENV`：环境标识（如 `dev`）
 - `APP_STORAGE_BACKEND`：运行态存储后端（`memory` / `postgres`）
+- `APP_DB_POOL_MIN_SIZE` / `APP_DB_POOL_MAX_SIZE`：PostgreSQL 连接池大小
 - `APP_CORS_ALLOW_ORIGINS`：CORS 白名单（逗号分隔）
 - `JWT_SECRET_KEY`：JWT 签名密钥（生产必须长随机串）
 - `DATABASE_URL`：数据库连接串（当前阶段全任务共用）

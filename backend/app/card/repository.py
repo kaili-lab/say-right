@@ -8,6 +8,7 @@ from typing import Protocol, cast
 
 import psycopg
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 from app.deck.repository import DeckNotFoundError, DeckRepository
 from app.domain.models import Card
@@ -246,9 +247,9 @@ class InMemoryCardRepository(CardRepository):
 class PostgresCardRepository(CardRepository):
     """基于 PostgreSQL 的 card 仓储实现。"""
 
-    def __init__(self, *, database_url: str) -> None:
-        """初始化数据库连接信息。"""
-        self._database_url = database_url
+    def __init__(self, *, pool: ConnectionPool) -> None:
+        """初始化数据库连接池。"""
+        self._pool = pool
 
     def create_card(
         self,
@@ -266,7 +267,7 @@ class PostgresCardRepository(CardRepository):
         lapses: int = 0,
     ) -> Card:
         """创建并落盘卡片，同时刷新 deck 统计。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 self._ensure_deck_accessible(cursor=cursor, user_id=user_id, deck_id=deck_id)
                 card = Card.create(
@@ -324,7 +325,7 @@ class PostgresCardRepository(CardRepository):
 
     def list_by_deck(self, *, user_id: str, deck_id: str) -> list[Card]:
         """按插入顺序返回 deck 下的卡片。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 self._ensure_deck_accessible(cursor=cursor, user_id=user_id, deck_id=deck_id)
                 cursor.execute(
@@ -355,7 +356,7 @@ class PostgresCardRepository(CardRepository):
 
     def list_by_user(self, *, user_id: str) -> list[Card]:
         """按创建时间返回用户全部卡片。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -385,7 +386,7 @@ class PostgresCardRepository(CardRepository):
 
     def get_by_id(self, *, user_id: str, card_id: str) -> Card:
         """按 ID 返回单张卡片。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -418,7 +419,7 @@ class PostgresCardRepository(CardRepository):
     def update_text(self, *, user_id: str, card_id: str, front_text: str, back_text: str) -> Card:
         """仅更新正反面文本，保留 FSRS 状态字段。"""
         now = datetime.now(UTC)
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -453,7 +454,7 @@ class PostgresCardRepository(CardRepository):
 
     def delete_card(self, *, user_id: str, card_id: str) -> None:
         """删除卡片并同步 deck 统计。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -471,7 +472,7 @@ class PostgresCardRepository(CardRepository):
     def move_card(self, *, user_id: str, card_id: str, to_deck_id: str) -> Card:
         """移动卡片并刷新来源/目标 deck 统计。"""
         now = datetime.now(UTC)
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -555,7 +556,7 @@ class PostgresCardRepository(CardRepository):
     ) -> Card:
         """更新卡片 FSRS 状态并同步 deck 统计。"""
         now = datetime.now(UTC)
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """

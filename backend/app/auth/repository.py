@@ -7,6 +7,7 @@ from typing import Protocol, cast
 
 import psycopg
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 from app.domain.models import User
 
@@ -67,13 +68,13 @@ class InMemoryUserRepository(UserRepository):
 class PostgresUserRepository(UserRepository):
     """基于 PostgreSQL 的用户仓储实现。"""
 
-    def __init__(self, *, database_url: str) -> None:
-        """初始化数据库连接信息。"""
-        self._database_url = database_url
+    def __init__(self, *, pool: ConnectionPool) -> None:
+        """初始化数据库连接池。"""
+        self._pool = pool
 
     def get_by_email(self, email: str) -> User | None:
         """按邮箱读取用户。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -91,7 +92,7 @@ class PostgresUserRepository(UserRepository):
 
     def get_by_id(self, user_id: str) -> User | None:
         """按 ID 读取用户。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -110,7 +111,7 @@ class PostgresUserRepository(UserRepository):
     def add(self, user: User) -> None:
         """新增用户并保证邮箱唯一。"""
         try:
-            with psycopg.connect(self._database_url) as connection:
+            with self._pool.connection() as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """

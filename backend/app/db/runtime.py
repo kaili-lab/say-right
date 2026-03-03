@@ -15,11 +15,15 @@ StorageBackend = Literal["memory", "postgres"]
 _STORAGE_ENV_KEY = "APP_STORAGE_BACKEND"
 _DATABASE_URL_ENV_KEY = "DATABASE_URL"
 _CORS_ALLOW_ORIGINS_ENV_KEY = "APP_CORS_ALLOW_ORIGINS"
+_DB_POOL_MIN_SIZE_ENV_KEY = "APP_DB_POOL_MIN_SIZE"
+_DB_POOL_MAX_SIZE_ENV_KEY = "APP_DB_POOL_MAX_SIZE"
 
 _DEFAULT_CORS_ALLOW_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+_DEFAULT_DB_POOL_MIN_SIZE = 2
+_DEFAULT_DB_POOL_MAX_SIZE = 10
 
 
 def resolve_storage_backend(env: Mapping[str, str] | None = None) -> StorageBackend:
@@ -65,3 +69,32 @@ def resolve_cors_allow_origins(env: Mapping[str, str] | None = None) -> list[str
     if configured:
         return configured
     return _DEFAULT_CORS_ALLOW_ORIGINS.copy()
+
+
+def resolve_db_pool_size(env: Mapping[str, str] | None = None) -> tuple[int, int]:
+    """解析数据库连接池大小配置。"""
+    env_map = env or os.environ
+    min_size = _parse_positive_int(
+        raw=env_map.get(_DB_POOL_MIN_SIZE_ENV_KEY, str(_DEFAULT_DB_POOL_MIN_SIZE)),
+        env_key=_DB_POOL_MIN_SIZE_ENV_KEY,
+    )
+    max_size = _parse_positive_int(
+        raw=env_map.get(_DB_POOL_MAX_SIZE_ENV_KEY, str(_DEFAULT_DB_POOL_MAX_SIZE)),
+        env_key=_DB_POOL_MAX_SIZE_ENV_KEY,
+    )
+    if min_size > max_size:
+        raise ValueError("APP_DB_POOL_MIN_SIZE must be less than or equal to APP_DB_POOL_MAX_SIZE")
+    return min_size, max_size
+
+
+def _parse_positive_int(*, raw: str, env_key: str) -> int:
+    text = raw.strip()
+    if not text:
+        raise ValueError(f"{env_key} must be a positive integer")
+    try:
+        value = int(text)
+    except ValueError as exc:
+        raise ValueError(f"{env_key} must be a positive integer") from exc
+    if value <= 0:
+        raise ValueError(f"{env_key} must be a positive integer")
+    return value

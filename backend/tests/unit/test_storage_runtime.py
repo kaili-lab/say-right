@@ -4,6 +4,7 @@ import pytest
 
 from app.db.runtime import (
     normalize_postgres_database_url,
+    resolve_db_pool_size,
     resolve_cors_allow_origins,
     resolve_postgres_database_url,
     resolve_storage_backend,
@@ -81,3 +82,18 @@ def test_resolve_cors_allow_origins_supports_comma_separated_values() -> None:
         "https://app.example.com",
         "https://admin.example.com",
     ]
+
+
+def test_resolve_db_pool_size_uses_default_values() -> None:
+    """未配置时应回退到默认连接池大小。"""
+    assert resolve_db_pool_size({}) == (2, 10)
+
+
+def test_resolve_db_pool_size_rejects_invalid_values() -> None:
+    """非法池大小配置应抛出可读错误。"""
+    with pytest.raises(ValueError, match="APP_DB_POOL_MIN_SIZE"):
+        resolve_db_pool_size({"APP_DB_POOL_MIN_SIZE": "0"})
+    with pytest.raises(ValueError, match="APP_DB_POOL_MIN_SIZE"):
+        resolve_db_pool_size({"APP_DB_POOL_MIN_SIZE": "abc"})
+    with pytest.raises(ValueError, match="APP_DB_POOL_MIN_SIZE"):
+        resolve_db_pool_size({"APP_DB_POOL_MIN_SIZE": "11", "APP_DB_POOL_MAX_SIZE": "10"})

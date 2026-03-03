@@ -8,6 +8,7 @@ from typing import Protocol, cast
 
 import psycopg
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 from app.domain.models import Deck
 
@@ -155,13 +156,13 @@ class InMemoryDeckRepository(DeckRepository):
 class PostgresDeckRepository(DeckRepository):
     """基于 PostgreSQL 的 deck 仓储实现。"""
 
-    def __init__(self, *, database_url: str) -> None:
-        """初始化数据库连接信息。"""
-        self._database_url = database_url
+    def __init__(self, *, pool: ConnectionPool) -> None:
+        """初始化数据库连接池。"""
+        self._pool = pool
 
     def ensure_default_deck(self, user_id: str) -> Deck:
         """初始化或返回用户默认组。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 existing_default = self._find_default_deck(cursor=cursor, user_id=user_id)
                 if existing_default is not None:
@@ -213,7 +214,7 @@ class PostgresDeckRepository(DeckRepository):
 
     def list_by_user(self, user_id: str) -> list[Deck]:
         """按创建顺序返回该用户 deck。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -237,7 +238,7 @@ class PostgresDeckRepository(DeckRepository):
 
     def get_by_id(self, deck_id: str) -> Deck | None:
         """按 deck_id 读取 deck。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -269,7 +270,7 @@ class PostgresDeckRepository(DeckRepository):
             is_default=False,
         )
         try:
-            with psycopg.connect(self._database_url) as connection:
+            with self._pool.connection() as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """
@@ -302,7 +303,7 @@ class PostgresDeckRepository(DeckRepository):
 
     def delete_deck(self, user_id: str, deck_id: str) -> None:
         """删除用户 deck 并校验业务约束。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
@@ -346,7 +347,7 @@ class PostgresDeckRepository(DeckRepository):
 
     def update_counts(self, *, deck_id: str, new_count: int, learning_count: int, due_count: int) -> None:
         """更新 deck 聚合计数。"""
-        with psycopg.connect(self._database_url) as connection:
+        with self._pool.connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """

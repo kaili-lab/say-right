@@ -25,3 +25,4 @@
 | API-018 | LangChain LLM 适配层与三处 Stub 替换 | done | API-017 | - | `docs/contracts/v0.3.5-record-generate.yaml` + `docs/contracts/v0.4-record-save-agent.yaml` + `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-LLM-REAL |
 | API-019 | 异步数据库仓储迁移评估（架构债跟踪） | todo | API-018 | - | - | SP-DB-ASYNC |
 | API-020 | 密码找回（v2 Backlog） | todo | - | UI-014（待创建） | - | SP-AUTH-RESET |
+| API-021 | 数据库连接池化 | done | API-015 | - | - | SP-CONNECTION-POOL |

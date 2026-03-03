@@ -14,6 +14,7 @@ FastAPI 后端子项目。
 - 首页概览：`GET /dashboard/home-summary`
 - 复习总结：`GET /review/session/{session_id}/summary`
 - 运行态存储：`APP_STORAGE_BACKEND=postgres`（默认可由 `DATABASE_URL` 自动推断）
+- 连接池参数：`APP_DB_POOL_MIN_SIZE` / `APP_DB_POOL_MAX_SIZE`（默认 `2/10`）
 - CORS 白名单：`APP_CORS_ALLOW_ORIGINS=https://app.example.com,https://admin.example.com`
 - LLM 模式：`LLM_MODE=deterministic|provider`（provider 需配置 `LLM_API_KEY`）
 

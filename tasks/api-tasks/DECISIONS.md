@@ -6,6 +6,7 @@
 - ORM：`SQLAlchemy 2.0 async`
 - 迁移工具：`Alembic`
 - 运行态仓储：`Repository + psycopg(SQL)`（已完成 InMemory -> PostgreSQL 切换）
+- 连接管理：`psycopg_pool.ConnectionPool`（共享池，默认 `min=2/max=10`，可环境变量覆盖）
 - 复习数据：`review_sessions + review_logs` 持久化入 PostgreSQL
 - 认证与授权：`FastAPI Security + pwdlib[argon2] + PyJWT`
 - LLM 接入：`LangChain OpenAI-compatible` + `deterministic fallback`
