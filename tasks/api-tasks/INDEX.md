@@ -26,3 +26,7 @@
 | API-019 | 异步数据库仓储迁移评估（架构债跟踪） | todo | API-018 | - | - | SP-DB-ASYNC |
 | API-020 | 密码找回（v2 Backlog） | todo | - | UI-014（待创建） | - | SP-AUTH-RESET |
 | API-021 | 数据库连接池化 | done | API-015 | - | - | SP-CONNECTION-POOL |
+| API-022 | DB读路径优化（health check删除/retry全覆盖/读autocommit/计时中间件） | done | API-021 | - | - | SP-PERF-PHASE0 |
+| API-023 | 查询次数精简与鉴权缓存（惰性ensure/去重复user/auth TTL缓存） | done | API-022 | - | - | SP-PERF-PHASE0 |
+| API-024 | 首页聚合改SQL计算与索引补齐 | done | API-023 | - | - | SP-PERF-PHASE1 |
+| API-025 | Deck/Review首屏查询收敛与性能基准验收 | done | API-024 | - | - | SP-PERF-PHASE1 |

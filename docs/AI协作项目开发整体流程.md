@@ -316,3 +316,67 @@
 - 后期验收与复盘纪律
 
 这套流程的目标是：**把反复改需求、反复改 UI 的成本前移并可控化**。
+
+---
+
+## 九、个人从零执行附录（与现有模板合并版）
+
+> 说明：本附录只补充“个人项目高频执行动作”，不重复任务字段定义。  
+> task 字段与审阅包格式以 `tasks/任务拆分说明-final.md`、`tasks/REVIEW-CHECKLIST.md` 为唯一准入标准。
+
+### 1) 每日执行节奏（个人开发推荐）
+
+- 上午：只做 1~2 个高价值 task 的拆分与验收标准确认
+- 下午：按 task 驱动 AI 实施（Red → Green → Refactor）
+- 收工前：更新 `INDEX.md` / `DECISIONS.md` / `HANDOFF.md`
+
+建议约束：
+- 同时进行的 in-progress task ≤ 2
+- 当日未过门禁的改动不合并主分支
+
+### 2) 单 task 执行口令（可直接复用）
+
+```text
+请严格按当前 task 执行：
+1) 仅实现 in_scope，禁止扩展到 out_of_scope
+2) 先补失败测试（Red），再做最小实现（Green）
+3) 运行 task 指定 test_commands，并补充必要的全量回归命令
+4) 输出审阅包：契约对照、变更文件+行号、测试证据、风险与后续
+5) 若出现架构不确定项，先给方案 A/B 与影响，等待确认
+```
+
+### 3) 个人项目最小门禁（CI 建议）
+
+- 静态检查：lint + typecheck
+- 测试检查：unit + integration（至少覆盖主链路）
+- 契约检查：请求/响应 schema 一致性
+- 安全检查：依赖漏洞扫描（可每日定时）
+
+判定规则：任一失败即阻断合并。
+
+### 4) 每周质量指标（用于判断流程是否有效）
+
+- Task 一次通过率（首次 review 即通过）
+- 回归缺陷数（合并后发现）
+- 平均 task 周期（创建到 done）
+- AI 改动回滚率（被撤销 commit 比例）
+
+建议目标（个人项目起步值）：
+- 一次通过率 ≥ 60%
+- 回归缺陷每周 ≤ 2
+- 单 task 周期 ≤ 1 天
+
+### 5) 高质量外部参考（持续更新）
+
+- GitHub Copilot 任务编排建议：
+  - https://docs.github.com/en/copilot/tutorials/coding-agent/get-the-best-results
+- GitHub Issue / PR 标准化：
+  - https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository
+  - https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/getting-started/managing-and-standardizing-pull-requests
+- Protected branch 与 required checks：
+  - https://docs.github.com/enterprise/user/articles/about-required-status-checks
+- OpenAI Evals 最佳实践：
+  - https://developers.openai.com/api/docs/guides/evaluation-best-practices
+- SWE-bench（含 Multilingual）：
+  - https://www.swebench.com/
+  - https://www.swebench.com/multilingual

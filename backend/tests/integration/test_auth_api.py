@@ -3,7 +3,10 @@
 from datetime import timedelta
 
 from fastapi.testclient import TestClient
+import psycopg
+import pytest
 
+from app.auth.service import AuthService
 from app.auth.tokens import create_refresh_token
 from app.main import create_app
 
@@ -163,3 +166,24 @@ def test_logout_requires_authentication() -> None:
     response = client.post("/auth/logout")
 
     assert response.status_code == 401
+
+
+def test_login_should_return_503_when_database_temporarily_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """数据库连接临时异常时应返回 503，而不是 500。"""
+
+    def fake_login(self: AuthService, *, email: str, password: str):  # noqa: ANN202
+        _ = (self, email, password)
+        raise psycopg.OperationalError("consuming input failed: SSL connection has been closed unexpectedly")
+
+    monkeypatch.setattr(AuthService, "login", fake_login)
+    client = build_client()
+
+    response = client.post(
+        "/auth/login",
+        json={"email": "anyone@example.com", "password": "Passw0rd!"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "database temporarily unavailable"}
