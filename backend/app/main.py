@@ -25,6 +25,11 @@ from app.card.api import create_card_router
 from app.card.repository import CardRepository, InMemoryCardRepository, PostgresCardRepository
 from app.card.service import CardService
 from app.dashboard.api import create_dashboard_router
+from app.dashboard.repository import (
+    DashboardRepository,
+    InMemoryDashboardRepository,
+    PostgresDashboardRepository,
+)
 from app.dashboard.service import DashboardService
 from app.db.pool import create_connection_pool
 from app.db.runtime import (
@@ -215,11 +220,16 @@ def create_app() -> FastAPI:
         session_repository=review_session_repository,
         review_log_repository=review_log_repository,
     )
-    dashboard_service = DashboardService(
-        deck_service=deck_service,
-        card_repository=card_repository,
-        review_log_repository=review_log_repository,
-    )
+    dashboard_repository: DashboardRepository
+    if storage_backend == "postgres" and db_connection_pool is not None:
+        dashboard_repository = PostgresDashboardRepository(pool=db_connection_pool)
+    else:
+        dashboard_repository = InMemoryDashboardRepository(
+            deck_service=deck_service,
+            card_repository=card_repository,
+            review_log_repository=review_log_repository,
+        )
+    dashboard_service = DashboardService(dashboard_repository=dashboard_repository)
 
     # 暴露核心依赖给测试使用，便于构造边界数据而不污染业务 API。
     application.state.storage_backend = storage_backend

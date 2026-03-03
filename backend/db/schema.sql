@@ -88,3 +88,7 @@ CREATE INDEX IF NOT EXISTS idx_review_logs_session_rated_at
 
 CREATE INDEX IF NOT EXISTS idx_review_logs_card_rated_at
     ON review_logs (card_id, rated_at DESC);
+
+-- 支撑首页聚合：每用户每卡最新评分 (DISTINCT ON card_id ORDER BY rated_at DESC)
+CREATE INDEX IF NOT EXISTS idx_review_logs_user_card_rated_at
+    ON review_logs (user_id, card_id, rated_at DESC);
