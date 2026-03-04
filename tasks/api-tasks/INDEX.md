@@ -24,9 +24,10 @@
 | API-017 | Dashboard 洞察、昵称/登出、CORS 环境化与契约补齐 | done | API-016 | UI-013 | `docs/contracts/v0.6-dashboard.yaml` | SP-DASHBOARD-IDENTITY |
 | API-018 | LangChain LLM 适配层与三处 Stub 替换 | done | API-017 | - | `docs/contracts/v0.3.5-record-generate.yaml` + `docs/contracts/v0.4-record-save-agent.yaml` + `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-LLM-REAL |
 | API-019 | 异步数据库仓储迁移评估（架构债跟踪） | todo | API-018 | - | - | SP-DB-ASYNC |
-| API-020 | 密码找回（v2 Backlog） | todo | - | UI-014（待创建） | - | SP-AUTH-RESET |
+| API-020 | 密码找回（v2 Backlog） | todo | - | UI-020（待创建） | - | SP-AUTH-RESET |
 | API-021 | 数据库连接池化 | done | API-015 | - | - | SP-CONNECTION-POOL |
 | API-022 | DB读路径优化（health check删除/retry全覆盖/读autocommit/计时中间件） | done | API-021 | - | - | SP-PERF-PHASE0 |
 | API-023 | 查询次数精简与鉴权缓存（惰性ensure/去重复user/auth TTL缓存） | done | API-022 | - | - | SP-PERF-PHASE0 |
 | API-024 | 首页聚合改SQL计算与索引补齐 | done | API-023 | - | - | SP-PERF-PHASE1 |
 | API-025 | Deck/Review首屏查询收敛与性能基准验收 | done | API-024 | - | - | SP-PERF-PHASE1 |
+| API-026 | 新增记录页手动分组保存接口 `POST /records/save` | todo | API-009 | UI-017 | `docs/contracts/v0.7-record-save-manual.yaml` | SP-API-RECORD-SAVE |

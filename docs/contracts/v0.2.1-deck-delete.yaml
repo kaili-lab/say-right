@@ -1,0 +1,41 @@
+version: v0.2.1-deck-delete
+endpoints:
+  - method: GET
+    path: /decks
+    auth: access_token
+    response:
+      status: 200
+      body:
+        - id: string
+          name: string
+          is_default: boolean
+          new_count: integer
+          learning_count: integer
+          due_count: integer
+  - method: POST
+    path: /decks
+    auth: access_token
+    request:
+      name: string
+    response:
+      status: 201
+      body:
+        id: string
+        name: string
+        is_default: boolean
+    errors:
+      - 409_duplicate_name
+      - 422_validation
+  - method: DELETE
+    path: /decks/{deck_id}
+    auth: access_token
+    response:
+      status: 204
+    errors:
+      - 404_deck_not_found
+      - 409_default_deck_forbidden
+      - 409_deck_not_empty
+rules:
+  - 每个用户必须有且仅有一个默认组
+  - 默认组不可删除
+  - 非空组不可删除

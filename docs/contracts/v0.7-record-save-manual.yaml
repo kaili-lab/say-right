@@ -1,0 +1,24 @@
+version: v0.7-record-save-manual
+endpoints:
+  - method: POST
+    path: /records/save
+    auth: access_token
+    request:
+      source_text: string
+      generated_text: string
+      deck_id: string
+      source_lang: zh
+      target_lang: en
+    response:
+      status: 201
+      body:
+        card_id: string
+        deck_id: string
+        deck_name: string
+    errors:
+      - 401_unauthorized
+      - 404_deck_not_found
+      - 422_validation
+rules:
+  - 卡片必须保存到用户可访问的 deck
+  - deck 计数由 card 创建链路自动刷新，不应重复更新

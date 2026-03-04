@@ -23,7 +23,7 @@
 
 ## paired_with
 
-- `UI-014`（待创建）
+- `UI-020`（待创建）
 
 ## contract_version
 
