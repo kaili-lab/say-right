@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, vi } from "vitest";
 
@@ -97,6 +97,175 @@ describe("deck-card-management", () => {
         }),
       ),
     );
+  });
+
+  it("点击查看打开详情弹窗展示完整中英文内容", async () => {
+    const user = userEvent.setup();
+
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            { id: "deck-default", name: "默认组", is_default: true, new_count: 0, learning_count: 0, due_count: 0 },
+            { id: "deck-work", name: "工作沟通", is_default: false, new_count: 1, learning_count: 1, due_count: 2 },
+          ]),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            {
+              id: "card-001",
+              deck_id: "deck-work",
+              front_text: "这个会议我需要再确认一下时间，另外还有一些议题需要提前对齐。",
+              back_text: "I need to double-check the time for this meeting, and there are also some agenda items to align on in advance.",
+              source_lang: "zh",
+              target_lang: "en",
+              due_at: "2026-03-02T10:00:00Z",
+              stability: 1,
+              difficulty: 3,
+              reps: 0,
+              lapses: 0,
+            },
+          ]),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+    vi.stubGlobal("fetch", mockFetch);
+
+    render(
+      <MemoryRouter initialEntries={["/decks"]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole("heading", { name: "卡片组管理" });
+    await user.click(screen.getByRole("button", { name: /工作沟通/ }));
+    await screen.findByRole("button", { name: "查看" });
+
+    await user.click(screen.getByRole("button", { name: "查看" }));
+    const dialog = await screen.findByRole("dialog", { name: "卡片详情" });
+
+    expect(within(dialog).getByText("这个会议我需要再确认一下时间，另外还有一些议题需要提前对齐。")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        "I need to double-check the time for this meeting, and there are also some agenda items to align on in advance.",
+      ),
+    ).toBeInTheDocument();
+    // 下次复习时间也应展示
+    expect(within(dialog).getByText(/下次复习/)).toBeInTheDocument();
+  });
+
+  it("详情弹窗内点击编辑进入编辑弹窗", async () => {
+    const user = userEvent.setup();
+
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            { id: "deck-default", name: "默认组", is_default: true, new_count: 0, learning_count: 0, due_count: 0 },
+            { id: "deck-work", name: "工作沟通", is_default: false, new_count: 1, learning_count: 1, due_count: 2 },
+          ]),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            {
+              id: "card-001",
+              deck_id: "deck-work",
+              front_text: "这个会议我需要再确认一下时间。",
+              back_text: "I need to double-check the time for this meeting.",
+              source_lang: "zh",
+              target_lang: "en",
+              due_at: "2026-03-02T10:00:00Z",
+              stability: 1,
+              difficulty: 3,
+              reps: 0,
+              lapses: 0,
+            },
+          ]),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+    vi.stubGlobal("fetch", mockFetch);
+
+    render(
+      <MemoryRouter initialEntries={["/decks"]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole("heading", { name: "卡片组管理" });
+    await user.click(screen.getByRole("button", { name: /工作沟通/ }));
+    await screen.findByRole("button", { name: "查看" });
+
+    await user.click(screen.getByRole("button", { name: "查看" }));
+    const detailDialog = await screen.findByRole("dialog", { name: "卡片详情" });
+
+    await user.click(within(detailDialog).getByRole("button", { name: "编辑" }));
+
+    expect(await screen.findByRole("dialog", { name: "编辑卡片" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "卡片详情" })).not.toBeInTheDocument();
+  });
+
+  it("详情弹窗内点击删除进入删除弹窗", async () => {
+    const user = userEvent.setup();
+
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            { id: "deck-default", name: "默认组", is_default: true, new_count: 0, learning_count: 0, due_count: 0 },
+            { id: "deck-work", name: "工作沟通", is_default: false, new_count: 1, learning_count: 1, due_count: 2 },
+          ]),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            {
+              id: "card-001",
+              deck_id: "deck-work",
+              front_text: "这个会议我需要再确认一下时间。",
+              back_text: "I need to double-check the time for this meeting.",
+              source_lang: "zh",
+              target_lang: "en",
+              due_at: "2026-03-02T10:00:00Z",
+              stability: 1,
+              difficulty: 3,
+              reps: 0,
+              lapses: 0,
+            },
+          ]),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+    vi.stubGlobal("fetch", mockFetch);
+
+    render(
+      <MemoryRouter initialEntries={["/decks"]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole("heading", { name: "卡片组管理" });
+    await user.click(screen.getByRole("button", { name: /工作沟通/ }));
+    await screen.findByRole("button", { name: "查看" });
+
+    await user.click(screen.getByRole("button", { name: "查看" }));
+    const detailDialog = await screen.findByRole("dialog", { name: "卡片详情" });
+
+    await user.click(within(detailDialog).getByRole("button", { name: "删除" }));
+
+    expect(await screen.findByRole("dialog", { name: "删除卡片" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "卡片详情" })).not.toBeInTheDocument();
   });
 
   it("应支持移动与删除卡片", async () => {

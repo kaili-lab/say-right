@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { DeckApiError, createDeck, deleteCard, fetchDeckCards, fetchDecks, moveCard, updateCard } from "./decksApi";
+import { DeckApiError, createDeck, deleteDeck, deleteCard, fetchDeckCards, fetchDecks, moveCard, updateCard } from "./decksApi";
 import type { DeckCard, DeckSummary } from "./decksApi";
 
 type DeckLoadStatus = "loading" | "ready" | "error";
@@ -15,6 +15,7 @@ type CardLoadStatus = "idle" | "loading" | "ready" | "error";
 
 type CardModalState =
   | { mode: "closed" }
+  | { mode: "detail"; card: DeckCard }
   | { mode: "edit"; card: DeckCard; frontText: string; backText: string; formError: string }
   | { mode: "move"; card: DeckCard; toDeckId: string; formError: string }
   | { mode: "delete"; card: DeckCard };
@@ -53,6 +54,9 @@ export function DeckListPage() {
 
   const [cardModalState, setCardModalState] = useState<CardModalState>({ mode: "closed" });
   const [isCardActionSubmitting, setIsCardActionSubmitting] = useState(false);
+  const [isDeckDeleteModalOpen, setIsDeckDeleteModalOpen] = useState(false);
+  const [deckDeleteError, setDeckDeleteError] = useState("");
+  const [isDeckDeleting, setIsDeckDeleting] = useState(false);
 
   const forceEmpty = searchParams.get("state") === "empty";
 
@@ -238,6 +242,43 @@ export function DeckListPage() {
 
   function openDeleteModal(card: DeckCard) {
     setCardModalState({ mode: "delete", card });
+  }
+
+  function openDetailModal(card: DeckCard) {
+    setCardModalState({ mode: "detail", card });
+  }
+
+  async function handleDeleteDeck() {
+    if (!selectedDeck || selectedDeck.isDefault) return;
+
+    const deckIdToDelete = selectedDeck.id;
+    const remainingDecks = decks.filter((d) => d.id !== deckIdToDelete);
+    const nextDeck = remainingDecks.find((d) => d.isDefault) ?? remainingDecks[0] ?? null;
+
+    setIsDeckDeleting(true);
+    setDeckDeleteError("");
+
+    try {
+      await deleteDeck(deckIdToDelete);
+      setDecks(remainingDecks);
+      setCardsByDeckId((prev) => {
+        const next = { ...prev };
+        delete next[deckIdToDelete];
+        return next;
+      });
+      setCardStatusByDeckId((prev) => {
+        const next = { ...prev };
+        delete next[deckIdToDelete];
+        return next;
+      });
+      setSelectedDeckId(nextDeck?.id ?? null);
+      setActionMessage("卡片组已删除。");
+      setIsDeckDeleteModalOpen(false);
+    } catch (error) {
+      setDeckDeleteError(error instanceof Error ? error.message : "删除失败，请稍后重试。");
+    } finally {
+      setIsDeckDeleting(false);
+    }
   }
 
   async function submitEditCard() {
@@ -447,18 +488,22 @@ export function DeckListPage() {
               </div>
               <button
                 type="button"
-                disabled
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-red-100 px-4 text-sm font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={selectedDeck?.isDefault ?? true}
+                onClick={() => {
+                  setIsDeckDeleteModalOpen(true);
+                  setDeckDeleteError("");
+                }}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-red-100 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 删除卡片组
               </button>
             </div>
 
-            <p className="mb-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-amber-800">
-              {selectedDeck?.isDefault
-                ? "默认组不可删除；当自动分组无法命中时，系统会回退到默认组。"
-                : "非默认组删除能力将在后续任务实现。"}
-            </p>
+            {selectedDeck?.isDefault ? (
+              <p className="mb-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-amber-800">
+                默认组不可删除；当自动分组无法命中时，系统会回退到默认组。
+              </p>
+            ) : null}
 
             {actionMessage ? (
               <p role="status" className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
@@ -467,6 +512,7 @@ export function DeckListPage() {
             ) : null}
 
             <div className="overflow-hidden rounded-xl border border-stone-200">
+              <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead className="bg-orange-50/70 text-left text-xs text-stone-500">
                   <tr>
@@ -523,11 +569,22 @@ export function DeckListPage() {
                   {selectedCardStatus === "ready"
                     ? selectedDeckCards.map((card) => (
                         <tr key={card.id} className="border-t border-stone-100 align-top text-sm">
-                          <td className="px-3 py-3 text-stone-700">{card.frontText}</td>
-                          <td className="px-3 py-3 font-semibold text-stone-700">{card.backText}</td>
+                          <td className="px-3 py-3 text-stone-700">
+                            <div className="max-w-[7rem] truncate" title={card.frontText}>{card.frontText}</div>
+                          </td>
+                          <td className="px-3 py-3 font-semibold text-stone-700">
+                            <div className="max-w-[7rem] truncate" title={card.backText}>{card.backText}</div>
+                          </td>
                           <td className="px-3 py-3 text-stone-500">{formatDueAt(card.dueAt)}</td>
                           <td className="px-3 py-3">
                             <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openDetailModal(card)}
+                                className="inline-flex h-9 items-center justify-center rounded-lg border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-600 transition hover:border-orange-300 hover:text-orange-600"
+                              >
+                                查看
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => openEditModal(card)}
@@ -556,6 +613,7 @@ export function DeckListPage() {
                     : null}
                 </tbody>
               </table>
+              </div>
             </div>
           </section>
         </div>
@@ -795,6 +853,84 @@ export function DeckListPage() {
         </div>
       ) : null}
 
+      {cardModalState.mode === "detail" ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/35 p-4">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="detail-card-title"
+            className="w-full max-w-[500px] overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-xl"
+          >
+            <header className="flex items-start justify-between gap-2 border-b border-stone-200 px-4 py-3">
+              <div>
+                <h2 id="detail-card-title" className="text-base font-bold text-amber-800">
+                  卡片详情
+                </h2>
+                <p className="mt-1 text-xs text-stone-500">
+                  下次复习：{formatDueAt(cardModalState.card.dueAt)}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="关闭"
+                onClick={closeCardModal}
+                className="grid h-11 w-11 place-items-center rounded-lg text-stone-500 transition hover:bg-stone-100"
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="space-y-3 p-4">
+              <div>
+                <p className="mb-1 text-xs font-semibold text-stone-500">中文</p>
+                <p className="rounded-xl border border-stone-200 bg-[#fffdfb] px-3 py-2 text-sm text-stone-700">
+                  {cardModalState.card.frontText}
+                </p>
+              </div>
+              <div>
+                <p className="mb-1 text-xs font-semibold text-stone-500">英文</p>
+                <p className="rounded-xl border border-stone-200 bg-[#fffdfb] px-3 py-2 text-sm font-semibold text-stone-700">
+                  {cardModalState.card.backText}
+                </p>
+              </div>
+            </div>
+
+            <footer className="flex items-center justify-between gap-2 border-t border-stone-200 px-4 py-3">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { openEditModal(cardModalState.card); }}
+                  className="inline-flex h-9 items-center justify-center rounded-lg border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-600 transition hover:border-orange-300 hover:text-orange-600"
+                >
+                  编辑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { const card = cardModalState.card; openMoveModal(card); }}
+                  className="inline-flex h-9 items-center justify-center rounded-lg border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-600 transition hover:border-orange-300 hover:text-orange-600"
+                >
+                  移动
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { const card = cardModalState.card; openDeleteModal(card); }}
+                  className="inline-flex h-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-100"
+                >
+                  删除
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={closeCardModal}
+                className="inline-flex h-9 items-center justify-center rounded-xl bg-orange-50 px-3 text-xs font-semibold text-orange-600 transition hover:bg-orange-100"
+              >
+                关闭
+              </button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+
       {cardModalState.mode === "delete" ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/35 p-4">
           <section
@@ -828,6 +964,52 @@ export function DeckListPage() {
                 type="button"
                 disabled={isCardActionSubmitting}
                 onClick={() => void submitDeleteCard()}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+              >
+                确认删除
+              </button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+      {isDeckDeleteModalOpen && selectedDeck && !selectedDeck.isDefault ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/35 p-4">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-deck-title"
+            className="w-full max-w-[480px] overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-xl"
+          >
+            <header className="border-b border-stone-200 px-4 py-3">
+              <h2 id="delete-deck-title" className="text-base font-bold text-amber-800">
+                删除卡片组
+              </h2>
+              <p className="mt-1 text-xs text-stone-500">删除后不可恢复，请确认后继续。</p>
+            </header>
+
+            <div className="p-4">
+              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                确认删除「{selectedDeck.name}」吗？该组必须为空才能删除。
+              </p>
+              {deckDeleteError ? (
+                <p role="alert" className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {deckDeleteError}
+                </p>
+              ) : null}
+            </div>
+
+            <footer className="flex items-center justify-end gap-2 border-t border-stone-200 px-4 py-3">
+              <button
+                type="button"
+                onClick={() => setIsDeckDeleteModalOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-orange-50 px-4 text-sm font-semibold text-orange-600 transition hover:bg-orange-100"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                disabled={isDeckDeleting}
+                onClick={() => void handleDeleteDeck()}
                 className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-stone-300"
               >
                 确认删除

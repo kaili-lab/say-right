@@ -194,3 +194,7 @@ export async function moveCard(cardId: string, toDeckId: string, fetchImpl: type
 export async function deleteCard(cardId: string, fetchImpl: typeof fetch = fetch): Promise<void> {
   await requestDeck(`/cards/${cardId}`, { method: "DELETE" }, fetchImpl);
 }
+
+export async function deleteDeck(deckId: string, fetchImpl: typeof fetch = fetch): Promise<void> {
+  await requestDeck(`/decks/${deckId}`, { method: "DELETE" }, fetchImpl);
+}
