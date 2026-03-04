@@ -7,6 +7,12 @@ export type RecordGenerateResult = {
   traceId: string;
 };
 
+export type RecordSaveResult = {
+  cardId: string;
+  deckId: string;
+  deckName: string;
+};
+
 export type RecordSaveWithAgentResult = {
   cardId: string;
   deckId: string;
@@ -19,6 +25,12 @@ type RecordGenerateApiResponse = {
   generated_text: string;
   model_hint: string;
   trace_id: string;
+};
+
+type RecordSaveApiResponse = {
+  card_id: string;
+  deck_id: string;
+  deck_name: string;
 };
 
 type RecordSaveWithAgentApiResponse = {
@@ -90,6 +102,35 @@ export async function generateRecordEnglish(
     generatedText: payload.generated_text,
     modelHint: payload.model_hint,
     traceId: payload.trace_id,
+  };
+}
+
+export async function saveRecordToDeck(
+  params: { sourceText: string; generatedText: string; deckId: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<RecordSaveResult> {
+  const response = await fetchWithAuth(`${getApiBaseUrl()}/records/save`, {
+    method: "POST",
+    headers: buildRequestHeaders(),
+    body: JSON.stringify({
+      source_text: params.sourceText,
+      generated_text: params.generatedText,
+      deck_id: params.deckId,
+      source_lang: "zh",
+      target_lang: "en",
+    }),
+  }, fetchImpl);
+
+  if (!response.ok) {
+    const detail = await parseErrorMessage(response);
+    throw new RecordGenerateApiError(detail, response.status);
+  }
+
+  const payload = (await response.json()) as RecordSaveApiResponse;
+  return {
+    cardId: payload.card_id,
+    deckId: payload.deck_id,
+    deckName: payload.deck_name,
   };
 }
 

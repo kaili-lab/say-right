@@ -20,6 +20,6 @@
 | UI-014 | 全局滚动条样式与桌面端 viewport 布局 | done | UI-013 | - | N/A | SP-UI-SCROLL |
 | UI-015 | Token 自动刷新与 401 跳转登录 | done | UI-014 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-UI-AUTH-REFRESH |
 | UI-016 | 手机端”我的”Tab 与个人中心页 | done | UI-015 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-UI-ME-TAB |
-| UI-017 | 记录页 textarea 自动增长与手动分组保存（前端） | todo | UI-016, API-026 | API-026 | `docs/contracts/v0.7-record-save-manual.yaml` | SP-UI-RECORD-SAVE |
+| UI-017 | 记录页 textarea 自动增长与手动分组保存（前端） | done | UI-016, API-026 | API-026 | `docs/contracts/v0.7-record-save-manual.yaml` | SP-UI-RECORD-SAVE |
 | UI-018 | 卡片组页卡片内容截断与详情弹窗 | todo | UI-016 | - | N/A | SP-UI-CARD-TRUNCATE |
 | UI-019 | 卡片组删除功能落地 | todo | UI-018 | - | `docs/contracts/v0.2.1-deck-delete.yaml` | SP-UI-DECK-DELETE |

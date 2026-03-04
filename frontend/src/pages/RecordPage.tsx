@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fetchDecks } from "./decksApi";
-import { RecordGenerateApiError, generateRecordEnglish, saveRecordWithAgent } from "./recordApi";
+import { RecordGenerateApiError, generateRecordEnglish, saveRecordToDeck } from "./recordApi";
 
 const MAX_SOURCE_TEXT_LENGTH = 200;
-const DEFAULT_DECK_LABEL = "待保存";
+const MAX_TEXTAREA_ROWS = 4;
+const LINE_HEIGHT_PX = 24; // leading-6 = 1.5rem = 24px at 16px base
 
 type GenerateStatus = "idle" | "loading" | "success" | "error";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -13,8 +14,29 @@ type DeckLoadStatus = "loading" | "ready" | "error";
 type DeckOption = {
   id: string;
   name: string;
+  isDefault: boolean;
   dueCount: number;
 };
+
+/** 根据内容动态调整 textarea 高度（最多 MAX_TEXTAREA_ROWS 行）。 */
+function syncHeight(el: HTMLTextAreaElement) {
+  el.style.height = "auto";
+  const maxHeight = LINE_HEIGHT_PX * MAX_TEXTAREA_ROWS + 24; // 24px = padding (p-3 = 12px * 2)
+  el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
+  el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+}
+
+function useAutoResize(value: string) {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      syncHeight(ref.current);
+    }
+  }, [value]);
+
+  return ref;
+}
 
 export function RecordPage() {
   const [sourceText, setSourceText] = useState("");
@@ -26,13 +48,14 @@ export function RecordPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
-  const [currentDeckId, setCurrentDeckId] = useState<string | null>(null);
-  const [currentDeckName, setCurrentDeckName] = useState(DEFAULT_DECK_LABEL);
   const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
   const [selectedDeckId, setSelectedDeckId] = useState("");
   const [deckOptions, setDeckOptions] = useState<DeckOption[]>([]);
   const [deckLoadStatus, setDeckLoadStatus] = useState<DeckLoadStatus>("loading");
   const [deckLoadError, setDeckLoadError] = useState("");
+
+  const sourceRef = useAutoResize(sourceText);
+  const generatedRef = useAutoResize(generatedText);
 
   useEffect(() => {
     let disposed = false;
@@ -42,53 +65,45 @@ export function RecordPage() {
       setDeckLoadError("");
       try {
         const decks = await fetchDecks();
-        if (disposed) {
-          return;
-        }
+        if (disposed) return;
         const nextOptions = decks.map((deck) => ({
           id: deck.id,
           name: deck.name,
+          isDefault: deck.isDefault,
           dueCount: deck.dueCount,
         }));
         setDeckOptions(nextOptions);
-        setSelectedDeckId((previous) => {
-          if (previous && nextOptions.some((deck) => deck.id === previous)) {
-            return previous;
-          }
-          return currentDeckId ?? nextOptions[0]?.id ?? "";
-        });
+        // 默认选中 isDefault=true 的组，没有则选第一项。
+        const defaultDeck = nextOptions.find((d) => d.isDefault) ?? nextOptions[0];
+        setSelectedDeckId(defaultDeck?.id ?? "");
         setDeckLoadStatus("ready");
       } catch (error) {
-        if (disposed) {
-          return;
-        }
+        if (disposed) return;
         setDeckLoadStatus("error");
-        if (error instanceof Error) {
-          setDeckLoadError(error.message);
-          return;
-        }
-        setDeckLoadError("卡片组加载失败，请稍后重试");
+        setDeckLoadError(error instanceof Error ? error.message : "卡片组加载失败，请稍后重试");
       }
     }
 
     void loadDeckOptions();
-    return () => {
-      disposed = true;
-    };
-  }, [currentDeckId]);
+    return () => { disposed = true; };
+  }, []);
 
   const canGenerate = sourceText.trim().length > 0 && generateStatus !== "loading";
-  const canSave = generateStatus === "success" && generatedText.trim().length > 0 && saveStatus !== "saving";
+  const isSaved = saveStatus === "saved";
+  const canSave =
+    generateStatus === "success" &&
+    generatedText.trim().length > 0 &&
+    !isSaved &&
+    saveStatus !== "saving";
 
-  // 只在提交时裁剪空白，避免用户输入过程中因自动 trim 导致光标跳动。
   async function handleGenerate() {
     const normalizedSourceText = sourceText.trim();
-    if (!normalizedSourceText) {
-      return;
-    }
+    if (!normalizedSourceText) return;
 
     setGenerateStatus("loading");
     setErrorMessage("");
+    setSaveStatus("idle");
+    setSaveMessage("");
 
     try {
       const result = await generateRecordEnglish(normalizedSourceText);
@@ -97,93 +112,43 @@ export function RecordPage() {
       setModelHint(result.modelHint);
       setTraceId(result.traceId);
       setGenerateStatus("success");
-      // 新一轮生成结果会覆盖上一轮保存上下文，避免“旧分组”误导用户。
-      setSaveStatus("idle");
-      setSaveMessage("");
-      setCurrentDeckId(null);
-      setCurrentDeckName(DEFAULT_DECK_LABEL);
     } catch (error) {
       setGenerateStatus("error");
-      if (error instanceof RecordGenerateApiError) {
-        setErrorMessage(error.message);
-        return;
-      }
-      setErrorMessage("网络异常，请稍后重试");
+      setErrorMessage(error instanceof RecordGenerateApiError ? error.message : "网络异常，请稍后重试");
     }
   }
 
-  async function handleSaveCard() {
-    if (!sourceSnapshot) {
-      return;
-    }
+  function openSaveDeckModal() {
+    if (deckOptions.length === 0) return;
+    // 重置为 default deck（每次点保存都重置选择，避免上次选中残留）。
+    const defaultDeck = deckOptions.find((d) => d.isDefault) ?? deckOptions[0];
+    setSelectedDeckId(defaultDeck?.id ?? "");
+    setIsDeckModalOpen(true);
+  }
 
-    const normalizedGeneratedText = generatedText.trim();
-    if (!normalizedGeneratedText) {
-      return;
-    }
+  const handleConfirmSave = useCallback(async () => {
+    const targetDeck = deckOptions.find((d) => d.id === selectedDeckId);
+    if (!targetDeck || !sourceSnapshot) return;
 
+    setIsDeckModalOpen(false);
     setSaveStatus("saving");
     setSaveMessage("");
 
     try {
-      const result = await saveRecordWithAgent({
+      await saveRecordToDeck({
         sourceText: sourceSnapshot,
-        generatedText: normalizedGeneratedText,
+        generatedText: generatedText.trim(),
+        deckId: selectedDeckId,
       });
-
       setSaveStatus("saved");
-      setCurrentDeckId(result.deckId);
-      setCurrentDeckName(result.deckName);
-      setSelectedDeckId(result.deckId);
-      setDeckOptions((previous) => {
-        const existing = previous.find((deck) => deck.id === result.deckId);
-        if (existing) {
-          return previous.map((deck) =>
-            deck.id === result.deckId
-              ? {
-                  ...deck,
-                  name: result.deckName,
-                  dueCount: deck.dueCount + 1,
-                }
-              : deck,
-          );
-        }
-        return [...previous, { id: result.deckId, name: result.deckName, dueCount: 1 }];
-      });
-
-      const fallbackTip = result.fallbackUsed ? "（已启用默认组兜底）" : "";
-      setSaveMessage(`已保存到 ${result.deckName}${fallbackTip}`);
+      setSaveMessage(`已保存到 ${targetDeck.name}`);
     } catch (error) {
       setSaveStatus("error");
-      if (error instanceof RecordGenerateApiError) {
-        setSaveMessage(`保存失败：${error.message}`);
-        return;
-      }
-      setSaveMessage("保存失败：网络异常，请稍后重试");
+      setSaveMessage(
+        error instanceof RecordGenerateApiError ? `保存失败：${error.message}` : "保存失败：网络异常，请稍后重试",
+      );
     }
-  }
-
-  function openDeckModal() {
-    if (deckOptions.length === 0) {
-      setSaveMessage("暂无可调整卡片组，请先在卡片组页面创建。");
-      return;
-    }
-    setSelectedDeckId(currentDeckId ?? deckOptions[0]?.id ?? "");
-    setIsDeckModalOpen(true);
-  }
-
-  // 保存后只更新前端分组展示，不额外触发接口，保持操作即时反馈。
-  function confirmDeckSelection() {
-    const selectedDeck = deckOptions.find((deck) => deck.id === selectedDeckId);
-    if (!selectedDeck) {
-      return;
-    }
-    setCurrentDeckId(selectedDeck.id);
-    setCurrentDeckName(selectedDeck.name);
-    setSaveStatus("saved");
-    setSaveMessage(`已调整到 ${selectedDeck.name}`);
-    setIsDeckModalOpen(false);
-  }
+  }, [deckOptions, generatedText, selectedDeckId, sourceSnapshot]);
 
   function handleSourceTextChange(value: string) {
     setSourceText(value.slice(0, MAX_SOURCE_TEXT_LENGTH));
@@ -201,12 +166,13 @@ export function RecordPage() {
           中文内容
         </label>
         <textarea
+          ref={sourceRef}
           id="record-source-text"
           value={sourceText}
           onChange={(event) => handleSourceTextChange(event.target.value)}
           placeholder="例如：我们明天先对齐目标，再确定执行节奏"
-          rows={4}
-          className="mt-2 w-full resize-y rounded-xl border border-stone-200 bg-[#fffdfb] p-3 text-sm leading-6 text-stone-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+          rows={1}
+          className="mt-2 w-full resize-none overflow-hidden rounded-xl border border-stone-200 bg-[#fffdfb] p-3 text-sm leading-6 text-stone-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
         />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -237,35 +203,39 @@ export function RecordPage() {
           </div>
 
           <div className="space-y-3 p-6">
-            <p className="border-b border-stone-200 pb-3 text-sm text-stone-500">原文：{sourceSnapshot}</p>
-
             <label htmlFor="record-generated-text" className="sr-only">
               英文结果
             </label>
             <textarea
+              ref={generatedRef}
               id="record-generated-text"
               aria-label="英文结果"
               value={generatedText}
+              readOnly={isSaved}
               onChange={(event) => setGeneratedText(event.target.value)}
-              rows={3}
-              className="w-full rounded-xl border border-dashed border-stone-300 bg-[#fffcf7] p-3 text-base font-semibold leading-7 text-stone-700 outline-none transition focus:border-orange-400 focus:border-solid focus:ring-2 focus:ring-orange-100"
+              rows={1}
+              className={`w-full resize-none overflow-hidden rounded-xl border border-dashed p-3 text-base font-semibold leading-6 text-stone-700 outline-none transition ${
+                isSaved
+                  ? "border-stone-200 bg-stone-50 text-stone-500"
+                  : "border-stone-300 bg-[#fffcf7] focus:border-orange-400 focus:border-solid focus:ring-2 focus:ring-orange-100"
+              }`}
             />
-            <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
+            {!isSaved && (
+              <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
+            )}
 
-            <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
-              <span className="rounded-md bg-orange-50 px-2 py-1 text-orange-600">model: {modelHint}</span>
-              <span className="rounded-md bg-stone-100 px-2 py-1">trace: {traceId}</span>
-            </div>
+            {import.meta.env.DEV ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
+                <span className="rounded-md bg-orange-50 px-2 py-1 text-orange-600">model: {modelHint}</span>
+                <span className="rounded-md bg-stone-100 px-2 py-1">trace: {traceId}</span>
+              </div>
+            ) : null}
 
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-3">
-              <span className="rounded-md bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-600">
-                当前分组：{currentDeckName}
-              </span>
-
+            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-stone-200 pt-3">
               <button
                 type="button"
                 disabled={!canSave}
-                onClick={() => void handleSaveCard()}
+                onClick={openSaveDeckModal}
                 className="inline-flex h-11 items-center justify-center rounded-xl bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-stone-300"
               >
                 {saveStatus === "saving" ? "保存中..." : "保存卡片"}
@@ -273,16 +243,8 @@ export function RecordPage() {
             </div>
 
             {saveStatus === "saved" ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-amber-800">
-                <span>{saveMessage}</span>
-                <button
-                  type="button"
-                  disabled={deckOptions.length === 0}
-                  onClick={openDeckModal}
-                  className="h-11 rounded-lg px-3 text-sm font-semibold text-orange-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-stone-400"
-                >
-                  立即调整分组
-                </button>
+              <div className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-amber-800">
+                {saveMessage}
               </div>
             ) : null}
 
@@ -306,9 +268,9 @@ export function RecordPage() {
             <header className="flex items-start justify-between gap-2 border-b border-stone-200 px-4 py-3">
               <div>
                 <h2 id="deck-modal-title" className="text-base font-bold text-amber-800">
-                  调整卡片组
+                  选择卡片组
                 </h2>
-                <p className="mt-1 text-xs text-stone-500">保存后可立即调整分组，减少误分组成本。</p>
+                <p className="mt-1 text-xs text-stone-500">选择要保存到的卡片组。</p>
               </div>
               <button
                 type="button"
@@ -342,7 +304,10 @@ export function RecordPage() {
                     onChange={() => setSelectedDeckId(deck.id)}
                     className="h-4 w-4 accent-orange-500"
                   />
-                  <span className="text-sm font-semibold text-stone-700">{deck.name}</span>
+                  <span className="text-sm font-semibold text-stone-700">
+                    {deck.name}
+                    {deck.isDefault ? <span className="ml-1 text-xs font-normal text-stone-400">（默认）</span> : null}
+                  </span>
                   <span className="text-xs font-semibold text-orange-600">待复习 {deck.dueCount}</span>
                 </label>
               ))}
@@ -358,10 +323,11 @@ export function RecordPage() {
               </button>
               <button
                 type="button"
-                onClick={confirmDeckSelection}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600"
+                disabled={!selectedDeckId}
+                onClick={() => void handleConfirmSave()}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-stone-300"
               >
-                确认分组
+                确认保存
               </button>
             </footer>
           </section>
