@@ -1,6 +1,6 @@
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
-const ACCESS_TOKEN_STORAGE_KEY = "say_right_access_token";
+import { fetchWithAuth } from "./authApi";
 
+const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 export type RecordGenerateResult = {
   generatedText: string;
   modelHint: string;
@@ -45,25 +45,10 @@ function getApiBaseUrl() {
   return rawBase.replace(/\/+$/, "");
 }
 
-function getAccessToken() {
-  try {
-    return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
 function buildRequestHeaders() {
-  const headers: Record<string, string> = {
+  return {
     "Content-Type": "application/json",
   };
-
-  const accessToken = getAccessToken();
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  return headers;
 }
 
 async function parseErrorMessage(response: Response) {
@@ -85,7 +70,7 @@ export async function generateRecordEnglish(
   sourceText: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<RecordGenerateResult> {
-  const response = await fetchImpl(`${getApiBaseUrl()}/records/generate`, {
+  const response = await fetchWithAuth(`${getApiBaseUrl()}/records/generate`, {
     method: "POST",
     headers: buildRequestHeaders(),
     body: JSON.stringify({
@@ -93,7 +78,7 @@ export async function generateRecordEnglish(
       source_lang: "zh",
       target_lang: "en",
     }),
-  });
+  }, fetchImpl);
 
   if (!response.ok) {
     const detail = await parseErrorMessage(response);
@@ -112,7 +97,7 @@ export async function saveRecordWithAgent(
   params: { sourceText: string; generatedText: string },
   fetchImpl: typeof fetch = fetch,
 ): Promise<RecordSaveWithAgentResult> {
-  const response = await fetchImpl(`${getApiBaseUrl()}/records/save-with-agent`, {
+  const response = await fetchWithAuth(`${getApiBaseUrl()}/records/save-with-agent`, {
     method: "POST",
     headers: buildRequestHeaders(),
     body: JSON.stringify({
@@ -121,7 +106,7 @@ export async function saveRecordWithAgent(
       source_lang: "zh",
       target_lang: "en",
     }),
-  });
+  }, fetchImpl);
 
   if (!response.ok) {
     const detail = await parseErrorMessage(response);

@@ -21,6 +21,11 @@ type LoginApiResponse = {
   token_type: "bearer";
 };
 
+type RefreshAccessTokenApiResponse = {
+  access_token: string;
+  token_type: "bearer";
+};
+
 export type RegisterResult = {
   userId: string;
   email: string;
@@ -42,6 +47,9 @@ export class AuthApiError extends Error {
   }
 }
 
+let refreshInFlight: Promise<string> | null = null;
+let redirectToLoginForTest: (() => void) | null = null;
+
 function getApiBaseUrl() {
   const envBase = import.meta.env.VITE_API_BASE_URL;
   const rawBase = typeof envBase === "string" && envBase.trim() ? envBase : DEFAULT_API_BASE_URL;
@@ -59,6 +67,37 @@ async function parseErrorMessage(response: Response) {
     // 错误响应兜底处理，避免 JSON 解析失败打断业务提示。
   }
   return detail;
+}
+
+function saveAccessToken(accessToken: string) {
+  try {
+    window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+  } catch {
+    // localStorage 在某些环境可能不可用，失败时让后续鉴权流程走兜底分支。
+  }
+}
+
+function redirectToLogin() {
+  if (redirectToLoginForTest) {
+    redirectToLoginForTest();
+    return;
+  }
+
+  window.location.assign("/auth/login");
+}
+
+function buildAuthHeaders(init: RequestInit, accessToken: string | null) {
+  const headers = new Headers(init.headers ?? {});
+  if (accessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  } else {
+    headers.delete("Authorization");
+  }
+  return headers;
+}
+
+function isRefreshEndpoint(url: string) {
+  return url.replace(/\/+$/, "").endsWith("/auth/refresh");
 }
 
 async function requestAuthJson<T>(path: string, init: RequestInit, fetchImpl: typeof fetch = fetch): Promise<T> {
@@ -151,6 +190,88 @@ export function readAccessToken() {
   } catch {
     return null;
   }
+}
+
+export function readRefreshToken() {
+  try {
+    return window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function __setRedirectToLoginForTest(handler: (() => void) | null) {
+  redirectToLoginForTest = handler;
+}
+
+export async function refreshAccessToken(fetchImpl: typeof fetch = fetch): Promise<string> {
+  const refreshToken = readRefreshToken();
+  if (!refreshToken) {
+    clearSession();
+    redirectToLogin();
+    throw new AuthApiError("missing refresh token", 401);
+  }
+
+  const response = await fetchImpl(`${getApiBaseUrl()}/auth/refresh`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${refreshToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const detail = await parseErrorMessage(response);
+    if (response.status === 401) {
+      clearSession();
+      redirectToLogin();
+    }
+    throw new AuthApiError(detail, response.status);
+  }
+
+  const payload = (await response.json()) as RefreshAccessTokenApiResponse;
+  const accessToken = payload.access_token?.trim();
+  if (!accessToken) {
+    throw new AuthApiError("invalid refresh response", 500);
+  }
+
+  saveAccessToken(accessToken);
+  return accessToken;
+}
+
+async function refreshAccessTokenSingleFlight(fetchImpl: typeof fetch) {
+  if (!refreshInFlight) {
+    // 并发 401 时共享同一个刷新请求，避免瞬时重复 refresh。
+    refreshInFlight = refreshAccessToken(fetchImpl).finally(() => {
+      refreshInFlight = null;
+    });
+  }
+
+  return refreshInFlight;
+}
+
+export async function fetchWithAuth(
+  url: string,
+  init: RequestInit = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<Response> {
+  async function requestWithCurrentToken() {
+    const accessToken = readAccessToken();
+    const headers = buildAuthHeaders(init, accessToken);
+    return fetchImpl(url, { ...init, headers });
+  }
+
+  const response = await requestWithCurrentToken();
+  if (response.status !== 401 || isRefreshEndpoint(url)) {
+    return response;
+  }
+
+  await refreshAccessTokenSingleFlight(fetchImpl);
+  const retried = await requestWithCurrentToken();
+  if (retried.status === 401) {
+    clearSession();
+    redirectToLogin();
+  }
+  return retried;
 }
 
 export async function logoutAccount(fetchImpl: typeof fetch = fetch) {

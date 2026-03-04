@@ -4,7 +4,7 @@
  * WHAT: 封装首页统计与最近卡片组数据请求。
  * WHY: 把首页展示数据全部切换为后端来源，避免页面层保留静态示例数据。
  */
-import { readAccessToken } from "./authApi";
+import { fetchWithAuth } from "./authApi";
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -56,15 +56,6 @@ function getApiBaseUrl() {
   return rawBase.replace(/\/+$/, "");
 }
 
-function buildHeaders() {
-  const headers: Record<string, string> = {};
-  const accessToken = readAccessToken();
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-  return headers;
-}
-
 async function parseErrorMessage(response: Response) {
   let detail = `request failed with status ${response.status}`;
   try {
@@ -79,10 +70,9 @@ async function parseErrorMessage(response: Response) {
 }
 
 export async function fetchHomeSummary(fetchImpl: typeof fetch = fetch): Promise<HomeSummary> {
-  const response = await fetchImpl(`${getApiBaseUrl()}/dashboard/home-summary`, {
+  const response = await fetchWithAuth(`${getApiBaseUrl()}/dashboard/home-summary`, {
     method: "GET",
-    headers: buildHeaders(),
-  });
+  }, fetchImpl);
 
   if (!response.ok) {
     const detail = await parseErrorMessage(response);

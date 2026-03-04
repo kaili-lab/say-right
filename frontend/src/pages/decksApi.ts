@@ -4,9 +4,9 @@
  * WHAT: 统一封装卡片组与组内卡片的接口调用、鉴权头和错误解析。
  * WHY: 避免页面层重复处理请求细节，确保契约字段映射集中、可测、可维护。
  */
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
-const ACCESS_TOKEN_STORAGE_KEY = "say_right_access_token";
+import { fetchWithAuth } from "./authApi";
 
+const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 type DeckListApiItem = {
   id: string;
   name: string;
@@ -75,23 +75,6 @@ function getApiBaseUrl() {
   return rawBase.replace(/\/+$/, "");
 }
 
-function getAccessToken() {
-  try {
-    return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function buildHeaders() {
-  const headers: Record<string, string> = {};
-  const accessToken = getAccessToken();
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-  return headers;
-}
-
 async function parseErrorMessage(response: Response) {
   let detail = `request failed with status ${response.status}`;
   try {
@@ -106,13 +89,7 @@ async function parseErrorMessage(response: Response) {
 }
 
 async function requestDeck(path: string, init: RequestInit, fetchImpl: typeof fetch = fetch): Promise<Response> {
-  const response = await fetchImpl(`${getApiBaseUrl()}${path}`, {
-    ...init,
-    headers: {
-      ...buildHeaders(),
-      ...(init.headers ?? {}),
-    },
-  });
+  const response = await fetchWithAuth(`${getApiBaseUrl()}${path}`, init, fetchImpl);
 
   if (!response.ok) {
     const detail = await parseErrorMessage(response);

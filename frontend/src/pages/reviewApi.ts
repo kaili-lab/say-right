@@ -1,6 +1,6 @@
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
-const ACCESS_TOKEN_STORAGE_KEY = "say_right_access_token";
+import { fetchWithAuth } from "./authApi";
 
+const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 type ReviewDeckApiItem = {
   deck_id: string;
   deck_name: string;
@@ -92,25 +92,6 @@ function getApiBaseUrl() {
   return rawBase.replace(/\/+$/, "");
 }
 
-function getAccessToken() {
-  try {
-    return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function buildHeaders() {
-  const headers: Record<string, string> = {};
-  const accessToken = getAccessToken();
-
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  return headers;
-}
-
 async function parseErrorMessage(response: Response) {
   let detail = `request failed with status ${response.status}`;
 
@@ -127,13 +108,7 @@ async function parseErrorMessage(response: Response) {
 }
 
 async function requestReviewJson<T>(path: string, init: RequestInit, fetchImpl: typeof fetch = fetch): Promise<T> {
-  const response = await fetchImpl(`${getApiBaseUrl()}${path}`, {
-    ...init,
-    headers: {
-      ...buildHeaders(),
-      ...(init.headers ?? {}),
-    },
-  });
+  const response = await fetchWithAuth(`${getApiBaseUrl()}${path}`, init, fetchImpl);
 
   if (!response.ok) {
     const detail = await parseErrorMessage(response);
