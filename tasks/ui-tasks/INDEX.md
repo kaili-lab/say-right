@@ -17,9 +17,9 @@
 | UI-011 | 登录注册页与头像下拉菜单 | done | UI-003 | API-004 | `docs/contracts/v0.1-auth-basic.yaml` | SP-002 |
 | UI-012 | 视觉回归与响应式验收（含 iPhone 13） | done | UI-004, UI-006, UI-008, UI-010, UI-011 | API-012 | N/A（验收任务） | SP-FINAL |
 | UI-013 | 首页昵称/洞察与复习总结接口接入 | done | UI-012 | API-016, API-017 | `docs/contracts/v0.5-review-flow-fsrs.yaml` + `docs/contracts/v0.6-dashboard.yaml` | SP-UI-DASHBOARD-REVIEW-SUMMARY |
-| UI-014 | 全局滚动条样式与桌面端 viewport 布局 | todo | UI-013 | - | N/A | SP-UI-SCROLL |
-| UI-015 | Token 自动刷新与 401 跳转登录 | todo | UI-014 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-UI-AUTH-REFRESH |
-| UI-016 | 手机端“我的”Tab 与个人中心页 | todo | UI-015 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-UI-ME-TAB |
+| UI-014 | 全局滚动条样式与桌面端 viewport 布局 | done | UI-013 | - | N/A | SP-UI-SCROLL |
+| UI-015 | Token 自动刷新与 401 跳转登录 | done | UI-014 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-UI-AUTH-REFRESH |
+| UI-016 | 手机端”我的”Tab 与个人中心页 | done | UI-015 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-UI-ME-TAB |
 | UI-017 | 记录页 textarea 自动增长与手动分组保存（前端） | todo | UI-016, API-026 | API-026 | `docs/contracts/v0.7-record-save-manual.yaml` | SP-UI-RECORD-SAVE |
 | UI-018 | 卡片组页卡片内容截断与详情弹窗 | todo | UI-016 | - | N/A | SP-UI-CARD-TRUNCATE |
 | UI-019 | 卡片组删除功能落地 | todo | UI-018 | - | `docs/contracts/v0.2.1-deck-delete.yaml` | SP-UI-DECK-DELETE |

@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import { clearSession, logoutAccount, readSessionEmail } from "../pages/authApi";
-import { MAIN_TABS } from "./navigation";
+import { DESKTOP_TABS, MOBILE_TABS } from "./navigation";
 
 const navBase =
   "rounded-xl px-3 py-2 text-sm font-medium text-stone-500 transition hover:bg-orange-50 hover:text-orange-500";
@@ -19,7 +19,6 @@ export function AppShell({ children }: PropsWithChildren) {
   const navigate = useNavigate();
   const avatarMenuRef = useRef<HTMLDivElement | null>(null);
   const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
-  const [menuNotice, setMenuNotice] = useState("");
 
   const sessionEmail = readSessionEmail();
   const avatarText = useMemo(() => {
@@ -53,23 +52,9 @@ export function AppShell({ children }: PropsWithChildren) {
     };
   }, [isAvatarMenuOpen]);
 
-  useEffect(() => {
-    if (!menuNotice) {
-      return;
-    }
-
-    // 提示语统一自动收起，避免占位信息长期停留影响页面阅读。
-    const timer = window.setTimeout(() => {
-      setMenuNotice("");
-    }, 3000);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [menuNotice]);
-
   function handleAccountInfoClick() {
-    setMenuNotice("账号信息页将在后续版本上线。");
     setIsAvatarMenuOpen(false);
+    navigate("/me");
   }
 
   async function handleLogout() {
@@ -79,7 +64,6 @@ export function AppShell({ children }: PropsWithChildren) {
       // 登出端点失败不阻断本地会话清理，保证用户可立即退出。
     } finally {
       clearSession();
-      setMenuNotice("");
       setIsAvatarMenuOpen(false);
       navigate("/auth/login", { replace: true, state: { notice: "已退出登录。" } });
     }
@@ -97,7 +81,7 @@ export function AppShell({ children }: PropsWithChildren) {
           </div>
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="主导航">
-            {MAIN_TABS.map((tab) => (
+            {DESKTOP_TABS.map((tab) => (
               <NavLink
                 key={tab.path}
                 to={tab.path}
@@ -132,7 +116,7 @@ export function AppShell({ children }: PropsWithChildren) {
                   onClick={handleAccountInfoClick}
                   className="block w-full rounded-lg px-3 py-2 text-left text-sm text-stone-700 transition hover:bg-orange-50"
                 >
-                  账号信息（即将上线）
+                  账号信息
                 </button>
                 <button
                   type="button"
@@ -149,20 +133,15 @@ export function AppShell({ children }: PropsWithChildren) {
       </header>
 
       <main className="mx-auto w-full max-w-[1100px] px-4 pb-24 pt-6 md:min-h-0 md:flex-1 md:overflow-y-auto md:px-6 md:pb-8">
-        {menuNotice ? (
-          <p role="status" className="mb-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-amber-800">
-            {menuNotice}
-          </p>
-        ) : null}
         {children}
       </main>
 
       <nav
         aria-label="移动端主导航"
         data-testid="bottom-nav"
-        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-stone-200 bg-[#faf9f6]/95 p-2 pb-[calc(env(safe-area-inset-bottom,8px)+8px)] backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-stone-200 bg-[#faf9f6]/95 p-2 pb-[calc(env(safe-area-inset-bottom,8px)+8px)] backdrop-blur md:hidden"
       >
-        {MAIN_TABS.map((tab) => (
+        {MOBILE_TABS.map((tab) => (
           <NavLink
             key={`mobile-${tab.path}`}
             to={tab.path}

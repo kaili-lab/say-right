@@ -5,6 +5,7 @@ import { AuthLoginPage } from "./pages/AuthLoginPage";
 import { AuthRegisterPage } from "./pages/AuthRegisterPage";
 import { DeckListPage } from "./pages/DeckListPage";
 import { HomePage } from "./pages/HomePage";
+import { MePage } from "./pages/MePage";
 import { RecordPage } from "./pages/RecordPage";
 import { ReviewDeckListPage } from "./pages/ReviewDeckListPage";
 import { ReviewSessionPage } from "./pages/ReviewSessionPage";
@@ -52,6 +53,7 @@ function App() {
           <Route path="/review" element={<ReviewDeckListPage />} />
           <Route path="/review/session/:deckId" element={<ReviewSessionPage />} />
           <Route path="/decks" element={<DeckListPage />} />
+          <Route path="/me" element={<MePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Route>

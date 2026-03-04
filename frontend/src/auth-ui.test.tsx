@@ -129,7 +129,7 @@ describe("auth-ui", () => {
 
     await user.click(screen.getByRole("button", { name: "用户菜单" }));
     expect(await screen.findByRole("menu")).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "账号信息（即将上线）" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "账号信息" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("menuitem", { name: "退出登录" }));
 
@@ -138,6 +138,6 @@ describe("auth-ui", () => {
     expect(window.localStorage.getItem("say_right_user_email")).toBeNull();
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "登录" })).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("已退出登录。");
+    expect(await screen.findByRole("status")).toHaveTextContent("已退出登录。");
   });
 });

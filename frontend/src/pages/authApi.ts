@@ -274,6 +274,37 @@ export async function fetchWithAuth(
   return retried;
 }
 
+type MeApiResponse = {
+  user_id: string;
+  email: string;
+  nickname: string | null;
+  display_name: string;
+};
+
+export type MeInfo = {
+  userId: string;
+  email: string;
+  nickname: string | null;
+  displayName: string;
+};
+
+export async function fetchMe(fetchImpl: typeof fetch = fetch): Promise<MeInfo> {
+  const response = await fetchWithAuth(`${getApiBaseUrl()}/me`, { method: "GET" }, fetchImpl);
+
+  if (!response.ok) {
+    const detail = await parseErrorMessage(response);
+    throw new AuthApiError(detail, response.status);
+  }
+
+  const payload = (await response.json()) as MeApiResponse;
+  return {
+    userId: payload.user_id,
+    email: payload.email,
+    nickname: payload.nickname,
+    displayName: payload.display_name,
+  };
+}
+
 export async function logoutAccount(fetchImpl: typeof fetch = fetch) {
   const accessToken = readAccessToken();
   if (!accessToken) {
