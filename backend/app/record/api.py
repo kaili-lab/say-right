@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 
 from app.auth.service import AuthService
+from app.card.service import CardService, InvalidCardPayloadError
+from app.deck.repository import DeckNotFoundError, DeckRepository
 from app.deck.api import build_current_user_dependency
 from app.domain.models import User
 from app.record.errors import (
@@ -41,6 +43,32 @@ class RecordGenerateApiResponse(BaseModel):
     generated_text: str
     model_hint: str
     trace_id: str
+
+
+class RecordSaveApiRequest(BaseModel):
+    """手动指定分组保存卡片请求体。"""
+
+    source_text: str = Field(min_length=1, max_length=200)
+    generated_text: str = Field(min_length=1, max_length=500)
+    deck_id: str = Field(min_length=1)
+    source_lang: Literal["zh"]
+    target_lang: Literal["en"]
+
+    @field_validator("source_text", "generated_text")
+    @classmethod
+    def validate_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("text must not be empty")
+        return normalized
+
+
+class RecordSaveApiResponse(BaseModel):
+    """手动保存卡片响应体。"""
+
+    card_id: str
+    deck_id: str
+    deck_name: str
 
 
 class SaveWithAgentApiRequest(BaseModel):
@@ -92,6 +120,8 @@ def create_record_router(
     record_service: RecordGenerateService,
     save_with_agent_service: SaveWithAgentService,
     auth_service: AuthService,
+    card_service: CardService | None = None,
+    deck_repository: DeckRepository | None = None,
 ) -> APIRouter:
     """创建记录页生成英文路由。"""
     router = APIRouter(tags=["records"])
@@ -160,5 +190,46 @@ def create_record_router(
             ) from exc
 
         return _to_save_response(result)
+
+    @router.post(
+        "/records/save",
+        status_code=status.HTTP_201_CREATED,
+        response_model=RecordSaveApiResponse,
+    )
+    def save_record(
+        payload: RecordSaveApiRequest,
+        current_user: Annotated[User, Depends(current_user_dependency)],
+    ) -> RecordSaveApiResponse:
+        if card_service is None or deck_repository is None:
+            raise HTTPException(
+                status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                detail="save endpoint not configured",
+            )
+
+        # 验证 deck 存在且属于当前用户。
+        deck = deck_repository.get_by_id(payload.deck_id)
+        if deck is None or deck.user_id != current_user.user_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="deck not found")
+
+        try:
+            card = card_service.create_card(
+                user_id=current_user.user_id,
+                deck_id=payload.deck_id,
+                front_text=payload.source_text,
+                back_text=payload.generated_text,
+                source_lang=payload.source_lang,
+                target_lang=payload.target_lang,
+            )
+        except (InvalidCardPayloadError, DeckNotFoundError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="deck not found",
+            ) from exc
+
+        return RecordSaveApiResponse(
+            card_id=card.card_id,
+            deck_id=deck.deck_id,
+            deck_name=deck.name,
+        )
 
     return router

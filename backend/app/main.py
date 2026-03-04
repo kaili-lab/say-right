@@ -262,6 +262,8 @@ def create_app() -> FastAPI:
             record_service=record_generate_service,
             save_with_agent_service=save_with_agent_service,
             auth_service=auth_service,
+            card_service=card_service,
+            deck_repository=deck_repository,
         ),
     )
     application.include_router(

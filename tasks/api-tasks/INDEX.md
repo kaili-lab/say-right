@@ -30,4 +30,4 @@
 | API-023 | 查询次数精简与鉴权缓存（惰性ensure/去重复user/auth TTL缓存） | done | API-022 | - | - | SP-PERF-PHASE0 |
 | API-024 | 首页聚合改SQL计算与索引补齐 | done | API-023 | - | - | SP-PERF-PHASE1 |
 | API-025 | Deck/Review首屏查询收敛与性能基准验收 | done | API-024 | - | - | SP-PERF-PHASE1 |
-| API-026 | 新增记录页手动分组保存接口 `POST /records/save` | todo | API-009 | UI-017 | `docs/contracts/v0.7-record-save-manual.yaml` | SP-API-RECORD-SAVE |
+| API-026 | 新增记录页手动分组保存接口 `POST /records/save` | done | API-009 | UI-017 | `docs/contracts/v0.7-record-save-manual.yaml` | SP-API-RECORD-SAVE |
