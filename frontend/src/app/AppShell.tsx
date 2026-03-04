@@ -86,7 +86,7 @@ export function AppShell({ children }: PropsWithChildren) {
   }
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] text-stone-800">
+    <div className="min-h-screen bg-[#faf9f6] text-stone-800 md:h-screen md:flex md:flex-col md:overflow-hidden">
       <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-[#faf9f6]/90 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-[1100px] items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-2">
@@ -148,7 +148,7 @@ export function AppShell({ children }: PropsWithChildren) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1100px] px-4 pb-24 pt-6 md:px-6 md:pb-8">
+      <main className="mx-auto w-full max-w-[1100px] px-4 pb-24 pt-6 md:min-h-0 md:flex-1 md:overflow-y-auto md:px-6 md:pb-8">
         {menuNotice ? (
           <p role="status" className="mb-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-amber-800">
             {menuNotice}
