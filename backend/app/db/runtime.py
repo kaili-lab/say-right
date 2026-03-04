@@ -15,6 +15,7 @@ StorageBackend = Literal["memory", "postgres"]
 _STORAGE_ENV_KEY = "APP_STORAGE_BACKEND"
 _DATABASE_URL_ENV_KEY = "DATABASE_URL"
 _CORS_ALLOW_ORIGINS_ENV_KEY = "APP_CORS_ALLOW_ORIGINS"
+_CORS_ALLOW_ORIGIN_REGEX_ENV_KEY = "APP_CORS_ALLOW_ORIGIN_REGEX"
 _DB_POOL_MIN_SIZE_ENV_KEY = "APP_DB_POOL_MIN_SIZE"
 _DB_POOL_MAX_SIZE_ENV_KEY = "APP_DB_POOL_MAX_SIZE"
 
@@ -22,6 +23,8 @@ _DEFAULT_CORS_ALLOW_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+# 开发时 Vite 端口可能自动递增（5173→5174→...），用正则一次性覆盖所有 localhost 端口。
+_DEFAULT_CORS_ALLOW_ORIGIN_REGEX = r"http://(localhost|127\.0\.0\.1):\d+"
 _DEFAULT_DB_POOL_MIN_SIZE = 2
 _DEFAULT_DB_POOL_MAX_SIZE = 10
 
@@ -69,6 +72,25 @@ def resolve_cors_allow_origins(env: Mapping[str, str] | None = None) -> list[str
     if configured:
         return configured
     return _DEFAULT_CORS_ALLOW_ORIGINS.copy()
+
+
+def resolve_cors_allow_origin_regex(env: Mapping[str, str] | None = None) -> str | None:
+    """解析 CORS origin 正则。
+
+    显式配置了 APP_CORS_ALLOW_ORIGIN_REGEX 时使用该值；
+    未配置 APP_CORS_ALLOW_ORIGINS 时回退到默认正则（覆盖本地所有端口），
+    方便开发时 Vite 端口自动递增不触发跨域；
+    已配置 APP_CORS_ALLOW_ORIGINS 时返回 None（严格白名单，无需正则兜底）。
+    """
+    env_map = env or os.environ
+    explicit_regex = env_map.get(_CORS_ALLOW_ORIGIN_REGEX_ENV_KEY, "").strip()
+    if explicit_regex:
+        return explicit_regex
+    # 若调用方已显式指定 origins 白名单，则不启用正则兜底
+    raw_origins = env_map.get(_CORS_ALLOW_ORIGINS_ENV_KEY, "").strip()
+    if raw_origins:
+        return None
+    return _DEFAULT_CORS_ALLOW_ORIGIN_REGEX
 
 
 def resolve_db_pool_size(env: Mapping[str, str] | None = None) -> tuple[int, int]:

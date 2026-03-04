@@ -2,10 +2,13 @@
 
 import pytest
 
+import re
+
 from app.db.runtime import (
     normalize_postgres_database_url,
-    resolve_db_pool_size,
+    resolve_cors_allow_origin_regex,
     resolve_cors_allow_origins,
+    resolve_db_pool_size,
     resolve_postgres_database_url,
     resolve_storage_backend,
 )
@@ -82,6 +85,46 @@ def test_resolve_cors_allow_origins_supports_comma_separated_values() -> None:
         "https://app.example.com",
         "https://admin.example.com",
     ]
+
+
+def test_resolve_cors_allow_origin_regex_returns_localhost_wildcard_by_default() -> None:
+    """未配置时正则应覆盖所有 localhost 端口（Vite 端口自动递增场景）。"""
+    pattern = resolve_cors_allow_origin_regex({})
+    assert pattern is not None
+    compiled = re.compile(pattern)
+    assert compiled.fullmatch("http://localhost:5173")
+    assert compiled.fullmatch("http://localhost:5174")
+    assert compiled.fullmatch("http://127.0.0.1:5173")
+    assert compiled.fullmatch("http://127.0.0.1:9999")
+    assert not compiled.fullmatch("https://example.com")
+    assert not compiled.fullmatch("http://evil.com:5173")
+
+
+def test_resolve_cors_allow_origin_regex_returns_none_when_origins_are_configured() -> None:
+    """已显式配置 APP_CORS_ALLOW_ORIGINS 时，不应启用正则兜底（生产严格白名单）。"""
+    result = resolve_cors_allow_origin_regex(
+        {"APP_CORS_ALLOW_ORIGINS": "https://app.example.com"},
+    )
+    assert result is None
+
+
+def test_resolve_cors_allow_origin_regex_uses_explicit_override() -> None:
+    """APP_CORS_ALLOW_ORIGIN_REGEX 显式设置时应直接返回该值。"""
+    result = resolve_cors_allow_origin_regex(
+        {"APP_CORS_ALLOW_ORIGIN_REGEX": r"https://.*\.example\.com"},
+    )
+    assert result == r"https://.*\.example\.com"
+
+
+def test_resolve_cors_allow_origin_regex_explicit_overrides_origins() -> None:
+    """同时设置两个 env 时，APP_CORS_ALLOW_ORIGIN_REGEX 应优先。"""
+    result = resolve_cors_allow_origin_regex(
+        {
+            "APP_CORS_ALLOW_ORIGINS": "https://app.example.com",
+            "APP_CORS_ALLOW_ORIGIN_REGEX": r"https://.*\.example\.com",
+        },
+    )
+    assert result == r"https://.*\.example\.com"
 
 
 def test_resolve_db_pool_size_uses_default_values() -> None:

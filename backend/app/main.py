@@ -33,6 +33,7 @@ from app.dashboard.repository import (
 from app.dashboard.service import DashboardService
 from app.db.pool import create_connection_pool
 from app.db.runtime import (
+    resolve_cors_allow_origin_regex,
     resolve_cors_allow_origins,
     resolve_db_pool_size,
     resolve_postgres_database_url,
@@ -184,6 +185,7 @@ def create_app() -> FastAPI:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=resolve_cors_allow_origins(),
+        allow_origin_regex=resolve_cors_allow_origin_regex(),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
