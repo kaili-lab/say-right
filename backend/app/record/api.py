@@ -20,6 +20,8 @@ from app.record.errors import (
 from app.record.service import RecordGenerateRequest, RecordGenerateResult, RecordGenerateService
 from app.record.save_agent_service import SaveWithAgentResult, SaveWithAgentService
 
+RECORD_SAVE_GENERATED_TEXT_MAX_LENGTH = 300
+
 
 class RecordGenerateApiRequest(BaseModel):
     """生成英文请求体。"""
@@ -28,12 +30,12 @@ class RecordGenerateApiRequest(BaseModel):
     source_lang: Literal["zh"]
     target_lang: Literal["en"]
 
-    @field_validator("source_text")
+    @field_validator("source_text", mode="before")
     @classmethod
     def validate_source_text(cls, value: str) -> str:
         normalized = value.strip()
         if not normalized:
-            raise ValueError("source_text must not be empty")
+            raise ValueError("中文内容不能为空")
         return normalized
 
 
@@ -47,17 +49,31 @@ class RecordSaveApiRequest(BaseModel):
     """手动指定分组保存卡片请求体。"""
 
     source_text: str = Field(min_length=1, max_length=200)
-    generated_text: str = Field(min_length=1, max_length=2000)
+    generated_text: str = Field(min_length=1, max_length=RECORD_SAVE_GENERATED_TEXT_MAX_LENGTH)
     deck_id: str = Field(min_length=1)
     source_lang: Literal["zh"]
     target_lang: Literal["en"]
 
-    @field_validator("source_text", "generated_text")
+    @field_validator("source_text", mode="before")
     @classmethod
-    def validate_text(cls, value: str) -> str:
+    def validate_source_text(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return value
         normalized = value.strip()
         if not normalized:
-            raise ValueError("text must not be empty")
+            raise ValueError("中文内容不能为空")
+        return normalized
+
+    @field_validator("generated_text", mode="before")
+    @classmethod
+    def validate_generated_text(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return value
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("英文内容不能为空")
+        if len(normalized) > RECORD_SAVE_GENERATED_TEXT_MAX_LENGTH:
+            raise ValueError(f"英文内容不能超过 {RECORD_SAVE_GENERATED_TEXT_MAX_LENGTH} 个字符")
         return normalized
 
 

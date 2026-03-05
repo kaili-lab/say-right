@@ -4,6 +4,7 @@ import { fetchDecks } from "./decksApi";
 import { RecordGenerateApiError, generateRecordEnglish, saveRecordToDeck } from "./recordApi";
 
 const MAX_SOURCE_TEXT_LENGTH = 200;
+const MAX_GENERATED_TEXT_LENGTH = 300;
 const MAX_TEXTAREA_ROWS = 4;
 const LINE_HEIGHT_PX = 24; // leading-6 = 1.5rem = 24px at 16px base
 
@@ -88,10 +89,13 @@ export function RecordPage() {
   }, []);
 
   const isSaved = saveStatus === "saved";
+  const generatedTextLength = generatedText.trim().length;
+  const isGeneratedTextTooLong = generatedTextLength > MAX_GENERATED_TEXT_LENGTH;
   const canGenerate = sourceText.trim().length > 0 && generateStatus !== "loading" && !isSaved;
   const canSave =
     generateStatus === "success" &&
-    generatedText.trim().length > 0 &&
+    generatedTextLength > 0 &&
+    !isGeneratedTextTooLong &&
     !isSaved &&
     saveStatus !== "saving";
 
@@ -116,6 +120,11 @@ export function RecordPage() {
   }
 
   function openSaveDeckModal() {
+    if (isGeneratedTextTooLong) {
+      setSaveStatus("error");
+      setSaveMessage(`保存失败：英文内容最多 ${MAX_GENERATED_TEXT_LENGTH} 字，请精简后再保存`);
+      return;
+    }
     if (deckOptions.length === 0) return;
     // 重置为 default deck（每次点保存都重置选择，避免上次选中残留）。
     const defaultDeck = deckOptions.find((d) => d.isDefault) ?? deckOptions[0];
@@ -125,7 +134,14 @@ export function RecordPage() {
 
   const handleConfirmSave = useCallback(async () => {
     const targetDeck = deckOptions.find((d) => d.id === selectedDeckId);
+    const normalizedGeneratedText = generatedText.trim();
     if (!targetDeck || !sourceSnapshot) return;
+    if (normalizedGeneratedText.length > MAX_GENERATED_TEXT_LENGTH) {
+      setIsDeckModalOpen(false);
+      setSaveStatus("error");
+      setSaveMessage(`保存失败：英文内容最多 ${MAX_GENERATED_TEXT_LENGTH} 字，请精简后再保存`);
+      return;
+    }
 
     setIsDeckModalOpen(false);
     setSaveStatus("saving");
@@ -134,7 +150,7 @@ export function RecordPage() {
     try {
       await saveRecordToDeck({
         sourceText: sourceSnapshot,
-        generatedText: generatedText.trim(),
+        generatedText: normalizedGeneratedText,
         deckId: selectedDeckId,
       });
       setSaveStatus("saved");
@@ -231,7 +247,17 @@ export function RecordPage() {
                   </span>
                 </p>
               ) : (
-                <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
+                <div className="space-y-1">
+                  <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
+                  <p className={`text-xs ${isGeneratedTextTooLong ? "text-red-600" : "text-stone-500"}`}>
+                    {generatedTextLength}/{MAX_GENERATED_TEXT_LENGTH}
+                  </p>
+                  {isGeneratedTextTooLong ? (
+                    <p role="alert" className="text-xs text-red-700">
+                      英文内容最多 {MAX_GENERATED_TEXT_LENGTH} 字，请精简后再保存
+                    </p>
+                  ) : null}
+                </div>
               )}
               <button
                 type="button"

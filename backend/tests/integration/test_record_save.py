@@ -165,6 +165,9 @@ def test_save_record_empty_source_text_returns_422() -> None:
     )
 
     assert resp.status_code == 422
+    body = resp.json()
+    assert isinstance(body.get("detail"), list)
+    assert any("中文内容不能为空" in item.get("msg", "") for item in body["detail"])
 
 
 def test_save_record_empty_generated_text_returns_422() -> None:
@@ -186,3 +189,54 @@ def test_save_record_empty_generated_text_returns_422() -> None:
     )
 
     assert resp.status_code == 422
+    body = resp.json()
+    assert isinstance(body.get("detail"), list)
+    assert any("英文内容不能为空" in item.get("msg", "") for item in body["detail"])
+
+
+def test_save_record_generated_text_at_limit_returns_201() -> None:
+    """generated_text 恰好 300 字符时应允许保存。"""
+    client = build_client()
+    token = _register_and_login(client, "save-record-300@example.com")
+    deck_id = _get_default_deck_id(client, token)
+
+    resp = client.post(
+        "/records/save",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "source_text": "今天天气很好",
+            "generated_text": "a" * 300,
+            "deck_id": deck_id,
+            "source_lang": "zh",
+            "target_lang": "en",
+        },
+    )
+
+    assert resp.status_code == 201
+
+
+def test_save_record_generated_text_too_long_returns_422() -> None:
+    """generated_text 超过 300 字符时应返回 422，并给出可读错误。"""
+    client = build_client()
+    token = _register_and_login(client, "save-record-422c@example.com")
+    deck_id = _get_default_deck_id(client, token)
+
+    resp = client.post(
+        "/records/save",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "source_text": "今天天气很好",
+            "generated_text": "a" * 301,
+            "deck_id": deck_id,
+            "source_lang": "zh",
+            "target_lang": "en",
+        },
+    )
+
+    assert resp.status_code == 422
+    body = resp.json()
+    assert isinstance(body.get("detail"), list)
+    assert any(
+        item.get("loc", [None])[-1] == "generated_text" and "300" in item.get("msg", "")
+        for item in body["detail"]
+    )

@@ -66,6 +66,20 @@ async function parseErrorMessage(response: Response) {
     const payload = (await response.json()) as { detail?: unknown };
     if (typeof payload.detail === "string" && payload.detail.trim()) {
       detail = payload.detail;
+    } else if (Array.isArray(payload.detail)) {
+      // FastAPI/Pydantic 校验失败常返回 detail 数组，这里提取首个可读 msg 给前端提示。
+      for (const item of payload.detail) {
+        if (
+          typeof item === "object" &&
+          item !== null &&
+          "msg" in item &&
+          typeof item.msg === "string" &&
+          item.msg.trim()
+        ) {
+          detail = item.msg.replace(/^Value error,\s*/i, "");
+          break;
+        }
+      }
     }
   } catch {
     // 错误响应可能不是 JSON，这里保持兜底文案，避免二次异常覆盖原始失败原因。

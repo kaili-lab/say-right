@@ -145,6 +145,38 @@ describe("record-save-feedback", () => {
     expect(await screen.findByText("工作沟通")).toBeInTheDocument();
   });
 
+  it("英文超过 300 字时前端直接提示并禁用保存", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", buildMockFetch());
+
+    await renderAndGenerate(user);
+
+    const generatedTextarea = screen.getByLabelText("英文结果");
+    await user.clear(generatedTextarea);
+    await user.type(generatedTextarea, "a".repeat(301));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("英文内容最多 300 字");
+    expect(screen.getByRole("button", { name: "保存卡片" })).toBeDisabled();
+    expect(screen.queryByRole("dialog", { name: "选择卡片组" })).not.toBeInTheDocument();
+  });
+
+  it("英文恰好 300 字时允许继续保存", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", buildMockFetch());
+
+    await renderAndGenerate(user);
+    const generatedTextarea = screen.getByLabelText("英文结果");
+    await user.clear(generatedTextarea);
+    await user.type(generatedTextarea, "a".repeat(300));
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    const saveButton = screen.getByRole("button", { name: "保存卡片" });
+    expect(saveButton).toBeEnabled();
+    await user.click(saveButton);
+
+    expect(await screen.findByRole("dialog", { name: "选择卡片组" })).toBeInTheDocument();
+  });
+
   it("保存失败时英文区域保持可编辑", async () => {
     const user = userEvent.setup();
     const mockFetch = vi.fn<typeof fetch>().mockImplementation((input) => {
@@ -183,7 +215,50 @@ describe("record-save-feedback", () => {
     await user.click(within(dialog).getByRole("button", { name: "确认保存" }));
 
     await screen.findByRole("alert");
+    expect(screen.getByRole("alert")).toHaveTextContent("deck not found");
     const generatedTextarea = screen.getByLabelText("英文结果");
     expect(generatedTextarea).not.toHaveAttribute("readonly");
+  });
+
+  it("后端返回 422 校验数组时展示可读错误信息", async () => {
+    const user = userEvent.setup();
+    const mockFetch = vi.fn<typeof fetch>().mockImplementation((input) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.endsWith("/decks")) {
+        return Promise.resolve(
+          new Response(JSON.stringify(decksPayload), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      if (url.endsWith("/records/generate")) {
+        return Promise.resolve(
+          new Response(JSON.stringify(generatePayload), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      if (url.endsWith("/records/save")) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ detail: [{ msg: "Value error, 英文内容不能超过 300 个字符" }] }), {
+            status: 422,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 500 }));
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await renderAndGenerate(user);
+    await user.click(screen.getByRole("button", { name: "保存卡片" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "确认保存" }));
+
+    await screen.findByRole("alert");
+    expect(screen.getByRole("alert")).toHaveTextContent("英文内容不能超过 300 个字符");
+    expect(screen.getByLabelText("英文结果")).not.toHaveAttribute("readonly");
   });
 });

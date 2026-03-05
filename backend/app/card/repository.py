@@ -418,7 +418,6 @@ class PostgresCardRepository(CardRepository):
     def move_card(self, *, user_id: str, card_id: str, to_deck_id: str) -> Card:
         """移动卡片并刷新来源/目标 deck 统计。"""
         now = datetime.now(UTC)
-        result: dict[str, object] | None = None
 
         def _op(connection: Connection[object]) -> dict[str, object]:
             with connection.cursor(row_factory=dict_row) as cursor:
