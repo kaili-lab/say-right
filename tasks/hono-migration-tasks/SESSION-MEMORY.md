@@ -54,6 +54,36 @@
 
 > 按时间倒序追加，最新在最上方。
 
+## [2026-03-05 22:40] HONO-005 前端鉴权切换到 Better Auth 会话模式
+
+- 关键变更：
+  - 前端认证请求统一走 cookie 会话：`fetchWithAuth` 强制 `credentials: include`，401 时清理本地会话并跳转登录页。
+  - 回归测试基线从 token 切换为 session marker：`frontend/src/test/setup.ts` 统一注入 `say_right_session_active` 与 `say_right_user_email`。
+  - `me-page` 用例对齐 `/api/auth/session` 契约响应结构，并将登出断言改为 session 清理校验。
+  - 修复 `authApi.ts` 遗留未使用类型，打通 lint 门禁。
+- 测试证据：
+  - 命令：`cd frontend && pnpm test -- auth`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  14 passed (14)`
+  - 命令：`cd frontend && pnpm test -- auth-refresh`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  14 passed (14)`
+  - 命令：`cd frontend && pnpm test -- home record decks review`
+  - 退出码：`0`
+  - 关键通过行：`Tests  45 passed (45)`
+  - 命令：`cd frontend && pnpm lint`
+  - 退出码：`0`
+  - 关键通过行：`eslint .`
+  - 命令：`cd frontend && pnpm typecheck`
+  - 退出码：`0`
+  - 关键通过行：`tsc --noEmit`
+- 踩坑/教训：
+  - `vitest run -- auth*` 会匹配大量业务测试；若 `test/setup.ts` 仍注入旧 token，测试会统一跌回登录页并出现“批量假失败”。
+- 新增规则：
+  - 鉴权模型迁移时，必须先更新测试基线（setup fixture）再跑聚合关键字测试，避免误判业务回归。
+- 对后续任务影响：
+  - `HONO-006` 可直接复用会话化 `fetchWithAuth` 与已稳定的前端测试基线，无需再维护 token/refresh 兼容路径。
+
 ## [2026-03-05 22:18] HONO-004 Better Auth 后端接入（Hono + D1）
 
 - 关键变更：

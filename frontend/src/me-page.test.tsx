@@ -7,10 +7,15 @@ import App from "./App";
 import { MePage } from "./pages/MePage";
 
 const meResponse = {
-  user_id: "u1",
-  email: "tester@example.com",
-  nickname: "Tester",
-  display_name: "Tester",
+  session: {
+    id: "session-001",
+    userId: "u1",
+  },
+  user: {
+    id: "u1",
+    email: "tester@example.com",
+    name: "Tester",
+  },
 };
 
 function buildMeFetch() {
@@ -78,7 +83,8 @@ describe("me-page", () => {
     const logoutBtn = await screen.findByRole("button", { name: "退出登录" });
     await user.click(logoutBtn);
 
-    expect(window.localStorage.getItem("say_right_access_token")).toBeNull();
+    expect(window.localStorage.getItem("say_right_session_active")).toBeNull();
+    expect(window.localStorage.getItem("say_right_user_email")).toBeNull();
   });
 
   it("移动端底部导航包含我的 Tab 且为 5 格", async () => {

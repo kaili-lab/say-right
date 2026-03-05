@@ -1,29 +1,29 @@
 /**
  * 认证 API 访问层。
  *
- * WHAT: 封装注册/登录接口与本地会话读写。
- * WHY: 统一处理鉴权令牌和错误解析，避免页面层重复维护相同逻辑。
+ * WHAT: 封装注册/登录/会话查询/登出，并统一 cookie session 请求行为。
+ * WHY: 前端从 token + refresh 流程迁移到 Better Auth 会话机制。
  */
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
+const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8000';
 
-export const ACCESS_TOKEN_STORAGE_KEY = "say_right_access_token";
-export const REFRESH_TOKEN_STORAGE_KEY = "say_right_refresh_token";
-export const SESSION_EMAIL_STORAGE_KEY = "say_right_user_email";
+// 兼容常量保留：迁移期用于清理旧键，后续可删除。
+export const ACCESS_TOKEN_STORAGE_KEY = 'say_right_access_token';
+export const REFRESH_TOKEN_STORAGE_KEY = 'say_right_refresh_token';
+export const SESSION_EMAIL_STORAGE_KEY = 'say_right_user_email';
+export const SESSION_ACTIVE_STORAGE_KEY = 'say_right_session_active';
 
 type RegisterApiResponse = {
-  user_id: string;
-  email: string;
+  user: {
+    id: string;
+    email: string;
+  };
 };
 
 type LoginApiResponse = {
-  access_token: string;
-  refresh_token: string;
-  token_type: "bearer";
-};
-
-type RefreshAccessTokenApiResponse = {
-  access_token: string;
-  token_type: "bearer";
+  user: {
+    id: string;
+    email: string;
+  };
 };
 
 export type RegisterResult = {
@@ -32,9 +32,8 @@ export type RegisterResult = {
 };
 
 export type LoginResult = {
-  accessToken: string;
-  refreshToken: string;
-  tokenType: "bearer";
+  userId: string;
+  email: string;
 };
 
 export class AuthApiError extends Error {
@@ -43,38 +42,34 @@ export class AuthApiError extends Error {
     public readonly status: number,
   ) {
     super(message);
-    this.name = "AuthApiError";
+    this.name = 'AuthApiError';
   }
 }
 
-let refreshInFlight: Promise<string> | null = null;
 let redirectToLoginForTest: (() => void) | null = null;
+let redirectScheduled = false;
 
 function getApiBaseUrl() {
   const envBase = import.meta.env.VITE_API_BASE_URL;
-  const rawBase = typeof envBase === "string" && envBase.trim() ? envBase : DEFAULT_API_BASE_URL;
-  return rawBase.replace(/\/+$/, "");
+  const rawBase = typeof envBase === 'string' && envBase.trim() ? envBase : DEFAULT_API_BASE_URL;
+  return rawBase.replace(/\/+$/, '');
 }
 
 async function parseErrorMessage(response: Response) {
   let detail = `request failed with status ${response.status}`;
+
   try {
-    const payload = (await response.json()) as { detail?: unknown };
-    if (typeof payload.detail === "string" && payload.detail.trim()) {
+    const payload = (await response.json()) as { detail?: unknown; message?: unknown };
+    if (typeof payload.detail === 'string' && payload.detail.trim()) {
       detail = payload.detail;
+    } else if (typeof payload.message === 'string' && payload.message.trim()) {
+      detail = payload.message;
     }
   } catch {
     // 错误响应兜底处理，避免 JSON 解析失败打断业务提示。
   }
-  return detail;
-}
 
-function saveAccessToken(accessToken: string) {
-  try {
-    window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
-  } catch {
-    // localStorage 在某些环境可能不可用，失败时让后续鉴权流程走兜底分支。
-  }
+  return detail;
 }
 
 function redirectToLogin() {
@@ -83,30 +78,52 @@ function redirectToLogin() {
     return;
   }
 
-  window.location.assign("/auth/login");
+  window.location.assign('/auth/login');
 }
 
-function buildAuthHeaders(init: RequestInit, accessToken: string | null) {
-  const headers = new Headers(init.headers ?? {});
-  if (accessToken) {
-    headers.set("Authorization", `Bearer ${accessToken}`);
-  } else {
-    headers.delete("Authorization");
+function scheduleRedirectToLogin() {
+  if (redirectScheduled) {
+    return;
   }
-  return headers;
+
+  redirectScheduled = true;
+  redirectToLogin();
+  queueMicrotask(() => {
+    redirectScheduled = false;
+  });
 }
 
-function isRefreshEndpoint(url: string) {
-  return url.replace(/\/+$/, "").endsWith("/auth/refresh");
+function isPublicAuthEndpoint(url: string) {
+  try {
+    const pathname = new URL(url, window.location.origin).pathname.replace(/\/+$/, '');
+    return pathname.endsWith('/api/auth/sign-in/email') || pathname.endsWith('/api/auth/sign-up/email');
+  } catch {
+    return false;
+  }
+}
+
+function writeSessionMarker(email?: string) {
+  try {
+    window.localStorage.setItem(SESSION_ACTIVE_STORAGE_KEY, '1');
+    if (email) {
+      window.localStorage.setItem(SESSION_EMAIL_STORAGE_KEY, email);
+    }
+    // 清理历史 token 键，确保前端不再依赖 token 存储。
+    window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+    window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+  } catch {
+    // localStorage 在某些环境可能不可用，失败时保持幂等。
+  }
 }
 
 async function requestAuthJson<T>(path: string, init: RequestInit, fetchImpl: typeof fetch = fetch): Promise<T> {
   const response = await fetchImpl(`${getApiBaseUrl()}${path}`, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...(init.headers ?? {}),
     },
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -121,18 +138,23 @@ export async function registerAccount(
   params: { email: string; password: string },
   fetchImpl: typeof fetch = fetch,
 ): Promise<RegisterResult> {
+  const normalizedEmail = params.email.trim().toLowerCase();
   const payload = await requestAuthJson<RegisterApiResponse>(
-    "/auth/register",
+    '/api/auth/sign-up/email',
     {
-      method: "POST",
-      body: JSON.stringify({ email: params.email, password: params.password }),
+      method: 'POST',
+      body: JSON.stringify({
+        email: normalizedEmail,
+        password: params.password,
+        name: normalizedEmail.split('@')[0] || 'Learner',
+      }),
     },
     fetchImpl,
   );
 
   return {
-    userId: payload.user_id,
-    email: payload.email,
+    userId: payload.user.id,
+    email: payload.user.email,
   };
 }
 
@@ -141,36 +163,33 @@ export async function loginAccount(
   fetchImpl: typeof fetch = fetch,
 ): Promise<LoginResult> {
   const payload = await requestAuthJson<LoginApiResponse>(
-    "/auth/login",
+    '/api/auth/sign-in/email',
     {
-      method: "POST",
-      body: JSON.stringify({ email: params.email, password: params.password }),
+      method: 'POST',
+      body: JSON.stringify({
+        email: params.email.trim().toLowerCase(),
+        password: params.password,
+      }),
     },
     fetchImpl,
   );
 
   return {
-    accessToken: payload.access_token,
-    refreshToken: payload.refresh_token,
-    tokenType: payload.token_type,
+    userId: payload.user.id,
+    email: payload.user.email,
   };
 }
 
 export function persistSession(session: LoginResult, email: string) {
-  try {
-    window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, session.accessToken);
-    window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, session.refreshToken);
-    window.localStorage.setItem(SESSION_EMAIL_STORAGE_KEY, email);
-  } catch {
-    // localStorage 在某些环境可能不可用，失败时降级为无状态。
-  }
+  writeSessionMarker(email || session.email);
 }
 
 export function clearSession() {
   try {
+    window.localStorage.removeItem(SESSION_ACTIVE_STORAGE_KEY);
+    window.localStorage.removeItem(SESSION_EMAIL_STORAGE_KEY);
     window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
     window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-    window.localStorage.removeItem(SESSION_EMAIL_STORAGE_KEY);
   } catch {
     // localStorage 在某些环境可能不可用，失败时保持幂等。
   }
@@ -184,69 +203,24 @@ export function readSessionEmail() {
   }
 }
 
+/**
+ * 兼容函数：历史路由守卫使用 readAccessToken 判断登录态。
+ * 迁移后该函数返回 session marker，而非 token 本身。
+ */
 export function readAccessToken() {
   try {
-    return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    return window.localStorage.getItem(SESSION_ACTIVE_STORAGE_KEY);
   } catch {
     return null;
   }
 }
 
 export function readRefreshToken() {
-  try {
-    return window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 export function __setRedirectToLoginForTest(handler: (() => void) | null) {
   redirectToLoginForTest = handler;
-}
-
-export async function refreshAccessToken(fetchImpl: typeof fetch = fetch): Promise<string> {
-  const refreshToken = readRefreshToken();
-  if (!refreshToken) {
-    clearSession();
-    redirectToLogin();
-    throw new AuthApiError("missing refresh token", 401);
-  }
-
-  const response = await fetchImpl(`${getApiBaseUrl()}/auth/refresh`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${refreshToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    const detail = await parseErrorMessage(response);
-    if (response.status === 401) {
-      clearSession();
-      redirectToLogin();
-    }
-    throw new AuthApiError(detail, response.status);
-  }
-
-  const payload = (await response.json()) as RefreshAccessTokenApiResponse;
-  const accessToken = payload.access_token?.trim();
-  if (!accessToken) {
-    throw new AuthApiError("invalid refresh response", 500);
-  }
-
-  saveAccessToken(accessToken);
-  return accessToken;
-}
-
-async function refreshAccessTokenSingleFlight(fetchImpl: typeof fetch) {
-  if (!refreshInFlight) {
-    // 并发 401 时共享同一个刷新请求，避免瞬时重复 refresh。
-    refreshInFlight = refreshAccessToken(fetchImpl).finally(() => {
-      refreshInFlight = null;
-    });
-  }
-
-  return refreshInFlight;
 }
 
 export async function fetchWithAuth(
@@ -254,31 +228,30 @@ export async function fetchWithAuth(
   init: RequestInit = {},
   fetchImpl: typeof fetch = fetch,
 ): Promise<Response> {
-  async function requestWithCurrentToken() {
-    const accessToken = readAccessToken();
-    const headers = buildAuthHeaders(init, accessToken);
-    return fetchImpl(url, { ...init, headers });
-  }
+  const response = await fetchImpl(url, {
+    ...init,
+    headers: init.headers ?? {},
+    credentials: 'include',
+  });
 
-  const response = await requestWithCurrentToken();
-  if (response.status !== 401 || isRefreshEndpoint(url)) {
-    return response;
-  }
-
-  await refreshAccessTokenSingleFlight(fetchImpl);
-  const retried = await requestWithCurrentToken();
-  if (retried.status === 401) {
+  if (response.status === 401 && !isPublicAuthEndpoint(url)) {
     clearSession();
-    redirectToLogin();
+    scheduleRedirectToLogin();
   }
-  return retried;
+
+  return response;
 }
 
 type MeApiResponse = {
-  user_id: string;
-  email: string;
-  nickname: string | null;
-  display_name: string;
+  session: {
+    id: string;
+    userId: string;
+  };
+  user: {
+    id: string;
+    email: string;
+    name?: string | null;
+  };
 };
 
 export type MeInfo = {
@@ -289,7 +262,15 @@ export type MeInfo = {
 };
 
 export async function fetchMe(fetchImpl: typeof fetch = fetch): Promise<MeInfo> {
-  const response = await fetchWithAuth(`${getApiBaseUrl()}/me`, { method: "GET" }, fetchImpl);
+  const response = await fetchImpl(`${getApiBaseUrl()}/api/auth/session`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (response.status === 401) {
+    clearSession();
+    throw new AuthApiError('unauthorized', 401);
+  }
 
   if (!response.ok) {
     const detail = await parseErrorMessage(response);
@@ -297,29 +278,20 @@ export async function fetchMe(fetchImpl: typeof fetch = fetch): Promise<MeInfo> 
   }
 
   const payload = (await response.json()) as MeApiResponse;
+  const email = payload.user.email;
+  writeSessionMarker(email);
+
   return {
-    userId: payload.user_id,
-    email: payload.email,
-    nickname: payload.nickname,
-    displayName: payload.display_name,
+    userId: payload.user.id,
+    email,
+    nickname: payload.user.name ?? null,
+    displayName: payload.user.name?.trim() || email.split('@')[0] || 'Learner',
   };
 }
 
 export async function logoutAccount(fetchImpl: typeof fetch = fetch) {
-  const accessToken = readAccessToken();
-  if (!accessToken) {
-    return;
-  }
-
-  const response = await fetchImpl(`${getApiBaseUrl()}/auth/logout`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+  await fetchImpl(`${getApiBaseUrl()}/api/auth/sign-out`, {
+    method: 'POST',
+    credentials: 'include',
   });
-
-  if (!response.ok && response.status !== 401) {
-    const detail = await parseErrorMessage(response);
-    throw new AuthApiError(detail, response.status);
-  }
 }

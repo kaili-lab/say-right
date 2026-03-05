@@ -2,14 +2,14 @@
 
 ## 最近一次交接
 
-- 当前阶段：`HONO-004` 已完成，准备进入 `HONO-005`。
+- 当前阶段：`HONO-005` 已完成，准备进入 `HONO-006`。
 - 已完成：
-  - Better Auth 已接入 Hono 路由，`/api/auth/*` 与 `/api/auth/session` 可用。
-  - Better Auth 所需 schema 已落库：`auth_users/auth_sessions/auth_accounts/auth_verifications`。
-  - 受保护路由中间件已落位，未登录返回 401，登录会话返回 200。
-  - CORS + cookie 链路已验证：显式 origin + credentials + cookie 会话收发。
-  - `pnpm test -- auth`、`pnpm test -- auth cors session`、`pnpm check` 全通过。
-- 下一个任务建议：执行 `HONO-005`，完成前端 `fetchWithAuth` 与全量 API 模块的会话化改造回归。
+  - 前端认证切换为 Better Auth 会话模型：`fetchWithAuth` 统一 `credentials: include`，401 触发本地会话清理并跳转登录。
+  - `auth-refresh` 测试已按 session 模型重写，覆盖会话失效、并发 401 单次跳转、登录/注册端点 401 不跳转。
+  - 全量 UI/API mock 回归门禁已通过；测试基线改为 session marker（`say_right_session_active`）。
+  - `me-page` 测试请求体已对齐 `/api/auth/session` 契约，并补齐退出登录会话清理断言。
+  - `pnpm test -- auth`、`pnpm test -- auth-refresh`、`pnpm test -- home record decks review`、`pnpm lint`、`pnpm typecheck` 全通过。
+- 下一个任务建议：执行 `HONO-006`，在已完成的前端会话链路基础上推进 Deck/Card/Record API Hono 平移。
 
 ## 注意事项
 

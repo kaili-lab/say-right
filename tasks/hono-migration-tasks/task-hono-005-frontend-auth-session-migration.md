@@ -110,3 +110,19 @@
 - 已完成本任务 review，并执行 `commit + push` 后再进入下一个任务
 
 ## output_summary（任务完成后由 AI 填写）
+
+- 关键产出文件：
+  - `frontend/src/pages/authApi.ts`：认证 API 与 `fetchWithAuth` 全面切换到 cookie session，请求统一 `credentials: include`；401 触发会话清理与登录跳转；保留旧 token key 常量仅用于迁移期清理。
+  - `frontend/src/auth-refresh.test.ts`：重写为 session 模型断言，覆盖凭证携带、401 跳转、并发 401 去重与公共鉴权端点豁免。
+  - `frontend/src/auth-ui.test.tsx`：注册/登录/登出测试已对齐 `/api/auth/sign-up/email`、`/api/auth/sign-in/email` 与 session marker 行为。
+  - `frontend/src/test/setup.ts`：默认登录态基线改为 `say_right_session_active + say_right_user_email`。
+  - `frontend/src/me-page.test.tsx`：会话查询响应结构改为 `/api/auth/session` 契约，登出断言改为 session 清理。
+- 契约与行为约定：
+  - 前端不再依赖 access/refresh token 进行鉴权判定，路由守卫读取 `say_right_session_active` 作为会话标记。
+  - 所有受保护请求通过 `fetchWithAuth` 携带 cookie；会话过期统一跳转 `/auth/login`。
+- 测试结果：
+  - `cd frontend && pnpm test -- auth` ✅
+  - `cd frontend && pnpm test -- auth-refresh` ✅
+  - `cd frontend && pnpm test -- home record decks review` ✅
+  - `cd frontend && pnpm lint` ✅
+  - `cd frontend && pnpm typecheck` ✅
