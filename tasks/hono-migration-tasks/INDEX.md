@@ -23,7 +23,7 @@
 |---|---|---|---|---|---|---|
 | HONO-001 | Hono 迁移基线冻结与工程目录落位 | done | - | - | `docs/contracts/v0.0-bootstrap.yaml` | SP-HONO-STACK |
 | HONO-002 | Workers + Hono 工程初始化与质量门禁 | done | HONO-001 | - | `docs/contracts/v0.0-bootstrap.yaml` | SP-HONO-BOOTSTRAP |
-| HONO-003 | D1 + Drizzle Schema 重建与仓储基线 | todo | HONO-002 | - | `docs/contracts/v0.2-deck-basic.yaml` + `docs/contracts/v0.3-card-management.yaml` | SP-HONO-DATA |
+| HONO-003 | D1 + Drizzle Schema 重建与仓储基线 | done | HONO-002 | - | `docs/contracts/v0.2-deck-basic.yaml` + `docs/contracts/v0.3-card-management.yaml` | SP-HONO-DATA |
 | HONO-004 | Better Auth 后端接入（Hono + D1） | todo | HONO-003 | HONO-005 | `docs/contracts/v0.8-auth-session.yaml` | SP-HONO-AUTH |
 | HONO-005 | 前端鉴权切换到 Better Auth 会话模式 | todo | HONO-004 | HONO-004 | `docs/contracts/v0.8-auth-session.yaml` | SP-HONO-AUTH-FE |
 | HONO-006 | Deck/Card/Record API 平移（Hono） | todo | HONO-003, HONO-005 | - | `docs/contracts/v0.2-deck-basic.yaml` + `docs/contracts/v0.3-card-management.yaml` + `docs/contracts/v0.3.5-record-generate.yaml` + `docs/contracts/v0.7-record-save-manual.yaml` | SP-HONO-CRUD-RECORD |

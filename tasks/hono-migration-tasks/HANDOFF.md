@@ -2,14 +2,14 @@
 
 ## 最近一次交接
 
-- 当前阶段：`HONO-002` 已完成，准备进入 `HONO-003`。
+- 当前阶段：`HONO-003` 已完成，准备进入 `HONO-004`。
 - 已完成：
-  - `backend-hono` 已完成 Hono Worker 工程初始化。
-  - `GET /health` 已实现并通过契约测试。
-  - CORS 骨架已落位：显式 origin（非 `*`）+ `credentials=true`。
-  - 质量门禁命令已落位并通过：`pnpm test/lint/typecheck/check`。
-  - `wrangler dev` 已验证可启动（`Ready on http://localhost:8787`）。
-- 下一个任务建议：执行 `HONO-003`，落位 D1 + Drizzle schema 与 repository 基线。
+  - D1/SQLite Drizzle schema 已落位（6 张核心表）。
+  - 基础迁移文件已生成：`drizzle/0000_*.sql` + `drizzle/meta/*`。
+  - `StudyRepository` 已提供最小可用写入链路。
+  - `d1` 集成测试已覆盖约束场景：唯一键/外键/级联删除/复合主键。
+  - `pnpm test -- d1`、`pnpm drizzle-kit check`、`pnpm check` 全通过。
+- 下一个任务建议：执行 `HONO-004`，接入 Better Auth（Hono + D1）并完成 CORS+cookie 端到端验证。
 
 ## 注意事项
 

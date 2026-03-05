@@ -54,6 +54,34 @@
 
 > 按时间倒序追加，最新在最上方。
 
+## [2026-03-05 22:06] HONO-003 D1 + Drizzle Schema 重建与仓储基线
+
+- 关键变更：
+  - 新增 `src/db/schema.ts`，落地 6 张核心表与关键约束。
+  - 新增 `src/repositories/core-repositories.ts`（`StudyRepository` 最小实现）。
+  - 新增 `drizzle.config.ts` 并生成迁移文件 `drizzle/0000_*.sql`。
+  - 新增 `tests/d1-schema-repository.test.ts`，覆盖 CRUD + 唯一键/外键/级联删除/复合主键。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm test -- d1`
+  - 退出码：`0`
+  - 关键通过行：`tests/d1-schema-repository.test.ts (4 tests)`
+  - 命令：`cd backend-hono && pnpm drizzle-kit check`
+  - 退出码：`0`
+  - 关键通过行：`Everything's fine`
+  - 命令：`cd backend-hono && pnpm check`
+  - 退出码：`0`
+  - 关键通过行：`pnpm test && pnpm lint && pnpm typecheck`
+  - 命令：`make -C backend check`
+  - 退出码：`0`
+  - 关键通过行：`122 passed in 14.75s`
+- 踩坑/教训：
+  - `eslint` 在 TS 参数属性场景会被基础 `no-unused-vars` 误判，需要显式切换到 `@typescript-eslint/no-unused-vars`。
+  - `drizzle.config.ts` 需加入 `tsconfig.include`，否则 lint/typecheck 链路不一致。
+- 新增规则：
+  - 数据层任务新增 TS 配置文件时，必须同步纳入 `tsconfig.include`，避免门禁阶段才暴露解析错误。
+- 对后续任务影响：
+  - `HONO-004` 可直接复用现有 schema 与 migration，补充 Better Auth 所需扩展表即可。
+
 ## [2026-03-05 22:00] HONO-002 Workers + Hono 工程初始化与质量门禁
 
 - 关键变更：

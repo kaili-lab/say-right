@@ -102,3 +102,20 @@
 - 已完成本任务 review，并执行 `commit + push` 后再进入下一个任务
 
 ## output_summary（任务完成后由 AI 填写）
+
+- 完成时间：2026-03-05 22:06 +0800
+- 关键变更：
+  - 新增 D1/SQLite Drizzle schema：`users/decks/cards/review_sessions/review_session_cards/review_logs`。
+  - 新增核心仓储基线 `StudyRepository`，覆盖用户/卡组/卡片/复习会话/复习日志最小写入链路。
+  - 新增 `drizzle.config.ts`，并生成基础迁移文件（`drizzle/0000_*.sql` + meta）。
+  - 新增 `d1` 集成测试，覆盖 CRUD、唯一键、外键、级联删除、`review_session_cards` 主键唯一约束。
+- TDD 证据：
+  - Red：`pnpm test -- d1` 初次失败（缺少 `../src/db/schema`）。
+  - Green：实现 schema/repository/migration 后，`pnpm test -- d1` 通过。
+- 测试证据（Green）：
+  - `cd backend-hono && pnpm test -- d1` -> 退出码 `0`（`tests/d1-schema-repository.test.ts (4 tests)`）
+  - `cd backend-hono && pnpm drizzle-kit check` -> 退出码 `0`（`Everything's fine`）
+  - `cd backend-hono && pnpm check` -> 退出码 `0`
+  - `make -C backend check` -> 退出码 `0`（`122 passed`）
+- 结论：
+  - DoD 满足，可进入 `HONO-004`。
