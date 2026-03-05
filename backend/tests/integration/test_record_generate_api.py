@@ -40,9 +40,6 @@ def test_generate_record_success_returns_contract_body() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["generated_text"] == "Hello."
-    assert body["model_hint"] == "stub:deterministic-v1"
-    assert isinstance(body["trace_id"], str)
-    assert len(body["trace_id"]) >= 8
 
 
 def test_generate_record_validation_error_returns_422() -> None:

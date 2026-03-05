@@ -3,8 +3,6 @@ import { fetchWithAuth } from "./authApi";
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 export type RecordGenerateResult = {
   generatedText: string;
-  modelHint: string;
-  traceId: string;
 };
 
 export type RecordSaveResult = {
@@ -23,8 +21,6 @@ export type RecordSaveWithAgentResult = {
 
 type RecordGenerateApiResponse = {
   generated_text: string;
-  model_hint: string;
-  trace_id: string;
 };
 
 type RecordSaveApiResponse = {
@@ -98,11 +94,7 @@ export async function generateRecordEnglish(
   }
 
   const payload = (await response.json()) as RecordGenerateApiResponse;
-  return {
-    generatedText: payload.generated_text,
-    modelHint: payload.model_hint,
-    traceId: payload.trace_id,
-  };
+  return { generatedText: payload.generated_text };
 }
 
 export async function saveRecordToDeck(

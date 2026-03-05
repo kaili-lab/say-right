@@ -13,8 +13,6 @@ const decksPayload = [
 
 const generatePayload = {
   generated_text: "I need to double-check the time for this meeting.",
-  model_hint: "stub-v1",
-  trace_id: "trace-001",
 };
 
 const savePayload = {

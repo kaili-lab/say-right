@@ -41,15 +41,13 @@ class RecordGenerateApiResponse(BaseModel):
     """生成英文响应体。"""
 
     generated_text: str
-    model_hint: str
-    trace_id: str
 
 
 class RecordSaveApiRequest(BaseModel):
     """手动指定分组保存卡片请求体。"""
 
     source_text: str = Field(min_length=1, max_length=200)
-    generated_text: str = Field(min_length=1, max_length=500)
+    generated_text: str = Field(min_length=1, max_length=2000)
     deck_id: str = Field(min_length=1)
     source_lang: Literal["zh"]
     target_lang: Literal["en"]
@@ -99,11 +97,7 @@ class SaveWithAgentApiResponse(BaseModel):
 
 
 def _to_response(result: RecordGenerateResult) -> RecordGenerateApiResponse:
-    return RecordGenerateApiResponse(
-        generated_text=result.generated_text,
-        model_hint=result.model_hint,
-        trace_id=result.trace_id,
-    )
+    return RecordGenerateApiResponse(generated_text=result.generated_text)
 
 
 def _to_save_response(result: SaveWithAgentResult) -> SaveWithAgentApiResponse:

@@ -59,8 +59,6 @@ describe("record-generate", () => {
       new Response(
         JSON.stringify({
           generated_text: "I need to double-check the time for this meeting.",
-          model_hint: "stub-v1",
-          trace_id: "trace-demo-001",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
@@ -68,8 +66,6 @@ describe("record-generate", () => {
 
     const englishOutput = await screen.findByLabelText("英文结果");
     expect(englishOutput).toHaveValue("I need to double-check the time for this meeting.");
-    expect(screen.getByText("model: stub-v1")).toBeInTheDocument();
-    expect(screen.getByText("trace: trace-demo-001")).toBeInTheDocument();
 
     await user.clear(englishOutput);
     await user.type(englishOutput, "Let me confirm this meeting time again.");

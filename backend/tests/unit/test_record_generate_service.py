@@ -13,7 +13,7 @@ def build_service() -> RecordGenerateService:
 
 
 def test_generate_returns_deterministic_response() -> None:
-    """相同输入应稳定返回相同生成结果与 trace_id。"""
+    """相同输入应稳定返回相同生成结果。"""
     service = build_service()
     request = RecordGenerateRequest(source_text="我想喝水", source_lang="zh", target_lang="en")
 
@@ -21,8 +21,6 @@ def test_generate_returns_deterministic_response() -> None:
     second = service.generate(request)
 
     assert first.generated_text == second.generated_text
-    assert first.trace_id == second.trace_id
-    assert first.model_hint == "stub:deterministic-v1"
 
 
 def test_generate_uses_fixture_translation_when_available() -> None:

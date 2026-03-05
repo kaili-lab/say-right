@@ -42,8 +42,6 @@ export function RecordPage() {
   const [sourceText, setSourceText] = useState("");
   const [generatedText, setGeneratedText] = useState("");
   const [sourceSnapshot, setSourceSnapshot] = useState("");
-  const [modelHint, setModelHint] = useState("");
-  const [traceId, setTraceId] = useState("");
   const [generateStatus, setGenerateStatus] = useState<GenerateStatus>("idle");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -109,8 +107,6 @@ export function RecordPage() {
       const result = await generateRecordEnglish(normalizedSourceText);
       setGeneratedText(result.generatedText);
       setSourceSnapshot(normalizedSourceText);
-      setModelHint(result.modelHint);
-      setTraceId(result.traceId);
       setGenerateStatus("success");
     } catch (error) {
       setGenerateStatus("error");
@@ -227,13 +223,6 @@ export function RecordPage() {
             {!isSaved && (
               <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
             )}
-
-            {import.meta.env.DEV ? (
-              <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
-                <span className="rounded-md bg-orange-50 px-2 py-1 text-orange-600">model: {modelHint}</span>
-                <span className="rounded-md bg-stone-100 px-2 py-1">trace: {traceId}</span>
-              </div>
-            ) : null}
 
             <div className="flex flex-wrap items-center justify-end gap-3 border-t border-stone-200 pt-3">
               <button

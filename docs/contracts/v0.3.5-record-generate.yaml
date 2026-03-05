@@ -11,8 +11,6 @@ endpoints:
       status: 200
       body:
         generated_text: string
-        model_hint: string
-        trace_id: string
     errors:
       - 422_validation
       - 503_llm_unavailable
