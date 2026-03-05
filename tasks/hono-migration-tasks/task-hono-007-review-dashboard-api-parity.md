@@ -100,3 +100,20 @@
 - 已完成本任务 review，并执行 `commit + push` 后再进入下一个任务
 
 ## output_summary（任务完成后由 AI 填写）
+
+- 关键产出文件：
+  - `backend-hono/src/app.ts`
+  - `backend-hono/tests/review-dashboard-api.test.ts`
+- 已完成接口平移：
+  - `GET /review/decks`（`due_count = due_count + new_count`，按 `due_count` 降序）
+  - `GET /review/decks/{deck_id}/session`（仅取到期卡；默认每日上限新卡 20、复习卡 100；按当日 `review_logs` 抵扣；写入 `review_sessions` + `review_session_cards`）
+  - `POST /review/session/{session_id}/ai-score`（会话/卡片归属校验；deterministic AI 评分；`__AI_UNAVAILABLE__ -> 503`）
+  - `POST /review/session/{session_id}/rate`（again/hard/good/easy FSRS 调度；更新卡片状态；写 `review_logs`）
+  - `GET /review/session/{session_id}/summary`（`reviewed_count/accuracy/rating_distribution`）
+  - `GET /dashboard/home-summary`（`display_name/insight/study_days/mastered_count/total_cards/total_due/recent_decks`）
+- 关键约定：
+  - 复习配额按 UTC 自然日统计（与 FastAPI 口径一致）。
+  - `display_name` 优先会话昵称，否则回退邮箱前缀。
+  - `insight` 使用 `user_id + 当日` 的稳定哈希抽样，避免刷新抖动。
+- 测试覆盖：
+  - 新增集成测试 `backend-hono/tests/review-dashboard-api.test.ts`，覆盖主链路与 `401/404/422/503` 边界、每日配额抵扣、dashboard 聚合。

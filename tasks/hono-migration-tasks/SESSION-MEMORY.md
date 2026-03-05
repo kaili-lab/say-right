@@ -54,6 +54,32 @@
 
 > 按时间倒序追加，最新在最上方。
 
+## [2026-03-06 06:27] HONO-007 Review/Dashboard API 平移（Hono）
+
+- 关键变更：
+  - 在 `backend-hono/src/app.ts` 新增 review/dashboard 全链路路由：`/review/decks`、`/review/decks/:deckId/session`、`/review/session/:sessionId/ai-score`、`/review/session/:sessionId/rate`、`/review/session/:sessionId/summary`、`/dashboard/home-summary`。
+  - 复习会话按 `due_at <= now` 取卡，沿用默认每日上限（新卡 20、复习卡 100），并基于当日 `review_logs` 抵扣配额。
+  - 评分链路接 deterministic AI 评分器（保留 `__AI_UNAVAILABLE__ -> 503` 可复现故障注入），评级链路实现 FSRS again/hard/good/easy 更新并落 review log。
+  - dashboard 聚合返回 `display_name/insight/study_days/mastered_count/total_cards/total_due/recent_decks`，口径与 FastAPI 对齐。
+  - 新增集成测试 `backend-hono/tests/review-dashboard-api.test.ts`，覆盖主链路与 `401/404/422/503` 边界、配额抵扣与统计行为。
+  - 在复审阶段调用了 claude reviewer subagent，采纳其“每日配额统计合并为单查询”的优化建议。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm test -- review dashboard`
+  - 退出码：`0`
+  - 关键通过行：`tests/review-dashboard-api.test.ts (5 tests)`
+  - 命令：`cd backend-hono && pnpm check`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  6 passed (6)`
+  - 命令：`make -C backend check`
+  - 退出码：`0`
+  - 关键通过行：`122 passed in 12.49s`
+- 踩坑/教训：
+  - review/dashboard 场景下若测试直接插入 `cards`，`decks` 计数字段不会自动刷新，需在测试 fixture 中显式重算，否则会误判 dashboard 统计回归。
+- 新增规则：
+  - 涉及“每日上限 + 抵扣”逻辑时，优先合并为单条聚合查询，避免随业务扩展产生多次 count 查询。
+- 对后续任务影响：
+  - `HONO-008` 可直接复用 `__FAIL_STUB__` / `__AI_UNAVAILABLE__` 现有故障注入约定，平滑替换为 OpenAI 兼容适配层并保持测试可复现。
+
 ## [2026-03-06 06:05] HONO-006 Deck/Card/Record API 平移（Hono）
 
 - 关键变更：

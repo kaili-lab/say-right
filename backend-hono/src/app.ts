@@ -5,7 +5,7 @@
  */
 import { createHash, randomUUID } from 'node:crypto';
 import { zValidator } from '@hono/zod-validator';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, lt, lte, sql } from 'drizzle-orm';
 import { type Context, Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { type DrizzleD1Database, drizzle } from 'drizzle-orm/d1';
@@ -49,9 +49,29 @@ type AppOptions = {
 
 type Database = DrizzleD1Database<typeof schema>;
 type ValidationSource = 'body' | 'path';
+type RatingSource = 'manual' | 'ai';
+type RatingValue = 'again' | 'hard' | 'good' | 'easy';
+
+type FsrsState = {
+  dueAt: number;
+  stability: number;
+  difficulty: number;
+  reps: number;
+  lapses: number;
+};
 
 const DEFAULT_DECK_NAME = '默认组';
 const RECORD_SAVE_GENERATED_TEXT_MAX_LENGTH = 300;
+const DEFAULT_DAILY_NEW_LIMIT = 20;
+const DEFAULT_DAILY_REVIEW_LIMIT = 100;
+
+const DAILY_INSIGHTS = [
+  '把一句话用三种语气复述一遍，记忆会更牢。',
+  '先追求“说得出”，再追求“说得漂亮”，更容易坚持。',
+  '复习时先回忆再看答案，效果通常优于直接浏览。',
+  '把今天新学表达放进真实对话场景，能显著提高留存。',
+  '每天 10 分钟连续学习，比周末突击更有效。'
+] as const;
 
 const RECORD_GENERATE_FIXTURES: Record<string, string> = {
   你好: 'Hello.',
@@ -169,6 +189,44 @@ const saveWithAgentSchema = z.object({
   target_lang: z.literal('en')
 });
 
+const reviewDeckSessionParamSchema = z.object({
+  deckId: z
+    .string()
+    .transform((value) => value.trim())
+    .refine((value) => value.length > 0, 'deck_id must not be empty')
+});
+
+const reviewSessionParamSchema = z.object({
+  sessionId: z
+    .string()
+    .transform((value) => value.trim())
+    .refine((value) => value.length > 0, 'session_id must not be empty')
+});
+
+const reviewAiScoreSchema = z.object({
+  card_id: z
+    .string()
+    .max(100)
+    .transform((value) => value.trim())
+    .refine((value) => value.length > 0, 'card_id must not be empty'),
+  user_answer: z
+    .string()
+    .max(500)
+    .transform((value) => value.trim())
+    .refine((value) => value.length > 0, 'user_answer must not be empty')
+});
+
+const reviewRateSchema = z.object({
+  card_id: z
+    .string()
+    .max(100)
+    .transform((value) => value.trim())
+    .refine((value) => value.length > 0, 'card_id must not be empty'),
+  rating_source: z.enum(['manual', 'ai']),
+  rating_value: z.enum(['again', 'hard', 'good', 'easy']),
+  user_answer: z.string().max(500).optional()
+});
+
 /**
  * WHAT: 解析 CORS 白名单变量。
  * WHY: 统一解析规则，避免测试环境与运行环境行为不一致。
@@ -263,6 +321,125 @@ function buildCardResponse(card: {
     reps: card.reps,
     lapses: card.lapses
   };
+}
+
+function buildFsrsStateResponse(state: FsrsState) {
+  return {
+    due_at: toIsoTime(state.dueAt),
+    stability: state.stability,
+    difficulty: state.difficulty,
+    reps: state.reps,
+    lapses: state.lapses
+  };
+}
+
+function roundToFourDecimals(value: number) {
+  return Math.round(value * 10_000) / 10_000;
+}
+
+function scheduleNextFsrsState(
+  state: FsrsState,
+  rating: RatingValue,
+  now: number
+): FsrsState {
+  if (rating === 'again') {
+    return {
+      dueAt: now + 10 * 60 * 1000,
+      stability: Math.max(0.1, roundToFourDecimals(state.stability * 0.7)),
+      difficulty: Math.min(10, roundToFourDecimals(state.difficulty + 0.3)),
+      reps: state.reps + 1,
+      lapses: state.lapses + 1
+    };
+  }
+
+  if (rating === 'hard') {
+    return {
+      dueAt: now + 24 * 60 * 60 * 1000,
+      stability: roundToFourDecimals(state.stability * 1.1 + 0.1),
+      difficulty: Math.min(10, roundToFourDecimals(state.difficulty + 0.1)),
+      reps: state.reps + 1,
+      lapses: state.lapses
+    };
+  }
+
+  if (rating === 'good') {
+    return {
+      dueAt: now + 3 * 24 * 60 * 60 * 1000,
+      stability: roundToFourDecimals(state.stability * 1.6 + 0.2),
+      difficulty: Math.max(1, roundToFourDecimals(state.difficulty - 0.1)),
+      reps: state.reps + 1,
+      lapses: state.lapses
+    };
+  }
+
+  return {
+    dueAt: now + 7 * 24 * 60 * 60 * 1000,
+    stability: roundToFourDecimals(state.stability * 2 + 0.4),
+    difficulty: Math.max(1, roundToFourDecimals(state.difficulty - 0.2)),
+    reps: state.reps + 1,
+    lapses: state.lapses
+  };
+}
+
+function mapScoreToRating(score: number): RatingValue {
+  if (score >= 90) {
+    return 'easy';
+  }
+  if (score >= 70) {
+    return 'good';
+  }
+  if (score >= 50) {
+    return 'hard';
+  }
+  return 'again';
+}
+
+function scoreReviewAnswer(expectedAnswer: string, userAnswer: string) {
+  const expected = expectedAnswer.trim().toLowerCase();
+  const answer = userAnswer.trim().toLowerCase();
+
+  let score = 35;
+  let feedback = '与标准答案差异较大，建议重学后再尝试。';
+  if (answer === expected) {
+    score = 95;
+    feedback = '表达准确，几乎与标准答案一致。';
+  } else if (answer.length > 0 && (answer.includes(expected) || expected.includes(answer))) {
+    score = 80;
+    feedback = '表达基本正确，可进一步优化措辞自然度。';
+  } else if (answer.length >= Math.max(1, Math.floor(expected.length * 0.6))) {
+    score = 65;
+    feedback = '核心意思接近，但语法或用词仍有偏差。';
+  }
+
+  return {
+    score,
+    feedback,
+    suggestedRating: mapScoreToRating(score)
+  };
+}
+
+function resolveUtcDayRange(timestamp: number) {
+  const now = new Date(timestamp);
+  const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return {
+    start,
+    end: start + 24 * 60 * 60 * 1000
+  };
+}
+
+function pickDailyInsight(userId: string, nowMs: number) {
+  const dayKey = new Date(nowMs).toISOString().slice(0, 10);
+  const digest = createHash('sha1').update(`${userId}:${dayKey}`, 'utf8').digest('hex');
+  const index = Number.parseInt(digest.slice(0, 8), 16) % DAILY_INSIGHTS.length;
+  return DAILY_INSIGHTS[index] ?? DAILY_INSIGHTS[0];
+}
+
+function resolveDisplayName(user: CurrentUser) {
+  if (user.name && user.name.trim().length > 0) {
+    return user.name.trim();
+  }
+  const localPart = user.email.split('@', 1)[0];
+  return localPart && localPart.length > 0 ? localPart : user.email;
 }
 
 async function resolveCurrentUser(c: Context<AppEnv>, auth: AuthInstance): Promise<CurrentUser | null> {
@@ -396,6 +573,72 @@ async function refreshDeckCounts(db: Database, deckId: string) {
     .where(eq(schema.decks.deckId, deckId));
 }
 
+async function countDailyRatedStats(
+  db: Database,
+  userId: string,
+  now: number
+) {
+  const dayRange = resolveUtcDayRange(now);
+  const rows = await db
+    .select({
+      isNewCard: schema.reviewLogs.isNewCard,
+      total: sql<number>`count(*)`
+    })
+    .from(schema.reviewLogs)
+    .where(
+      and(
+        eq(schema.reviewLogs.userId, userId),
+        gte(schema.reviewLogs.ratedAt, dayRange.start),
+        lt(schema.reviewLogs.ratedAt, dayRange.end)
+      )
+    )
+    .groupBy(schema.reviewLogs.isNewCard)
+    .orderBy(schema.reviewLogs.isNewCard);
+
+  let reviewedToday = 0;
+  let introducedToday = 0;
+  for (const row of rows) {
+    if (row.isNewCard) {
+      introducedToday = Number(row.total ?? 0);
+    } else {
+      reviewedToday = Number(row.total ?? 0);
+    }
+  }
+
+  return {
+    reviewedToday,
+    introducedToday
+  };
+}
+
+async function findOwnedReviewSession(db: Database, userId: string, sessionId: string) {
+  const [session] = await db
+    .select()
+    .from(schema.reviewSessions)
+    .where(
+      and(
+        eq(schema.reviewSessions.sessionId, sessionId),
+        eq(schema.reviewSessions.userId, userId)
+      )
+    )
+    .limit(1);
+  return session ?? null;
+}
+
+async function isCardBoundToSession(db: Database, sessionId: string, cardId: string) {
+  const [row] = await db
+    .select({ cardId: schema.reviewSessionCards.cardId })
+    .from(schema.reviewSessionCards)
+    .where(
+      and(
+        eq(schema.reviewSessionCards.sessionId, sessionId),
+        eq(schema.reviewSessionCards.cardId, cardId)
+      )
+    )
+    .limit(1);
+  return Boolean(row?.cardId);
+}
+
 function isUniqueConstraintError(error: unknown) {
   return error instanceof Error && /unique/i.test(error.message);
 }
@@ -520,6 +763,8 @@ export function createApp(options: AppOptions = {}) {
   app.use('/decks/*', requireSession);
   app.use('/cards/*', requireSession);
   app.use('/records/*', requireSession);
+  app.use('/review/*', requireSession);
+  app.use('/dashboard/*', requireSession);
 
   app.get('/decks', async (c) => {
     const db = resolveDb(c);
@@ -747,6 +992,336 @@ export function createApp(options: AppOptions = {}) {
       return c.json(buildCardResponse(movedCard));
     }
   );
+
+  app.get('/review/decks', async (c) => {
+    const db = resolveDb(c);
+    const currentUser = c.get('currentUser');
+    await ensureDefaultDeck(db, currentUser.userId);
+
+    const decks = await db
+      .select()
+      .from(schema.decks)
+      .where(eq(schema.decks.userId, currentUser.userId));
+
+    const summaries = decks
+      .map((deck) => ({
+        deck_id: deck.deckId,
+        deck_name: deck.name,
+        due_count: deck.dueCount + deck.newCount
+      }))
+      .sort((left, right) => {
+        if (right.due_count !== left.due_count) {
+          return right.due_count - left.due_count;
+        }
+        return left.deck_id.localeCompare(right.deck_id);
+      });
+
+    return c.json(summaries);
+  });
+
+  app.get(
+    '/review/decks/:deckId/session',
+    zValidator('param', reviewDeckSessionParamSchema, createValidationHook('path')),
+    async (c) => {
+      const db = resolveDb(c);
+      const currentUser = c.get('currentUser');
+      const { deckId } = c.req.valid('param');
+
+      const deck = await findOwnedDeckById(db, currentUser.userId, deckId);
+      if (!deck) {
+        return c.json({ detail: 'deck not found' }, 404);
+      }
+
+      const now = Date.now();
+      const dueCards = await db
+        .select()
+        .from(schema.cards)
+        .where(
+          and(
+            eq(schema.cards.userId, currentUser.userId),
+            eq(schema.cards.deckId, deckId),
+            lte(schema.cards.dueAt, now)
+          )
+        )
+        .orderBy(schema.cards.dueAt, schema.cards.createdAt, schema.cards.cardId);
+
+      const reviewCards = dueCards.filter((card) => card.reps > 0);
+      const newCards = dueCards.filter((card) => card.reps === 0);
+      const { reviewedToday, introducedToday } = await countDailyRatedStats(
+        db,
+        currentUser.userId,
+        now
+      );
+      const reviewQuota = Math.max(0, DEFAULT_DAILY_REVIEW_LIMIT - reviewedToday);
+      const newQuota = Math.max(0, DEFAULT_DAILY_NEW_LIMIT - introducedToday);
+      const selectedCards = [...reviewCards.slice(0, reviewQuota), ...newCards.slice(0, newQuota)];
+
+      const sessionId = randomUUID();
+      await db.insert(schema.reviewSessions).values({
+        sessionId,
+        userId: currentUser.userId,
+        deckId,
+        createdAt: now
+      });
+      for (let index = 0; index < selectedCards.length; index += 1) {
+        await db.insert(schema.reviewSessionCards).values({
+          sessionId,
+          cardId: selectedCards[index]!.cardId,
+          ord: index
+        });
+      }
+
+      return c.json({
+        session_id: sessionId,
+        cards: selectedCards.map((card) => ({
+          card_id: card.cardId,
+          front_text: card.frontText,
+          back_text: card.backText,
+          fsrs_state: buildFsrsStateResponse({
+            dueAt: card.dueAt,
+            stability: card.stability,
+            difficulty: card.difficulty,
+            reps: card.reps,
+            lapses: card.lapses
+          })
+        }))
+      });
+    }
+  );
+
+  app.post(
+    '/review/session/:sessionId/ai-score',
+    zValidator('param', reviewSessionParamSchema, createValidationHook('path')),
+    zValidator('json', reviewAiScoreSchema, createValidationHook('body')),
+    async (c) => {
+      const db = resolveDb(c);
+      const currentUser = c.get('currentUser');
+      const { sessionId } = c.req.valid('param');
+      const payload = c.req.valid('json');
+
+      const session = await findOwnedReviewSession(db, currentUser.userId, sessionId);
+      if (!session) {
+        return c.json({ detail: 'session not found' }, 404);
+      }
+
+      const inSession = await isCardBoundToSession(db, sessionId, payload.card_id);
+      if (!inSession) {
+        return c.json({ detail: 'card not in session' }, 404);
+      }
+
+      const card = await findOwnedCardById(db, currentUser.userId, payload.card_id);
+      if (!card) {
+        return c.json({ detail: 'card not in session' }, 404);
+      }
+
+      // 为保证测试可复现，约定特定输入触发 AI 不可用分支，替代真实模型依赖。
+      if (payload.user_answer.includes('__AI_UNAVAILABLE__')) {
+        return c.json({ detail: 'ai unavailable' }, 503);
+      }
+
+      const scored = scoreReviewAnswer(card.backText, payload.user_answer);
+      return c.json({
+        score: scored.score,
+        feedback: scored.feedback,
+        suggested_rating: scored.suggestedRating
+      });
+    }
+  );
+
+  app.post(
+    '/review/session/:sessionId/rate',
+    zValidator('param', reviewSessionParamSchema, createValidationHook('path')),
+    zValidator('json', reviewRateSchema, createValidationHook('body')),
+    async (c) => {
+      const db = resolveDb(c);
+      const currentUser = c.get('currentUser');
+      const { sessionId } = c.req.valid('param');
+      const payload = c.req.valid('json');
+
+      const session = await findOwnedReviewSession(db, currentUser.userId, sessionId);
+      if (!session) {
+        return c.json({ detail: 'session not found' }, 404);
+      }
+
+      const inSession = await isCardBoundToSession(db, sessionId, payload.card_id);
+      if (!inSession) {
+        return c.json({ detail: 'card not in session' }, 404);
+      }
+
+      const card = await findOwnedCardById(db, currentUser.userId, payload.card_id);
+      if (!card) {
+        return c.json({ detail: 'card not in session' }, 404);
+      }
+
+      const now = Date.now();
+      const nextState = scheduleNextFsrsState(
+        {
+          dueAt: card.dueAt,
+          stability: card.stability,
+          difficulty: card.difficulty,
+          reps: card.reps,
+          lapses: card.lapses
+        },
+        payload.rating_value,
+        now
+      );
+
+      await db
+        .update(schema.cards)
+        .set({
+          dueAt: nextState.dueAt,
+          stability: nextState.stability,
+          difficulty: nextState.difficulty,
+          reps: nextState.reps,
+          lapses: nextState.lapses,
+          updatedAt: now
+        })
+        .where(eq(schema.cards.cardId, card.cardId));
+
+      await db.insert(schema.reviewLogs).values({
+        reviewLogId: randomUUID(),
+        userId: currentUser.userId,
+        cardId: card.cardId,
+        sessionId,
+        ratingSource: payload.rating_source as RatingSource,
+        finalRating: payload.rating_value as RatingValue,
+        isNewCard: card.reps === 0,
+        ratedAt: now,
+        fsrsSnapshot: JSON.stringify({
+          due_at: toIsoTime(nextState.dueAt),
+          stability: nextState.stability,
+          difficulty: nextState.difficulty,
+          reps: nextState.reps,
+          lapses: nextState.lapses
+        })
+      });
+
+      await refreshDeckCounts(db, card.deckId);
+
+      return c.json({
+        next_due_at: toIsoTime(nextState.dueAt),
+        updated_fsrs_state: buildFsrsStateResponse(nextState)
+      });
+    }
+  );
+
+  app.get(
+    '/review/session/:sessionId/summary',
+    zValidator('param', reviewSessionParamSchema, createValidationHook('path')),
+    async (c) => {
+      const db = resolveDb(c);
+      const currentUser = c.get('currentUser');
+      const { sessionId } = c.req.valid('param');
+
+      const session = await findOwnedReviewSession(db, currentUser.userId, sessionId);
+      if (!session) {
+        return c.json({ detail: 'session not found' }, 404);
+      }
+
+      const logs = await db
+        .select({
+          finalRating: schema.reviewLogs.finalRating
+        })
+        .from(schema.reviewLogs)
+        .where(
+          and(
+            eq(schema.reviewLogs.userId, currentUser.userId),
+            eq(schema.reviewLogs.sessionId, sessionId)
+          )
+        )
+        .orderBy(schema.reviewLogs.ratedAt, schema.reviewLogs.reviewLogId);
+
+      const distribution: Record<RatingValue, number> = {
+        again: 0,
+        hard: 0,
+        good: 0,
+        easy: 0
+      };
+      for (const log of logs) {
+        const rating = log.finalRating as RatingValue;
+        distribution[rating] += 1;
+      }
+
+      const reviewedCount = logs.length;
+      const accuracy = reviewedCount === 0
+        ? 0
+        : Math.round(((distribution.good + distribution.easy) / reviewedCount) * 100);
+
+      return c.json({
+        session_id: sessionId,
+        reviewed_count: reviewedCount,
+        accuracy,
+        rating_distribution: distribution
+      });
+    }
+  );
+
+  app.get('/dashboard/home-summary', async (c) => {
+    const db = resolveDb(c);
+    const currentUser = c.get('currentUser');
+    const now = Date.now();
+    await ensureDefaultDeck(db, currentUser.userId);
+
+    const [totalCardsRow] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(schema.cards)
+      .where(eq(schema.cards.userId, currentUser.userId));
+    const totalCards = Number(totalCardsRow?.total ?? 0);
+
+    const [totalDueRow] = await db
+      .select({ total: sql<number>`sum(${schema.decks.dueCount})` })
+      .from(schema.decks)
+      .where(eq(schema.decks.userId, currentUser.userId));
+    const totalDue = Number(totalDueRow?.total ?? 0);
+
+    const recentDeckRows = await db
+      .select({
+        id: schema.decks.deckId,
+        name: schema.decks.name,
+        dueCount: schema.decks.dueCount
+      })
+      .from(schema.decks)
+      .where(eq(schema.decks.userId, currentUser.userId))
+      .orderBy(desc(schema.decks.createdAt), desc(schema.decks.deckId))
+      .limit(3);
+
+    const reviewLogs = await db
+      .select({
+        cardId: schema.reviewLogs.cardId,
+        finalRating: schema.reviewLogs.finalRating,
+        ratedAt: schema.reviewLogs.ratedAt,
+        reviewLogId: schema.reviewLogs.reviewLogId
+      })
+      .from(schema.reviewLogs)
+      .where(eq(schema.reviewLogs.userId, currentUser.userId))
+      .orderBy(desc(schema.reviewLogs.ratedAt), desc(schema.reviewLogs.reviewLogId));
+
+    const studyDays = new Set<string>();
+    const latestRatingByCard = new Map<string, RatingValue>();
+    for (const log of reviewLogs) {
+      studyDays.add(new Date(log.ratedAt).toISOString().slice(0, 10));
+      if (!latestRatingByCard.has(log.cardId)) {
+        latestRatingByCard.set(log.cardId, log.finalRating as RatingValue);
+      }
+    }
+    const masteredCount = [...latestRatingByCard.values()].filter(
+      (rating) => rating === 'good' || rating === 'easy'
+    ).length;
+
+    return c.json({
+      display_name: resolveDisplayName(currentUser),
+      insight: pickDailyInsight(currentUser.userId, now),
+      study_days: studyDays.size,
+      mastered_count: masteredCount,
+      total_cards: totalCards,
+      total_due: totalDue,
+      recent_decks: recentDeckRows.map((deck) => ({
+        id: deck.id,
+        name: deck.name,
+        due_count: deck.dueCount
+      }))
+    });
+  });
 
   app.post(
     '/records/generate',
