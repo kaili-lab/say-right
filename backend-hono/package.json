@@ -8,7 +8,10 @@
     "test": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "check": "pnpm test && pnpm lint && pnpm typecheck"
+    "check": "pnpm test && pnpm lint && pnpm typecheck",
+    "migration:export": "node --experimental-strip-types ./scripts/migration/export-postgres.ts",
+    "migration:import": "node --experimental-strip-types ./scripts/migration/import-d1.ts",
+    "migration:verify": "node --experimental-strip-types ./scripts/migration/verify-d1.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.5.3",

@@ -54,6 +54,37 @@
 
 > 按时间倒序追加，最新在最上方。
 
+## [2026-03-06 06:49] HONO-009 Postgres -> D1 数据迁移与一致性校验
+
+- 关键变更：
+  - 新增 `backend-hono/src/migration/snapshot.ts`，统一快照结构、字段归一化、D1 导入顺序与一致性报告输出。
+  - 导入策略为“逆序清空 + 正序重灌”，支持重复执行，避免外键残留污染。
+  - 新增迁移脚本：
+    - `backend-hono/scripts/migration/export-postgres.ts`
+    - `backend-hono/scripts/migration/import-d1.ts`
+    - `backend-hono/scripts/migration/verify-d1.ts`
+  - 新增迁移测试 `backend-hono/tests/migration-tools.test.ts`，覆盖成功与失败（关键字段漂移）场景。
+  - 新增迁移执行手册 `docs/HONO-009-Postgres-to-D1迁移手册.md`，包含执行步骤、报告解读与回滚流程。
+  - 兼容脚本运行：`backend-hono/package.json` 增加 `migration:*` 命令，`tsconfig` 纳入 `scripts` 并开启 `allowImportingTsExtensions`。
+  - review 阶段调用了 claude reviewer subagent，并完成风险项人工复核（以本地完整代码为准）。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm test -- migration`
+  - 退出码：`0`
+  - 关键通过行：`tests/migration-tools.test.ts (2 tests)`
+  - 命令：`cd backend-hono && pnpm check`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  9 passed (9)`
+  - 命令：`make -C backend check`
+  - 退出码：`0`
+  - 关键通过行：`122 passed in 13.29s`
+- 踩坑/教训：
+  - 迁移脚本若放在 `scripts/` 目录，必须同步更新 `tsconfig.include`；否则 eslint/typecheck 会在门禁阶段报“文件不在 project”。
+  - Node 22 的 `--experimental-strip-types` 配合 TypeScript 导入扩展名时，需要 `allowImportingTsExtensions=true`。
+- 新增规则：
+  - 新增 TypeScript CLI 脚本时，必须同时校验三件事：`tsconfig.include`、eslint node 全局、TS 扩展名导入策略。
+- 对后续任务影响：
+  - `HONO-010` 可直接复用本任务的迁移脚本与校验报告模板，作为切换前最终数据一致性证据。
+
 ## [2026-03-06 06:40] HONO-008 OpenAI 兼容 LLM 适配层与 Stub 替换
 
 - 关键变更：

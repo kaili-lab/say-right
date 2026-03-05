@@ -95,3 +95,20 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
+- 关键产出文件：
+  - `backend-hono/src/migration/snapshot.ts`
+  - `backend-hono/scripts/migration/export-postgres.ts`
+  - `backend-hono/scripts/migration/import-d1.ts`
+  - `backend-hono/scripts/migration/verify-d1.ts`
+  - `backend-hono/tests/migration-tools.test.ts`
+  - `docs/HONO-009-Postgres-to-D1迁移手册.md`
+- 已完成能力：
+  - 定义标准迁移快照格式（按 `users -> decks -> cards -> review_sessions -> review_session_cards -> review_logs` 顺序）。
+  - 提供 D1 可重复导入能力：每次导入前按外键逆序清空，再按依赖顺序重灌。
+  - 提供一致性校验报告：按表输出 `source_count/target_count/count_match/hash_match` 与抽样哈希。
+  - 提供导出/导入/校验 CLI 脚本，形成可执行迁移流程。
+  - 提供迁移执行手册，覆盖步骤、回滚与风险说明。
+- 测试覆盖：
+  - 新增 `tests/migration-tools.test.ts`：
+    - 重复导入可通过校验（Green）
+    - 关键字段漂移时校验失败（Red 覆盖）
