@@ -54,6 +54,37 @@
 
 > 按时间倒序追加，最新在最上方。
 
+## [2026-03-05 22:00] HONO-002 Workers + Hono 工程初始化与质量门禁
+
+- 关键变更：
+  - 初始化 `backend-hono` 工程与脚手架：`wrangler.toml`、`package.json`、`tsconfig.json`、`eslint.config.js`、`vitest.config.ts`。
+  - 落地 `GET /health` 与 CORS 骨架（显式 origin、`credentials=true`）。
+  - 新增测试：`tests/health.test.ts`、`tests/cors.test.ts`。
+  - 建立并打通 `pnpm test/lint/typecheck/check`。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm test`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  2 passed (2)`
+  - 命令：`cd backend-hono && pnpm test -- cors`
+  - 退出码：`0`
+  - 关键通过行：`tests/cors.test.ts (1 test)`
+  - 命令：`cd backend-hono && pnpm check`
+  - 退出码：`0`
+  - 关键通过行：`pnpm test && pnpm lint && pnpm typecheck`
+  - 命令：`cd backend-hono && timeout 15s pnpm dev`
+  - 退出码：`124`（timeout 触发，属于预期）
+  - 关键通过行：`Ready on http://localhost:8787`
+  - 命令：`make -C backend check`
+  - 退出码：`0`
+  - 关键通过行：`122 passed in 16.10s`
+- 踩坑/教训：
+  - 依赖安装与测试不能并行触发，否则会出现 `vitest: not found` 假失败，必须串行保证安装先完成。
+  - CORS 回调里直接读取 `c.env` 会在无 env 上下文测试中触发 500，需要 `c.env?` 兜底。
+- 新增规则：
+  - `app.request()` 的单测必须覆盖“无 env 上下文”场景，避免仅在 Worker 运行时才暴露问题。
+- 对后续任务影响：
+  - `HONO-003` 可直接复用当前测试/静态检查门禁与 Worker 入口结构。
+
 ## [2026-03-05 21:55] HONO-001 Hono 迁移基线冻结与工程目录落位
 
 - 关键变更：

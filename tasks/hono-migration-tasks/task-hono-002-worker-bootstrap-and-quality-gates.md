@@ -109,3 +109,23 @@
 - 已完成本任务 review，并执行 `commit + push` 后再进入下一个任务
 
 ## output_summary（任务完成后由 AI 填写）
+
+- 完成时间：2026-03-05 22:00 +0800
+- 关键变更：
+  - 初始化 `backend-hono` 工程：`package.json`、`tsconfig.json`、`eslint.config.js`、`vitest.config.ts`、`wrangler.toml`。
+  - 新增 `src/app.ts` 与 `src/index.ts`，实现 `GET /health` 与 CORS 骨架（显式 origin + credentials）。
+  - 新增 `tests/health.test.ts`、`tests/cors.test.ts`，覆盖健康检查与跨域会话前提。
+  - 建立质量门禁命令：`test/lint/typecheck/check`。
+- TDD 证据：
+  - Red：`pnpm test` 初次失败（`Cannot find module '../src/app'`）。
+  - Green：实现 `src/app.ts` 后，`pnpm test` 通过。
+- 测试证据（Green）：
+  - `cd backend-hono && pnpm test` -> 退出码 `0`（`2 passed`）
+  - `cd backend-hono && pnpm test -- cors` -> 退出码 `0`（`Access-Control-Allow-Origin != *` 断言通过）
+  - `cd backend-hono && pnpm lint` -> 退出码 `0`
+  - `cd backend-hono && pnpm typecheck` -> 退出码 `0`
+  - `cd backend-hono && pnpm check` -> 退出码 `0`
+  - `cd backend-hono && timeout 15s pnpm dev` -> 看到 `Ready on http://localhost:8787`
+  - `make -C backend check` -> 退出码 `0`（`122 passed`）
+- 结论：
+  - DoD 满足，可进入 `HONO-003`。

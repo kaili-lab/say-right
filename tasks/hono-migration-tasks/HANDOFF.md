@@ -2,13 +2,14 @@
 
 ## 最近一次交接
 
-- 当前阶段：`HONO-001` 已完成，准备进入 `HONO-002`。
+- 当前阶段：`HONO-002` 已完成，准备进入 `HONO-003`。
 - 已完成：
-  - 创建 `backend-hono/` 基线目录。
-  - 迁移环境变量基线已落位：`backend-hono/.env.example`（可提交）+ 本地 `.env/.dev.vars`（不入库）。
-  - 迁移方案文档已补充“迁移期环境变量草案”。
-  - 已验证“直接在 `main` 执行迁移”策略在文档中可检索。
-- 下一个任务建议：执行 `HONO-002`，完成 Worker 初始化、`/health`、CORS 骨架与质量门禁命令。
+  - `backend-hono` 已完成 Hono Worker 工程初始化。
+  - `GET /health` 已实现并通过契约测试。
+  - CORS 骨架已落位：显式 origin（非 `*`）+ `credentials=true`。
+  - 质量门禁命令已落位并通过：`pnpm test/lint/typecheck/check`。
+  - `wrangler dev` 已验证可启动（`Ready on http://localhost:8787`）。
+- 下一个任务建议：执行 `HONO-003`，落位 D1 + Drizzle schema 与 repository 基线。
 
 ## 注意事项
 
