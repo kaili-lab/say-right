@@ -87,6 +87,23 @@
   - `LLMClient` 接口不暴露具体厂商细节
   - 服务层只依赖统一 `generate()` 协议
 
+## 5.1 迁移期环境变量草案（基于现有 `.env` 同步）
+
+- 本地迁移目录：`backend-hono/`
+- 本地密钥文件（不入库）：
+  - `backend-hono/.env`
+  - `backend-hono/.dev.vars`
+- 可提交示例文件：
+  - `backend-hono/.env.example`
+
+建议变量口径：
+
+- 基础：`APP_ENV`、`APP_CORS_ALLOW_ORIGINS`
+- Better Auth：`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`
+- Cloudflare/D1：`CLOUDFLARE_ACCOUNT_ID`、`D1_DATABASE_ID`、`D1_DATABASE_NAME`
+- LLM（OpenAI 兼容）：`LLM_MODE`、`LLM_MODEL`、`OPENAI_API_KEY`、`OPENAI_BASE_URL`
+- 兼容过渡字段：`LLM_API_KEY`、`LLM_BASE_URL`
+
 ## 6. 接口迁移策略（契约优先）
 
 - 原则：先保路径和响应结构，再替换内部实现

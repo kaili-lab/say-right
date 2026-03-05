@@ -21,7 +21,7 @@
 
 | Task ID | 标题 | 状态 | 前置依赖 | paired_with | contract_version | sync_point |
 |---|---|---|---|---|---|---|
-| HONO-001 | Hono 迁移基线冻结与工程目录落位 | todo | - | - | `docs/contracts/v0.0-bootstrap.yaml` | SP-HONO-STACK |
+| HONO-001 | Hono 迁移基线冻结与工程目录落位 | done | - | - | `docs/contracts/v0.0-bootstrap.yaml` | SP-HONO-STACK |
 | HONO-002 | Workers + Hono 工程初始化与质量门禁 | todo | HONO-001 | - | `docs/contracts/v0.0-bootstrap.yaml` | SP-HONO-BOOTSTRAP |
 | HONO-003 | D1 + Drizzle Schema 重建与仓储基线 | todo | HONO-002 | - | `docs/contracts/v0.2-deck-basic.yaml` + `docs/contracts/v0.3-card-management.yaml` | SP-HONO-DATA |
 | HONO-004 | Better Auth 后端接入（Hono + D1） | todo | HONO-003 | HONO-005 | `docs/contracts/v0.8-auth-session.yaml` | SP-HONO-AUTH |

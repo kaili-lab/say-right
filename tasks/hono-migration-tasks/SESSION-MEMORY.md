@@ -53,3 +53,27 @@
 ## 经验沉淀区
 
 > 按时间倒序追加，最新在最上方。
+
+## [2026-03-05 21:55] HONO-001 Hono 迁移基线冻结与工程目录落位
+
+- 关键变更：
+  - 创建 `backend-hono/` 目录。
+  - 新增 `backend-hono/.env.example`，统一 Hono/Cloudflare/Better Auth/OpenAI 兼容变量口径。
+  - 本地生成 `backend-hono/.env` 与 `backend-hono/.dev.vars`，值来自现有 `backend/.env`，用于迁移期本地联调。
+  - 迁移方案文档新增“迁移期环境变量草案”章节。
+- 测试证据：
+  - 命令：`test -d backend-hono`
+  - 退出码：`0`
+  - 关键通过行：`test -d backend-hono => 0`
+  - 命令：`test -f docs/Hono-Cloudflare迁移整改方案-2026-03-05.md`
+  - 退出码：`0`
+  - 关键通过行：`test -f Hono方案文档 => 0`
+  - 命令：`rg -n "直接在 .*main.* 执行迁移" docs/Hono-Cloudflare迁移整改方案-2026-03-05.md`
+  - 退出码：`0`
+  - 关键通过行：`已确认采用“直接在 main 执行迁移”的策略。`
+- 踩坑/教训：
+  - `.dev.vars` 默认不会被 `.env` 规则覆盖，需要单独加入 `.gitignore`，否则容易把本地密钥误提交。
+- 新增规则：
+  - 迁移期统一使用 `backend-hono/.env.example` 作为变量口径文档，真实值仅放本地 `.env/.dev.vars`。
+- 对后续任务影响：
+  - `HONO-002` 可以直接复用当前环境变量基线与 CORS origin 变量，不需要再次定义。

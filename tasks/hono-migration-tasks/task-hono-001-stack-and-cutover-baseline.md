@@ -95,3 +95,16 @@
 - 已完成本任务 review，并执行 `commit + push` 后再进入下一个任务
 
 ## output_summary（任务完成后由 AI 填写）
+
+- 完成时间：2026-03-05 21:54 +0800
+- 关键变更：
+  - 创建 `backend-hono/` 基线目录。
+  - 新增 `backend-hono/.env.example`（Hono + Cloudflare + Better Auth + OpenAI 兼容口径）。
+  - 本地生成 `backend-hono/.env` 与 `backend-hono/.dev.vars`，值同步自现有 `backend/.env`（密钥文件不入库）。
+  - 在迁移方案文档新增“迁移期环境变量草案”章节。
+- 测试证据：
+  - `test -d backend-hono` -> 退出码 `0`
+  - `test -f docs/Hono-Cloudflare迁移整改方案-2026-03-05.md` -> 退出码 `0`
+  - `rg -n "直接在 .*main.* 执行迁移" docs/Hono-Cloudflare迁移整改方案-2026-03-05.md` -> 命中 `已确认采用“直接在 main 执行迁移”的策略。`
+- 结论：
+  - DoD 已满足，可进入 `HONO-002`。

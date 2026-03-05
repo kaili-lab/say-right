@@ -2,13 +2,13 @@
 
 ## 最近一次交接
 
-- 当前阶段：迁移任务拆分已建立，尚未开始实现（全部 `todo`）。
+- 当前阶段：`HONO-001` 已完成，准备进入 `HONO-002`。
 - 已完成：
-  - 新增迁移任务目录：`tasks/hono-migration-tasks/`
-  - 明确主线决策：直接在 `main` 上执行全量迁移
-  - 明确上线策略：前后端同步改完后一次切换
-  - 新增跨会话记忆文件：`tasks/hono-migration-tasks/SESSION-MEMORY.md`
-- 下一个任务建议：从 `HONO-001` 开始，先落位 `backend-hono` 工程目录与基线约束。
+  - 创建 `backend-hono/` 基线目录。
+  - 迁移环境变量基线已落位：`backend-hono/.env.example`（可提交）+ 本地 `.env/.dev.vars`（不入库）。
+  - 迁移方案文档已补充“迁移期环境变量草案”。
+  - 已验证“直接在 `main` 执行迁移”策略在文档中可检索。
+- 下一个任务建议：执行 `HONO-002`，完成 Worker 初始化、`/health`、CORS 骨架与质量门禁命令。
 
 ## 注意事项
 
