@@ -97,3 +97,19 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
+- 关键产出文件：
+  - `backend-hono/src/llm/runtime.ts`
+  - `backend-hono/src/llm/text.ts`
+  - `backend-hono/src/llm/adapter.ts`
+  - `backend-hono/src/app.ts`
+  - `backend-hono/tests/llm-adapter.test.ts`
+  - `backend-hono/tests/llm-record-review-integration.test.ts`
+- 新增能力：
+  - 封装 `LLM_MODE` 运行态配置解析（`deterministic` / `provider`），支持 `OPENAI_*` 与迁移兼容字段 `LLM_*`。
+  - 封装 OpenAI 兼容 adapter（`openai` SDK），统一 `generateEnglish` 与 `scoreReview` 两条业务协议。
+  - 保留 deterministic adapter 作为可复现 fallback，并保留 `__FAIL_STUB__` / `__AI_UNAVAILABLE__` 故障注入。
+  - `records/generate` 与 `review ai-score` 已接入统一 adapter，并完成 `LLMUnavailableError -> 503` 错误映射。
+- 测试覆盖：
+  - 新增单测 `tests/llm-adapter.test.ts`：成功、超时、供应商不可用、配置解析与 JSON 解析。
+  - 新增集成测试 `tests/llm-record-review-integration.test.ts`：验证路由接线与 503 映射。
+  - 原有 `record/review` 集成测试保持通过，确保对外契约未回归。

@@ -2,16 +2,18 @@
 
 ## 最近一次交接
 
-- 当前阶段：`HONO-007` 已完成，准备进入 `HONO-008`。
+- 当前阶段：`HONO-008` 已完成，准备进入 `HONO-009`。
 - 已完成：
-  - 在 `backend-hono/src/app.ts` 完成 review + dashboard 路由平移，保持 Better Auth session cookie 鉴权。
-  - 平移 `GET /review/decks`、`GET /review/decks/{deck_id}/session`、`POST /review/session/{session_id}/ai-score`、`POST /review/session/{session_id}/rate`、`GET /review/session/{session_id}/summary`、`GET /dashboard/home-summary`。
-  - 会话拉取实现到期筛选 + 每日上限（新卡 20/复习卡 100）+ 当日 `review_logs` 抵扣，并落 `review_sessions/review_session_cards`。
-  - 评分与调度实现 deterministic AI scorer（`__AI_UNAVAILABLE__ -> 503`）和 FSRS again/hard/good/easy 更新链路，写入 `review_logs`。
-  - 新增集成测试 `backend-hono/tests/review-dashboard-api.test.ts`，覆盖主链路与 `401/404/422/503` 边界、配额抵扣、dashboard 统计口径。
-  - 已执行 claude reviewer subagent 复审，并吸收“每日配额统计合并查询”优化。
-  - `cd backend-hono && pnpm test -- review dashboard`、`cd backend-hono && pnpm check`、`make -C backend check` 全通过。
-- 下一个任务建议：执行 `HONO-008`，接入 OpenAI 兼容 LLM 适配层并替换当前 deterministic stub。
+  - 新增 `backend-hono/src/llm` 适配层：`runtime.ts`（配置解析）、`text.ts`（JSON 提取）、`adapter.ts`（deterministic + OpenAI 兼容实现）。
+  - `backend-hono/src/app.ts` 已将 `/records/generate` 与 `/review/session/:sessionId/ai-score` 接入统一 LLM adapter。
+  - 保留 deterministic fallback，支持 `__FAIL_STUB__` / `__AI_UNAVAILABLE__` 可复现故障注入；provider 错误统一映射到 `503`。
+  - 新增测试：
+    - `backend-hono/tests/llm-adapter.test.ts`（成功/超时/不可用 + 配置与解析）
+    - `backend-hono/tests/llm-record-review-integration.test.ts`（路由接线 + 503 映射）
+  - 依赖变更：`backend-hono` 新增 `openai@6.26.0`。
+  - 已执行 claude reviewer subagent 复审，并吸收“缩小 fallback 捕获范围、移除跨请求 LLM 缓存”的建议。
+  - `cd backend-hono && pnpm test -- llm record review`、`cd backend-hono && pnpm check`、`make -C backend check` 全通过。
+- 下一个任务建议：执行 `HONO-009`，推进 Postgres -> D1 数据迁移与一致性校验。
 
 ## 注意事项
 

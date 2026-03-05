@@ -12,11 +12,24 @@ import { type DrizzleD1Database, drizzle } from 'drizzle-orm/d1';
 import { z } from 'zod';
 import { createBetterAuth } from './auth';
 import * as schema from './db/schema';
+import {
+  createLLMAdapter,
+  DeterministicLLMAdapter,
+  LLMUnavailableError,
+  type LLMAdapter
+} from './llm/adapter';
+import { resolveLLMConfig } from './llm/runtime';
 
 type Bindings = {
   APP_CORS_ALLOW_ORIGINS?: string;
   BETTER_AUTH_SECRET?: string;
   BETTER_AUTH_URL?: string;
+  LLM_MODE?: string;
+  LLM_MODEL?: string;
+  OPENAI_API_KEY?: string;
+  OPENAI_BASE_URL?: string;
+  LLM_API_KEY?: string;
+  LLM_BASE_URL?: string;
   DB?: unknown;
 };
 
@@ -45,6 +58,7 @@ type CurrentUser = {
 type AppOptions = {
   getAuth?: (c: Context<AppEnv>) => AuthInstance;
   getDb?: (c: Context<AppEnv>) => Database;
+  getLlm?: (c: Context<AppEnv>) => LLMAdapter;
 };
 
 type Database = DrizzleD1Database<typeof schema>;
@@ -72,13 +86,6 @@ const DAILY_INSIGHTS = [
   '把今天新学表达放进真实对话场景，能显著提高留存。',
   '每天 10 分钟连续学习，比周末突击更有效。'
 ] as const;
-
-const RECORD_GENERATE_FIXTURES: Record<string, string> = {
-  你好: 'Hello.',
-  谢谢: 'Thank you.',
-  我想喝水: 'I want to drink water.',
-  你好吗: 'How are you?'
-};
 
 const deckCreateSchema = z.object({
   name: z
@@ -265,6 +272,21 @@ function createRuntimeDb(c: Context<AppEnv>): Database {
   return drizzle(c.env.DB as Parameters<typeof drizzle>[0], { schema });
 }
 
+function createRuntimeLlm(c: Context<AppEnv>): LLMAdapter {
+  try {
+    return createLLMAdapter(resolveLLMConfig(c.env));
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message.includes('LLM_MODE') || error.message.includes('OPENAI_API_KEY'))
+    ) {
+      // provider 配置缺失或非法时回退到 deterministic，保证核心链路可用。
+      return new DeterministicLLMAdapter();
+    }
+    throw error;
+  }
+}
+
 function toValidationDetail(
   source: ValidationSource,
   error: any
@@ -378,43 +400,6 @@ function scheduleNextFsrsState(
     difficulty: Math.max(1, roundToFourDecimals(state.difficulty - 0.2)),
     reps: state.reps + 1,
     lapses: state.lapses
-  };
-}
-
-function mapScoreToRating(score: number): RatingValue {
-  if (score >= 90) {
-    return 'easy';
-  }
-  if (score >= 70) {
-    return 'good';
-  }
-  if (score >= 50) {
-    return 'hard';
-  }
-  return 'again';
-}
-
-function scoreReviewAnswer(expectedAnswer: string, userAnswer: string) {
-  const expected = expectedAnswer.trim().toLowerCase();
-  const answer = userAnswer.trim().toLowerCase();
-
-  let score = 35;
-  let feedback = '与标准答案差异较大，建议重学后再尝试。';
-  if (answer === expected) {
-    score = 95;
-    feedback = '表达准确，几乎与标准答案一致。';
-  } else if (answer.length > 0 && (answer.includes(expected) || expected.includes(answer))) {
-    score = 80;
-    feedback = '表达基本正确，可进一步优化措辞自然度。';
-  } else if (answer.length >= Math.max(1, Math.floor(expected.length * 0.6))) {
-    score = 65;
-    feedback = '核心意思接近，但语法或用词仍有偏差。';
-  }
-
-  return {
-    score,
-    feedback,
-    suggestedRating: mapScoreToRating(score)
   };
 }
 
@@ -688,6 +673,7 @@ export function createApp(options: AppOptions = {}) {
 
   const resolveAuth = (c: Context<AppEnv>) => options.getAuth?.(c) ?? createRuntimeAuth(c);
   const resolveDb = (c: Context<AppEnv>) => options.getDb?.(c) ?? createRuntimeDb(c);
+  const resolveLlm = (c: Context<AppEnv>) => options.getLlm?.(c) ?? createRuntimeLlm(c);
 
   app.use(
     '*',
@@ -1114,17 +1100,23 @@ export function createApp(options: AppOptions = {}) {
         return c.json({ detail: 'card not in session' }, 404);
       }
 
-      // 为保证测试可复现，约定特定输入触发 AI 不可用分支，替代真实模型依赖。
-      if (payload.user_answer.includes('__AI_UNAVAILABLE__')) {
-        return c.json({ detail: 'ai unavailable' }, 503);
+      const llm = resolveLlm(c);
+      try {
+        const scored = await llm.scoreReview({
+          expectedAnswer: card.backText,
+          userAnswer: payload.user_answer
+        });
+        return c.json({
+          score: scored.score,
+          feedback: scored.feedback,
+          suggested_rating: scored.suggestedRating
+        });
+      } catch (error) {
+        if (error instanceof LLMUnavailableError) {
+          return c.json({ detail: 'ai unavailable' }, 503);
+        }
+        throw error;
       }
-
-      const scored = scoreReviewAnswer(card.backText, payload.user_answer);
-      return c.json({
-        score: scored.score,
-        feedback: scored.feedback,
-        suggested_rating: scored.suggestedRating
-      });
     }
   );
 
@@ -1326,17 +1318,24 @@ export function createApp(options: AppOptions = {}) {
   app.post(
     '/records/generate',
     zValidator('json', recordGenerateSchema, createValidationHook('body')),
-    (c) => {
+    async (c) => {
       const payload = c.req.valid('json');
-
-      if (payload.source_text === '__FAIL_STUB__') {
-        return c.json({ detail: 'llm unavailable' }, 503);
+      const llm = resolveLlm(c);
+      try {
+        const generatedText = await llm.generateEnglish({
+          sourceText: payload.source_text,
+          sourceLang: payload.source_lang,
+          targetLang: payload.target_lang
+        });
+        return c.json({
+          generated_text: generatedText
+        });
+      } catch (error) {
+        if (error instanceof LLMUnavailableError) {
+          return c.json({ detail: 'llm unavailable' }, 503);
+        }
+        throw error;
       }
-
-      return c.json({
-        generated_text:
-          RECORD_GENERATE_FIXTURES[payload.source_text] ?? `${payload.source_text} (in English)`
-      });
     }
   );
 

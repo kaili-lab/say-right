@@ -17,6 +17,7 @@
     "better-auth": "^1.5.3",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.12.5",
+    "openai": "^6.26.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

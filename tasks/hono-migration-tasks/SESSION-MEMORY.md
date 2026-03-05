@@ -54,6 +54,36 @@
 
 > 按时间倒序追加，最新在最上方。
 
+## [2026-03-06 06:40] HONO-008 OpenAI 兼容 LLM 适配层与 Stub 替换
+
+- 关键变更：
+  - 新增 `backend-hono/src/llm/runtime.ts`，统一解析 `LLM_MODE/LLM_MODEL/OPENAI_*`（含 `LLM_*` 兼容字段）并默认 `deterministic`。
+  - 新增 `backend-hono/src/llm/text.ts`，提供模型输出 JSON 提取能力（前后缀容错）。
+  - 新增 `backend-hono/src/llm/adapter.ts`，封装 `DeterministicLLMAdapter` 与 `OpenAICompatibleLLMAdapter`，统一 `generateEnglish/scoreReview` 协议。
+  - `backend-hono/src/app.ts` 已将 `records/generate` 与 `review ai-score` 迁移为通过 adapter 调用，并统一 `LLMUnavailableError -> 503` 映射。
+  - provider 配置异常时回退 deterministic；同时缩小异常捕获范围，避免吞掉非配置类错误。
+  - 新增依赖：`openai@6.26.0`。
+  - 新增测试：
+    - `backend-hono/tests/llm-adapter.test.ts`
+    - `backend-hono/tests/llm-record-review-integration.test.ts`
+  - review 阶段调用了 claude reviewer subagent，并吸收“避免跨请求缓存 LLM 实例”的建议。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm test -- llm record review`
+  - 退出码：`0`
+  - 关键通过行：`tests/llm-adapter.test.ts (6 tests)`、`tests/llm-record-review-integration.test.ts (2 tests)`
+  - 命令：`cd backend-hono && pnpm check`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  8 passed (8)`
+  - 命令：`make -C backend check`
+  - 退出码：`0`
+  - 关键通过行：`122 passed in 13.76s`
+- 踩坑/教训：
+  - OpenAI 兼容调用建议在 adapter 层就完成“超时/不可用/解析失败”统一封装，避免路由层散落 provider 细节导致错误映射不一致。
+- 新增规则：
+  - LLM 相关路由改造时，必须保留 deterministic 可复现路径（默认模式或明确 fallback），防止 CI 被真实模型波动污染。
+- 对后续任务影响：
+  - `HONO-009` 与 `HONO-010` 可以复用当前 deterministic 测试基线做回归，不需要引入真实模型访问。
+
 ## [2026-03-06 06:27] HONO-007 Review/Dashboard API 平移（Hono）
 
 - 关键变更：
