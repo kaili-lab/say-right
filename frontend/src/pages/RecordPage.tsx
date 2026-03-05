@@ -46,6 +46,7 @@ export function RecordPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  const [savedDeckName, setSavedDeckName] = useState("");
   const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
   const [selectedDeckId, setSelectedDeckId] = useState("");
   const [deckOptions, setDeckOptions] = useState<DeckOption[]>([]);
@@ -137,6 +138,7 @@ export function RecordPage() {
         deckId: selectedDeckId,
       });
       setSaveStatus("saved");
+      setSavedDeckName(targetDeck.name);
       setSaveMessage(`已保存到 ${targetDeck.name}`);
     } catch (error) {
       setSaveStatus("error");
@@ -222,7 +224,12 @@ export function RecordPage() {
             />
             <div className="flex items-center justify-between gap-3 border-t border-stone-200 pt-3">
               {isSaved ? (
-                <p className="text-sm text-amber-800">{saveMessage}</p>
+                <p className="text-sm text-amber-800">
+                  已保存到{" "}
+                  <span className="inline-flex items-center rounded-md bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
+                    {savedDeckName}
+                  </span>
+                </p>
               ) : (
                 <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
               )}

@@ -99,7 +99,8 @@ describe("record-save-feedback", () => {
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "确认保存" }));
 
-    expect(await screen.findByText("已保存到 默认组")).toBeInTheDocument();
+    expect(await screen.findByText(/已保存到/)).toBeInTheDocument();
+    expect(await screen.findByText("默认组")).toBeInTheDocument();
 
     await waitFor(() =>
       expect(vi.mocked(fetch)).toHaveBeenCalledWith(
@@ -118,7 +119,7 @@ describe("record-save-feedback", () => {
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "确认保存" }));
 
-    await screen.findByText("已保存到 默认组");
+    await screen.findByText(/已保存到/);
     const generatedTextarea = screen.getByLabelText("英文结果");
     expect(generatedTextarea).toHaveAttribute("readonly");
     expect(screen.getByRole("button", { name: "保存卡片" })).toBeDisabled();
@@ -140,7 +141,8 @@ describe("record-save-feedback", () => {
     await user.click(within(dialog).getByRole("radio", { name: /工作沟通/ }));
     await user.click(within(dialog).getByRole("button", { name: "确认保存" }));
 
-    expect(await screen.findByText("已保存到 工作沟通")).toBeInTheDocument();
+    expect(await screen.findByText(/已保存到/)).toBeInTheDocument();
+    expect(await screen.findByText("工作沟通")).toBeInTheDocument();
   });
 
   it("保存失败时英文区域保持可编辑", async () => {
