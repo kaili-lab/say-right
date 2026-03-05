@@ -1,6 +1,5 @@
 import { fetchWithAuth } from "./authApi";
-
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8787";
+import { getApiBaseUrl } from "./apiBaseUrl";
 export type RecordGenerateResult = {
   generatedText: string;
 };
@@ -45,12 +44,6 @@ export class RecordGenerateApiError extends Error {
     super(message);
     this.name = "RecordGenerateApiError";
   }
-}
-
-function getApiBaseUrl() {
-  const envBase = import.meta.env.VITE_API_BASE_URL;
-  const rawBase = typeof envBase === "string" && envBase.trim() ? envBase : DEFAULT_API_BASE_URL;
-  return rawBase.replace(/\/+$/, "");
 }
 
 function buildRequestHeaders() {

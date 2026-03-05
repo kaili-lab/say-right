@@ -1,6 +1,5 @@
 import { fetchWithAuth } from "./authApi";
-
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8787";
+import { getApiBaseUrl } from "./apiBaseUrl";
 type ReviewDeckApiItem = {
   deck_id: string;
   deck_name: string;
@@ -84,12 +83,6 @@ export class ReviewApiError extends Error {
     super(message);
     this.name = "ReviewApiError";
   }
-}
-
-function getApiBaseUrl() {
-  const envBase = import.meta.env.VITE_API_BASE_URL;
-  const rawBase = typeof envBase === "string" && envBase.trim() ? envBase : DEFAULT_API_BASE_URL;
-  return rawBase.replace(/\/+$/, "");
 }
 
 async function parseErrorMessage(response: Response) {

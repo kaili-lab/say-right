@@ -5,8 +5,7 @@
  * WHY: 把首页展示数据全部切换为后端来源，避免页面层保留静态示例数据。
  */
 import { fetchWithAuth } from "./authApi";
-
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8787";
+import { getApiBaseUrl } from "./apiBaseUrl";
 
 type HomeRecentDeckApiItem = {
   id: string;
@@ -48,12 +47,6 @@ export class HomeApiError extends Error {
     super(message);
     this.name = "HomeApiError";
   }
-}
-
-function getApiBaseUrl() {
-  const envBase = import.meta.env.VITE_API_BASE_URL;
-  const rawBase = typeof envBase === "string" && envBase.trim() ? envBase : DEFAULT_API_BASE_URL;
-  return rawBase.replace(/\/+$/, "");
 }
 
 async function parseErrorMessage(response: Response) {

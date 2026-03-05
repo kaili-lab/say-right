@@ -5,8 +5,7 @@
  * WHY: 避免页面层重复处理请求细节，确保契约字段映射集中、可测、可维护。
  */
 import { fetchWithAuth } from "./authApi";
-
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8787";
+import { getApiBaseUrl } from "./apiBaseUrl";
 type DeckListApiItem = {
   id: string;
   name: string;
@@ -67,12 +66,6 @@ export class DeckApiError extends Error {
     super(message);
     this.name = "DeckApiError";
   }
-}
-
-function getApiBaseUrl() {
-  const envBase = import.meta.env.VITE_API_BASE_URL;
-  const rawBase = typeof envBase === "string" && envBase.trim() ? envBase : DEFAULT_API_BASE_URL;
-  return rawBase.replace(/\/+$/, "");
 }
 
 async function parseErrorMessage(response: Response) {
