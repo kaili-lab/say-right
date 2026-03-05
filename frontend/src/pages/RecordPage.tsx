@@ -221,10 +221,10 @@ export function RecordPage() {
               }`}
             />
             <div className="flex items-center justify-between gap-3 border-t border-stone-200 pt-3">
-              {!isSaved ? (
-                <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
+              {isSaved ? (
+                <p className="text-sm text-amber-800">{saveMessage}</p>
               ) : (
-                <span />
+                <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
               )}
               <button
                 type="button"
@@ -235,12 +235,6 @@ export function RecordPage() {
                 {saveStatus === "saving" ? "保存中..." : "保存卡片"}
               </button>
             </div>
-
-            {saveStatus === "saved" ? (
-              <div className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-amber-800">
-                {saveMessage}
-              </div>
-            ) : null}
 
             {saveStatus === "error" ? (
               <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
