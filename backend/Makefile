@@ -9,7 +9,7 @@ APP := app.main:app
 .PHONY: dev test lint typecheck check db-sync
 
 dev:
-	@$(UVICORN) $(APP) --reload --env-file .env
+	@$(UVICORN) $(APP) --reload --reload-dir app --env-file .env
 
 test:
 	@$(PYTEST) -q

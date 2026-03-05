@@ -27,7 +27,7 @@ class ReviewService:
             ReviewDeckSummary(
                 deck_id=deck.deck_id,
                 deck_name=deck.name,
-                due_count=deck.due_count,
+                due_count=deck.due_count + deck.new_count,
             )
             for deck in decks
         ]

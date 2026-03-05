@@ -102,3 +102,12 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
+### Bug 修复（2026-03-05）
+
+**问题**：保存卡片后，"保存卡片"按钮正确禁用，但"生成英文"按钮仍可点击，与"保存后完成"的交互预期不符。
+
+**原因**：`canGenerate` 未检查 `isSaved`，且 `handleSourceTextChange` 未在已保存状态下重置 `saveStatus`。
+
+**修复**：
+1. `canGenerate` 增加 `!isSaved` 条件——保存后"生成英文"禁用
+2. `handleSourceTextChange` 在 `saveStatus === "saved"` 时重置状态——用户修改源文本后可重新生成

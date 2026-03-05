@@ -88,8 +88,8 @@ export function RecordPage() {
     return () => { disposed = true; };
   }, []);
 
-  const canGenerate = sourceText.trim().length > 0 && generateStatus !== "loading";
   const isSaved = saveStatus === "saved";
+  const canGenerate = sourceText.trim().length > 0 && generateStatus !== "loading" && !isSaved;
   const canSave =
     generateStatus === "success" &&
     generatedText.trim().length > 0 &&
@@ -152,6 +152,10 @@ export function RecordPage() {
 
   function handleSourceTextChange(value: string) {
     setSourceText(value.slice(0, MAX_SOURCE_TEXT_LENGTH));
+    if (saveStatus === "saved") {
+      setSaveStatus("idle");
+      setSaveMessage("");
+    }
   }
 
   return (
