@@ -220,16 +220,17 @@ export function RecordPage() {
                   : "border-stone-300 bg-[#fffcf7] focus:border-orange-400 focus:border-solid focus:ring-2 focus:ring-orange-100"
               }`}
             />
-            {!isSaved && (
-              <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
-            )}
-
-            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-stone-200 pt-3">
+            <div className="flex items-center justify-between gap-3 border-t border-stone-200 pt-3">
+              {!isSaved ? (
+                <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
+              ) : (
+                <span />
+              )}
               <button
                 type="button"
                 disabled={!canSave}
                 onClick={openSaveDeckModal}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-stone-300"
+                className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-stone-300"
               >
                 {saveStatus === "saving" ? "保存中..." : "保存卡片"}
               </button>
