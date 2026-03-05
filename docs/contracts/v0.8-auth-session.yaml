@@ -1,0 +1,51 @@
+version: v0.8-auth-session
+endpoints:
+  - method: POST
+    path: /api/auth/sign-up/email
+    auth: none
+    request:
+      email: string
+      password: string
+      name: string?
+    response:
+      status: 200
+      body:
+        user:
+          id: string
+          email: string
+  - method: POST
+    path: /api/auth/sign-in/email
+    auth: none
+    request:
+      email: string
+      password: string
+    response:
+      status: 200
+      body:
+        user:
+          id: string
+          email: string
+  - method: POST
+    path: /api/auth/sign-out
+    auth: session_cookie
+    response:
+      status: 200
+      body:
+        success: boolean
+  - method: GET
+    path: /api/auth/session
+    auth: session_cookie
+    response:
+      status: 200
+      body:
+        session:
+          id: string
+          userId: string
+        user:
+          id: string
+          email: string
+    errors:
+      - 401_unauthorized
+rules:
+  - 前端请求必须携带 credentials=include
+  - 不再依赖 access_token/refresh_token 存储在 localStorage

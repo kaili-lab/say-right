@@ -26,9 +26,11 @@
 
 - 变更文件清单（带行号）
 - 测试命令 + 退出码 + 关键通过行
+- 任务收尾记录：已完成 review，且存在本 task 对应的 `commit + push` 证据（commit id / 远端分支）
 - 状态文件是否更新：
   - `tasks/*/INDEX.md`
   - `tasks/*/HANDOFF.md`
+  - `tasks/*/SESSION-MEMORY.md`（若该目录存在）
   - 当前 task 的 `output_summary`
 
 ## 5) 快速风险检查
@@ -39,6 +41,8 @@
 - 是否出现“测试过度 mock”
 - 若存在上游未就绪：是否显式声明 `test_data_strategy`，并说明后续回归替换点
 - 是否出现“强行通过测试”（弱化断言/跳过用例/删除失败用例）
+- 若目录有 `SESSION-MEMORY.md`：是否追加了本任务的经验/踩坑记录
+- 是否出现“未 commit/push 就开始下一个 task”的流程违规
 
 ---
 

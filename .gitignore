@@ -39,3 +39,6 @@ docs/subagents
 
 # other
 /prd-multi-agent
+# Cloudflare Workers local secrets
+.dev.vars
+.dev.vars.*

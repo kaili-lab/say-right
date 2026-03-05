@@ -16,3 +16,4 @@
 - `v0.5-review-flow-fsrs.yaml`：复习拉取、AI 评分、评级提交（FSRS）
 - `v0.6-dashboard.yaml`：首页概览（显示名、洞察与学习统计）
 - `v0.7-record-save-manual.yaml`：记录页手动选分组保存卡片
+- `v0.8-auth-session.yaml`：Better Auth 会话鉴权（Hono 迁移）

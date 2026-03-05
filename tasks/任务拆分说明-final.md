@@ -71,6 +71,8 @@ docs/
 1. 更新 `INDEX.md`（当前 task 状态改为 done）
 2. 覆写 `HANDOFF.md`（本次交接快照）
 3. 填写当前 task 文件中的 `output_summary`（永久记录，不会被覆盖）
+4. 若任务目录存在 `SESSION-MEMORY.md`，追加本次任务的“经验/踩坑/规则”记录
+5. 完成本 task review 后执行 `commit + push`，再开始下一个 task
 
 ---
 
@@ -134,6 +136,7 @@ docs/
 5. 运行全量测试确认无回归
 6. 若前置模块未就绪，先声明 `test_data_strategy` 再执行替代验证（不得改变业务契约语义）
 7. 保留 test_commands 的可追溯证据（命令、退出码、关键通过行；失败时附日志路径）
+8. 完成本任务 review 后执行 `commit + push`，再进入下一个任务
 
 ## test_scope
 （unit / integration / e2e）
@@ -145,6 +148,8 @@ docs/
 - 所有 test_commands 通过
 - 全量测试无回归（不只是本任务的测试）
 - lint + typecheck 通过
+- 若目录存在 `SESSION-MEMORY.md`，已追加本任务经验记录
+- 已完成 review，并执行 `commit + push`
 - （按需补充业务验收标准）
 
 ## output_summary（任务完成后由 AI 填写）
