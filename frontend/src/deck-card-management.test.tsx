@@ -87,7 +87,7 @@ describe("deck-card-management", () => {
     expect(await screen.findByText("Please let me double-check the meeting time.")).toBeInTheDocument();
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://127.0.0.1:8000/cards/card-001",
+        "http://127.0.0.1:8787/cards/card-001",
         expect.objectContaining({
           method: "PATCH",
           body: JSON.stringify({
@@ -340,7 +340,7 @@ describe("deck-card-management", () => {
 
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://127.0.0.1:8000/cards/card-001/move",
+        "http://127.0.0.1:8787/cards/card-001/move",
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({ to_deck_id: "deck-default" }),
@@ -357,7 +357,7 @@ describe("deck-card-management", () => {
 
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://127.0.0.1:8000/cards/card-001",
+        "http://127.0.0.1:8787/cards/card-001",
         expect.objectContaining({ method: "DELETE" }),
       ),
     );

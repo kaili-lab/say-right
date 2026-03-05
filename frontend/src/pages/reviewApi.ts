@@ -1,6 +1,6 @@
 import { fetchWithAuth } from "./authApi";
 
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
+const DEFAULT_API_BASE_URL = "http://127.0.0.1:8787";
 type ReviewDeckApiItem = {
   deck_id: string;
   deck_name: string;

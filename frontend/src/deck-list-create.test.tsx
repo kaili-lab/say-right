@@ -104,7 +104,7 @@ describe("deck-list-create", () => {
     expect((await screen.findAllByText("旅行应急")).length).toBeGreaterThan(0);
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://127.0.0.1:8000/decks",
+        "http://127.0.0.1:8787/decks",
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({ name: "旅行应急" }),

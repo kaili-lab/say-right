@@ -4,7 +4,7 @@
  * WHAT: 封装注册/登录/会话查询/登出，并统一 cookie session 请求行为。
  * WHY: 前端从 token + refresh 流程迁移到 Better Auth 会话机制。
  */
-const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8000';
+const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8787';
 
 // 兼容常量保留：迁移期用于清理旧键，后续可删除。
 export const ACCESS_TOKEN_STORAGE_KEY = 'say_right_access_token';

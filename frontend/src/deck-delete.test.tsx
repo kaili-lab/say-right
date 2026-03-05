@@ -60,7 +60,7 @@ describe("deck-delete", () => {
 
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://127.0.0.1:8000/decks/deck-work",
+        "http://127.0.0.1:8787/decks/deck-work",
         expect.objectContaining({ method: "DELETE" }),
       ),
     );

@@ -45,7 +45,7 @@ describe('auth-ui', () => {
     expect(await screen.findByText('注册成功，请前往登录。')).toBeInTheDocument();
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://127.0.0.1:8000/api/auth/sign-up/email',
+        'http://127.0.0.1:8787/api/auth/sign-up/email',
         expect.objectContaining({
           method: 'POST',
           credentials: 'include',

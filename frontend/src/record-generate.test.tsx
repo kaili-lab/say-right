@@ -73,7 +73,7 @@ describe("record-generate", () => {
 
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://127.0.0.1:8000/records/generate",
+        "http://127.0.0.1:8787/records/generate",
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({
