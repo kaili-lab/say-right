@@ -164,3 +164,87 @@ export const reviewLogs = sqliteTable(
     )
   })
 );
+
+/**
+ * Better Auth 用户表（与业务 users 表分离）。
+ * WHY: 避免在迁移早期强耦合业务用户模型，先保证会话链路稳定。
+ */
+export const authUsers = sqliteTable(
+  'auth_users',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull().unique(),
+    email_verified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
+    image: text('image'),
+    created_at: integer('created_at').notNull(),
+    updated_at: integer('updated_at').notNull()
+  },
+  (table) => ({
+    uqAuthUsersEmail: uniqueIndex('uq_auth_users_email').on(table.email)
+  })
+);
+
+export const authSessions = sqliteTable(
+  'auth_sessions',
+  {
+    id: text('id').primaryKey(),
+    user_id: text('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    token: text('token').notNull().unique(),
+    expires_at: integer('expires_at').notNull(),
+    ip_address: text('ip_address'),
+    user_agent: text('user_agent'),
+    created_at: integer('created_at').notNull(),
+    updated_at: integer('updated_at').notNull()
+  },
+  (table) => ({
+    uqAuthSessionsToken: uniqueIndex('uq_auth_sessions_token').on(table.token),
+    idxAuthSessionsUserId: index('idx_auth_sessions_user_id').on(table.user_id)
+  })
+);
+
+export const authAccounts = sqliteTable(
+  'auth_accounts',
+  {
+    id: text('id').primaryKey(),
+    user_id: text('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    account_id: text('account_id').notNull(),
+    provider_id: text('provider_id').notNull(),
+    access_token: text('access_token'),
+    refresh_token: text('refresh_token'),
+    id_token: text('id_token'),
+    access_token_expires_at: integer('access_token_expires_at'),
+    refresh_token_expires_at: integer('refresh_token_expires_at'),
+    scope: text('scope'),
+    password: text('password'),
+    created_at: integer('created_at').notNull(),
+    updated_at: integer('updated_at').notNull()
+  },
+  (table) => ({
+    uqAuthAccountsProviderAccount: uniqueIndex('uq_auth_accounts_provider_account').on(
+      table.provider_id,
+      table.account_id
+    ),
+    idxAuthAccountsUserId: index('idx_auth_accounts_user_id').on(table.user_id)
+  })
+);
+
+export const authVerifications = sqliteTable(
+  'auth_verifications',
+  {
+    id: text('id').primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expires_at: integer('expires_at').notNull(),
+    created_at: integer('created_at'),
+    updated_at: integer('updated_at')
+  },
+  (table) => ({
+    idxAuthVerificationsIdentifier: index('idx_auth_verifications_identifier').on(table.identifier),
+    idxAuthVerificationsExpiresAt: index('idx_auth_verifications_expires_at').on(table.expires_at)
+  })
+);

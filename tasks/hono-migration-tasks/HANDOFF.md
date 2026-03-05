@@ -2,14 +2,14 @@
 
 ## 最近一次交接
 
-- 当前阶段：`HONO-003` 已完成，准备进入 `HONO-004`。
+- 当前阶段：`HONO-004` 已完成，准备进入 `HONO-005`。
 - 已完成：
-  - D1/SQLite Drizzle schema 已落位（6 张核心表）。
-  - 基础迁移文件已生成：`drizzle/0000_*.sql` + `drizzle/meta/*`。
-  - `StudyRepository` 已提供最小可用写入链路。
-  - `d1` 集成测试已覆盖约束场景：唯一键/外键/级联删除/复合主键。
-  - `pnpm test -- d1`、`pnpm drizzle-kit check`、`pnpm check` 全通过。
-- 下一个任务建议：执行 `HONO-004`，接入 Better Auth（Hono + D1）并完成 CORS+cookie 端到端验证。
+  - Better Auth 已接入 Hono 路由，`/api/auth/*` 与 `/api/auth/session` 可用。
+  - Better Auth 所需 schema 已落库：`auth_users/auth_sessions/auth_accounts/auth_verifications`。
+  - 受保护路由中间件已落位，未登录返回 401，登录会话返回 200。
+  - CORS + cookie 链路已验证：显式 origin + credentials + cookie 会话收发。
+  - `pnpm test -- auth`、`pnpm test -- auth cors session`、`pnpm check` 全通过。
+- 下一个任务建议：执行 `HONO-005`，完成前端 `fetchWithAuth` 与全量 API 模块的会话化改造回归。
 
 ## 注意事项
 

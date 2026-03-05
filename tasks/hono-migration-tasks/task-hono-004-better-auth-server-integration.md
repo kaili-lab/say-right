@@ -101,3 +101,22 @@
 - 已完成本任务 review，并执行 `commit + push` 后再进入下一个任务
 
 ## output_summary（任务完成后由 AI 填写）
+
+- 完成时间：2026-03-05 22:18 +0800
+- 关键变更：
+  - 接入 Better Auth：新增 `src/auth.ts`，使用 `drizzleAdapter` + sqlite provider。
+  - 在 Drizzle schema 中落地 Better Auth 所需表：`auth_users/auth_sessions/auth_accounts/auth_verifications`。
+  - 挂载鉴权路由：`/api/auth/*`，并增加契约兼容会话查询路由 `/api/auth/session`。
+  - 实现受保护路由中间件：`/protected/*` 通过 `auth.api.getSession` 校验 cookie 会话。
+  - 完成 CORS + cookie 端到端验证（`credentials: include` 场景）。
+- TDD 证据：
+  - Red：`pnpm test -- auth` 初次失败（缺少 `src/auth`）。
+  - Green：完成 auth 路由、schema 与中间件后，`auth` 相关测试全部通过。
+- 测试证据（Green）：
+  - `cd backend-hono && pnpm test -- auth` -> 退出码 `0`（`tests/auth-session.test.ts (2 tests)`）
+  - `cd backend-hono && pnpm test -- auth cors session` -> 退出码 `0`
+  - `cd backend-hono && pnpm drizzle-kit check` -> 退出码 `0`（`Everything's fine`）
+  - `cd backend-hono && pnpm check` -> 退出码 `0`
+  - `make -C backend check` -> 退出码 `0`（`122 passed`）
+- 结论：
+  - DoD 满足，可进入 `HONO-005`。

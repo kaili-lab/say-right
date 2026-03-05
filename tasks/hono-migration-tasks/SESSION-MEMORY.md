@@ -54,6 +54,37 @@
 
 > 按时间倒序追加，最新在最上方。
 
+## [2026-03-05 22:18] HONO-004 Better Auth 后端接入（Hono + D1）
+
+- 关键变更：
+  - 新增 `src/auth.ts`，基于 `better-auth + @better-auth/drizzle-adapter` 完成会话鉴权配置。
+  - 扩展 `src/db/schema.ts`：新增 `auth_users/auth_sessions/auth_accounts/auth_verifications` 四张表。
+  - 改造 `src/app.ts`：挂载 `/api/auth/*` 与 `/api/auth/session`，新增 `/protected/*` 会话中间件。
+  - 新增 `tests/auth-session.test.ts`，覆盖注册/会话查询/登出/受保护路由/CORS cookie 断言。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm test -- auth`
+  - 退出码：`0`
+  - 关键通过行：`tests/auth-session.test.ts (2 tests)`
+  - 命令：`cd backend-hono && pnpm test -- auth cors session`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  4 passed (4)`
+  - 命令：`cd backend-hono && pnpm drizzle-kit check`
+  - 退出码：`0`
+  - 关键通过行：`Everything's fine`
+  - 命令：`cd backend-hono && pnpm check`
+  - 退出码：`0`
+  - 关键通过行：`pnpm test && pnpm lint && pnpm typecheck`
+  - 命令：`make -C backend check`
+  - 退出码：`0`
+  - 关键通过行：`122 passed in 18.86s`
+- 踩坑/教训：
+  - Better Auth 的字段映射会按“映射后的字段名”校验 Drizzle schema key，schema key 与字段映射必须同口径。
+  - `drizzle/meta/_journal.json` 若缺少某次迁移条目，`migrate()` 不会执行对应 SQL，容易出现“表不存在”假故障。
+- 新增规则：
+  - 变更 `drizzle/meta/_journal.json` 后必须立即执行一次 `migrate + auth` 用例，确认迁移链条未断。
+- 对后续任务影响：
+  - `HONO-005` 可直接对接 `/api/auth/*` + `/api/auth/session`，并以 cookie session 完成前端改造。
+
 ## [2026-03-05 22:06] HONO-003 D1 + Drizzle Schema 重建与仓储基线
 
 - 关键变更：
