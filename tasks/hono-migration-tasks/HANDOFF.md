@@ -2,19 +2,14 @@
 
 ## 最近一次交接
 
-- 当前阶段：`HONO-009` 已完成，准备进入 `HONO-010`。
+- 当前阶段：`HONO-010` 已完成，Hono 迁移任务链路已全部收口。
 - 已完成：
-  - 新增迁移核心模块 `backend-hono/src/migration/snapshot.ts`：快照解析、D1 重复导入、逐表一致性校验（行数 + 哈希）。
-  - 新增迁移脚本：
-    - `backend-hono/scripts/migration/export-postgres.ts`
-    - `backend-hono/scripts/migration/import-d1.ts`
-    - `backend-hono/scripts/migration/verify-d1.ts`
-  - 新增迁移测试 `backend-hono/tests/migration-tools.test.ts`，覆盖“重复导入成功”与“数据漂移校验失败（Red）”。
-  - 新增迁移执行手册：`docs/HONO-009-Postgres-to-D1迁移手册.md`。
-  - 为迁移脚本补充运行入口：`package.json` 新增 `migration:export/import/verify`，`tsconfig` 纳入 `scripts` 并启用 `allowImportingTsExtensions`。
-  - 已执行 claude reviewer subagent 复审，确认核心风险点并完成自审收口。
-  - `cd backend-hono && pnpm test -- migration`、`cd backend-hono && pnpm check`、`make -C backend check` 全通过。
-- 下一个任务建议：执行 `HONO-010`，完成全量回归与上线 Runbook 收口。
+  - 执行并通过后端全量门禁：`cd backend-hono && pnpm check`。
+  - 执行并通过前端全量门禁：`cd frontend && pnpm test`、`cd frontend && pnpm lint && pnpm typecheck`。
+  - 执行并通过项目后端强制门禁：`make -C backend check`。
+  - 新增上线切换文档：`docs/HONO-010-Hono切换Runbook.md`（含切换步骤、监控项、回滚步骤）。
+  - 结合 `HONO-009` 的迁移脚本与校验流程，形成可执行的上线前置清单与证据链。
+- 下一个任务建议：进入发布窗口演练（staging 实跑一次 Runbook），确认后再执行生产切换。
 
 ## 注意事项
 

@@ -30,4 +30,4 @@
 | HONO-007 | Review/Dashboard API 平移（Hono） | done | HONO-006 | - | `docs/contracts/v0.5-review-flow-fsrs.yaml` + `docs/contracts/v0.6-dashboard.yaml` | SP-HONO-REVIEW-DASHBOARD |
 | HONO-008 | OpenAI 兼容 LLM 适配层与 Stub 替换 | done | HONO-006 | - | `docs/contracts/v0.3.5-record-generate.yaml` + `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-HONO-LLM |
 | HONO-009 | Postgres -> D1 数据迁移与一致性校验 | done | HONO-007 | - | N/A（数据迁移任务） | SP-HONO-DATA-MIGRATION |
-| HONO-010 | 全量回归、切换 Runbook 与上线收口 | todo | HONO-008, HONO-009 | - | 全量契约回归 | SP-HONO-CUTOVER |
+| HONO-010 | 全量回归、切换 Runbook 与上线收口 | done | HONO-008, HONO-009 | - | 全量契约回归 | SP-HONO-CUTOVER |

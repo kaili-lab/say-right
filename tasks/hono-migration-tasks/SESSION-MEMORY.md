@@ -54,6 +54,33 @@
 
 > 按时间倒序追加，最新在最上方。
 
+## [2026-03-06 06:54] HONO-010 全量回归、切换 Runbook 与上线收口
+
+- 关键变更：
+  - 完成后端全量门禁回归：`backend-hono` 全量测试 + lint + typecheck。
+  - 完成前端全量门禁回归：`frontend` 全量测试 + lint + typecheck。
+  - 新增上线切换文档：`docs/HONO-010-Hono切换Runbook.md`，覆盖切换前检查、切换步骤、监控项、回滚触发与回滚流程。
+  - 收口 `HONO-008/009` 的 LLM 与数据迁移能力，形成一体化上线前置检查链路。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm check`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  9 passed (9)`
+  - 命令：`cd frontend && pnpm test`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  14 passed (14)`、`Tests  45 passed (45)`
+  - 命令：`cd frontend && pnpm lint && pnpm typecheck`
+  - 退出码：`0`
+  - 关键通过行：`eslint .`、`tsc --noEmit`
+  - 命令：`make -C backend check`
+  - 退出码：`0`
+  - 关键通过行：`122 passed in 14.01s`
+- 踩坑/教训：
+  - 最终收口任务必须把“项目级强制门禁”与“子项目门禁”同时跑一遍，否则证据链不完整，容易在发布审批阶段被打回。
+- 新增规则：
+  - 上线 Runbook 必须落盘为单独文档，且至少包含：切换步骤、验收指标、回滚触发条件与回滚动作。
+- 对后续任务影响：
+  - Hono 迁移执行任务已全部完成，可直接进入 staging 演练与生产切换审批。
+
 ## [2026-03-06 06:49] HONO-009 Postgres -> D1 数据迁移与一致性校验
 
 - 关键变更：

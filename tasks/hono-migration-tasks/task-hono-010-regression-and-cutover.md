@@ -99,3 +99,14 @@
 
 ## output_summary（任务完成后由 AI 填写）
 
+- 回归执行结果：
+  - `cd backend-hono && pnpm check`：通过
+  - `cd frontend && pnpm test`：通过（`14 files, 45 tests`）
+  - `cd frontend && pnpm lint && pnpm typecheck`：通过
+  - `make -C backend check`：通过（`122 passed`）
+- 新增交付：
+  - 上线切换与回滚手册：`docs/HONO-010-Hono切换Runbook.md`
+  - 覆盖切换前检查、上线步骤、监控验收、回滚触发条件与回滚流程
+- 结论：
+  - 前后端全量门禁通过
+  - 迁移链路（含 HONO-009 数据校验流程）可作为上线前置检查执行
