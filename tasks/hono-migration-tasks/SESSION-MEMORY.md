@@ -54,6 +54,32 @@
 
 > 按时间倒序追加，最新在最上方。
 
+## [2026-03-06 06:05] HONO-006 Deck/Card/Record API 平移（Hono）
+
+- 关键变更：
+  - 在 `backend-hono/src/app.ts` 增加 `decks/cards/records` 路由，统一走 Better Auth session 鉴权，不再依赖 Bearer token。
+  - 新增业务用户兜底同步：每次业务请求按会话信息 `upsert users`，解决 `auth_users` 与业务 `users` 分离导致的外键写入失败。
+  - 完成 Deck/Card/Record 核心行为平移：默认组初始化、组名冲突、删除约束、卡片编辑/移动/删除、组计数刷新。
+  - `records/generate` 接 deterministic stub，支持稳定失败注入（`__FAIL_STUB__` -> 503）。
+  - 保留并平移 `records/save-with-agent`，维持前端保存主路径与 fallback 行为。
+  - 新增集成测试 `backend-hono/tests/deck-card-record-api.test.ts` 覆盖契约关键路径与异常映射。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm test -- deck card record`
+  - 退出码：`0`
+  - 关键通过行：`tests/deck-card-record-api.test.ts (4 tests)`
+  - 命令：`cd backend-hono && pnpm check`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  5 passed (5)`
+  - 命令：`make -C backend check`
+  - 退出码：`0`
+  - 关键通过行：`122 passed in 14.34s`
+- 踩坑/教训：
+  - `@hono/zod-validator` 的 hook 类型在严格模式下与项目自定义 `Context` 容易冲突，需要在 hook 层做宽松参数接收，再在内部格式化错误体。
+- 新增规则：
+  - Hono 路由接入 `zValidator` 时，若项目使用自定义 `Env` 泛型，优先把 hook 封装成通用函数并在内部做类型收窄，避免在门禁阶段出现批量类型错误。
+- 对后续任务影响：
+  - `HONO-007` 可直接复用会话鉴权 + D1 业务用户同步机制，不需要再处理 auth/business 用户表断层问题。
+
 ## [2026-03-05 22:40] HONO-005 前端鉴权切换到 Better Auth 会话模式
 
 - 关键变更：

@@ -26,7 +26,7 @@
 | HONO-003 | D1 + Drizzle Schema 重建与仓储基线 | done | HONO-002 | - | `docs/contracts/v0.2-deck-basic.yaml` + `docs/contracts/v0.3-card-management.yaml` | SP-HONO-DATA |
 | HONO-004 | Better Auth 后端接入（Hono + D1） | done | HONO-003 | HONO-005 | `docs/contracts/v0.8-auth-session.yaml` | SP-HONO-AUTH |
 | HONO-005 | 前端鉴权切换到 Better Auth 会话模式 | done | HONO-004 | HONO-004 | `docs/contracts/v0.8-auth-session.yaml` | SP-HONO-AUTH-FE |
-| HONO-006 | Deck/Card/Record API 平移（Hono） | todo | HONO-003, HONO-005 | - | `docs/contracts/v0.2-deck-basic.yaml` + `docs/contracts/v0.3-card-management.yaml` + `docs/contracts/v0.3.5-record-generate.yaml` + `docs/contracts/v0.7-record-save-manual.yaml` | SP-HONO-CRUD-RECORD |
+| HONO-006 | Deck/Card/Record API 平移（Hono） | done | HONO-003, HONO-005 | - | `docs/contracts/v0.2-deck-basic.yaml` + `docs/contracts/v0.3-card-management.yaml` + `docs/contracts/v0.3.5-record-generate.yaml` + `docs/contracts/v0.7-record-save-manual.yaml` | SP-HONO-CRUD-RECORD |
 | HONO-007 | Review/Dashboard API 平移（Hono） | todo | HONO-006 | - | `docs/contracts/v0.5-review-flow-fsrs.yaml` + `docs/contracts/v0.6-dashboard.yaml` | SP-HONO-REVIEW-DASHBOARD |
 | HONO-008 | OpenAI 兼容 LLM 适配层与 Stub 替换 | todo | HONO-006 | - | `docs/contracts/v0.3.5-record-generate.yaml` + `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-HONO-LLM |
 | HONO-009 | Postgres -> D1 数据迁移与一致性校验 | todo | HONO-007 | - | N/A（数据迁移任务） | SP-HONO-DATA-MIGRATION |

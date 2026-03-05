@@ -102,3 +102,16 @@
 - 已完成本任务 review，并执行 `commit + push` 后再进入下一个任务
 
 ## output_summary（任务完成后由 AI 填写）
+
+- 关键产出文件：
+  - `backend-hono/src/app.ts`：新增 `decks/cards/records` 路由平移实现，包含会话鉴权、中间件用户同步、参数校验、错误映射、D1 写入与计数刷新。
+  - `backend-hono/tests/deck-card-record-api.test.ts`：新增 HONO-006 集成测试，覆盖成功路径及 `401/404/409/422/503`。
+  - `backend-hono/package.json` / `backend-hono/pnpm-lock.yaml`：新增 `@hono/zod-validator`、`zod` 依赖并锁定版本。
+- 契约对齐点：
+  - `GET/POST/DELETE /decks`、`GET/PATCH/DELETE /cards`、`POST /cards/:cardId/move` 已按 v0.2/v0.3 平移。
+  - `POST /records/generate`（stub）、`POST /records/save` 已按 v0.3.5/v0.7 平移并保持关键状态码。
+  - 401 改为 session cookie 鉴权；会话用户在业务路由中自动同步到 `users` 表，保障外键可写。
+- 测试结果：
+  - `cd backend-hono && pnpm test -- deck card record` ✅
+  - `cd backend-hono && pnpm check` ✅
+  - `make -C backend check` ✅
