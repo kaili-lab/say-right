@@ -37,12 +37,12 @@ type RecordSaveWithAgentApiResponse = {
 };
 
 export class RecordGenerateApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
+  public readonly status: number;
+
+  constructor(message: string, status: number) {
     super(message);
     this.name = "RecordGenerateApiError";
+    this.status = status;
   }
 }
 

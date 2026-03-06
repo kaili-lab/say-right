@@ -18,7 +18,8 @@ describe("record-generate", () => {
     let resolveGenerateRequest: ((value: Response) => void) | undefined;
 
     mockFetch.mockImplementation((input) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url =
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       if (url.endsWith("/decks")) {
         return Promise.resolve(
           new Response(
@@ -90,7 +91,8 @@ describe("record-generate", () => {
     const user = userEvent.setup();
 
     mockFetch.mockImplementation((input) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url =
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       if (url.endsWith("/decks")) {
         return Promise.resolve(
           new Response(

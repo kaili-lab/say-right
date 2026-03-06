@@ -76,12 +76,12 @@ export type ReviewSessionSummary = {
 };
 
 export class ReviewApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
+  public readonly status: number;
+
+  constructor(message: string, status: number) {
     super(message);
     this.name = "ReviewApiError";
+    this.status = status;
   }
 }
 

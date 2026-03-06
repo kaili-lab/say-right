@@ -59,12 +59,12 @@ export type DeckCard = {
 };
 
 export class DeckApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
+  public readonly status: number;
+
+  constructor(message: string, status: number) {
     super(message);
     this.name = "DeckApiError";
+    this.status = status;
   }
 }
 

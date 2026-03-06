@@ -16,7 +16,8 @@ describe("home-page", () => {
   it("首页应展示主路径卡片与统计信息，并可跳转复习页", async () => {
     const user = userEvent.setup();
     mockFetch.mockImplementation(async (input) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url =
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       if (url.endsWith("/dashboard/home-summary")) {
         return new Response(
           JSON.stringify({
