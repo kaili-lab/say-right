@@ -104,7 +104,8 @@ jobs:
         run: |
           # WHY: 这里直接调用仓库里已安装的 wrangler，避免 wrangler-action 再封装一层 pnpm
           # 导致工作目录/错误输出不透明，从而出现仅看到 “pnpm exit code 1” 的排障困难问题。
-          pnpm exec wrangler deploy
+          # WHY: 生产变量统一在 Cloudflare Dashboard 维护，部署时保留现有 vars，避免把线上配置冲回本地默认值。
+          pnpm exec wrangler deploy --keep-vars
         working-directory: backend-hono
 
   deploy-frontend:
