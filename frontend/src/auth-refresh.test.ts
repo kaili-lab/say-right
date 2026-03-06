@@ -28,11 +28,11 @@ describe('auth-refresh(session-mode)', () => {
   it('fetchWithAuth 应携带 credentials=include', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
 
-    const response = await fetchWithAuth('http://127.0.0.1:8787/dashboard/home-summary', { method: 'GET' }, fetchMock);
+    const response = await fetchWithAuth('http://localhost:8787/dashboard/home-summary', { method: 'GET' }, fetchMock);
 
     expect(response.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8787/dashboard/home-summary',
+      'http://localhost:8787/dashboard/home-summary',
       expect.objectContaining({
         method: 'GET',
         credentials: 'include',
@@ -47,7 +47,7 @@ describe('auth-refresh(session-mode)', () => {
       .fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({ detail: 'unauthorized' }), { status: 401 }));
 
-    const response = await fetchWithAuth('http://127.0.0.1:8787/decks', { method: 'GET' }, fetchMock);
+    const response = await fetchWithAuth('http://localhost:8787/decks', { method: 'GET' }, fetchMock);
 
     expect(response.status).toBe(401);
     expect(window.localStorage.getItem(SESSION_ACTIVE_STORAGE_KEY)).toBeNull();
@@ -61,7 +61,7 @@ describe('auth-refresh(session-mode)', () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ detail: 'invalid credentials' }), { status: 401 }));
 
     const response = await fetchWithAuth(
-      'http://127.0.0.1:8787/api/auth/sign-in/email',
+      'http://localhost:8787/api/auth/sign-in/email',
       {
         method: 'POST',
       },
@@ -80,8 +80,8 @@ describe('auth-refresh(session-mode)', () => {
     });
 
     const [responseA, responseB] = await Promise.all([
-      fetchWithAuth('http://127.0.0.1:8787/decks', { method: 'GET' }, fetchMock),
-      fetchWithAuth('http://127.0.0.1:8787/review/decks', { method: 'GET' }, fetchMock),
+      fetchWithAuth('http://localhost:8787/decks', { method: 'GET' }, fetchMock),
+      fetchWithAuth('http://localhost:8787/review/decks', { method: 'GET' }, fetchMock),
     ]);
 
     expect(responseA.status).toBe(401);

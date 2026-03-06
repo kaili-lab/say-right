@@ -66,7 +66,7 @@ describe("review-deck-list", () => {
 
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://127.0.0.1:8787/review/decks",
+        "http://localhost:8787/review/decks",
         expect.objectContaining({ method: "GET" }),
       ),
     );

@@ -173,7 +173,7 @@ describe("review-session", () => {
 
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://127.0.0.1:8787/review/session/session-002/rate",
+        "http://localhost:8787/review/session/session-002/rate",
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({

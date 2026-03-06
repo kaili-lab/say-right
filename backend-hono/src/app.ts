@@ -258,7 +258,7 @@ function createRuntimeAuth(c: Context<AppEnv>): AuthInstance {
   const trustedOrigins = parseAllowedOrigins(c.env.APP_CORS_ALLOW_ORIGINS);
 
   return createBetterAuth(db, {
-    baseURL: c.env.BETTER_AUTH_URL ?? 'http://localhost:8787',
+    baseURL: c.env.BETTER_AUTH_URL ?? new URL(c.req.url).origin,
     secret: c.env.BETTER_AUTH_SECRET ?? 'better-auth-dev-secret-change-me-32bytes',
     trustedOrigins
   });

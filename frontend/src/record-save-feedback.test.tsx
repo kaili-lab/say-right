@@ -104,7 +104,7 @@ describe("record-save-feedback", () => {
 
     await waitFor(() =>
       expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-        "http://127.0.0.1:8787/records/save",
+        "http://localhost:8787/records/save",
         expect.objectContaining({ method: "POST" }),
       ),
     );
