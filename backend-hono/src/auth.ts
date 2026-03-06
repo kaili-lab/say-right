@@ -5,6 +5,7 @@
  */
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { betterAuth } from 'better-auth';
+import { createWorkerFriendlyPasswordStrategy } from './auth-password';
 import * as schema from './db/schema';
 
 type BetterAuthDatabase = Parameters<typeof drizzleAdapter>[0];
@@ -35,7 +36,8 @@ export function createBetterAuth(database: BetterAuthDatabase, config: BetterAut
     secret: config.secret,
     trustedOrigins: config.trustedOrigins,
     emailAndPassword: {
-      enabled: true
+      enabled: true,
+      password: createWorkerFriendlyPasswordStrategy(config.secret)
     },
     user: {
       modelName: 'auth_users',
