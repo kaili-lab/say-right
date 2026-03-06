@@ -9,12 +9,37 @@
 
 > Turn your Chinese thoughts into natural English — then lock them in with spaced repetition.
 
-[🔗 Live Demo](#demo) · [中文文档](./README_CN.md)
+[🔗 Live Demo](https://say-right.kaili.dev) · [中文文档](./README_CN.md)
 
 ---
 
-<!-- SCREENSHOT: Record a 5–8s GIF of the core flow: type Chinese in the input box → click "Generate" → AI returns natural English expression → click "Save" → card is auto-categorized into a deck with a toast confirmation. This is the magic moment. Save to public/demo.gif and replace this comment with: ![Demo](./public/demo.gif) -->
-> **Screenshot pending** — will be added after deployment.
+
+<table>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="./mock-ui/record1.png" alt="Record page with Chinese input and generated English result" width="100%" />
+      <br />
+      <sub><strong>Record</strong> · Input Chinese and generate natural English</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="./mock-ui/record2.png" alt="Record page after saving a card into a deck" width="100%" />
+      <br />
+      <sub><strong>Save Flow</strong> · Review the generated text before saving</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="./mock-ui/card-group.png" alt="Deck management page showing grouped cards" width="100%" />
+      <br />
+      <sub><strong>Decks</strong> · AI auto-organizes cards into the right deck</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="./mock-ui/review.png" alt="Review page with FSRS-based study flow" width="100%" />
+      <br />
+      <sub><strong>Review</strong> · Practice, rate, and reinforce with FSRS</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -143,4 +168,4 @@ MIT
 ---
 
 <a name="demo"></a>
-> **Demo coming soon.** Will be linked here once deployed to Cloudflare Workers.
+> **Live Demo:** https://say-right.kaili.dev

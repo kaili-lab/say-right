@@ -9,12 +9,37 @@
 
 > 用你的中文想法，学地道英语表达 — 再用间隔重复把它记住。
 
-[🔗 在线体验](#demo) · [English](./README.md)
+[🔗 在线体验](https://say-right.kaili.dev) · [English](./README.md)
 
 ---
 
-<!-- SCREENSHOT: 录制 5–8 秒 GIF，展示核心流程：在输入框输入中文 → 点击"生成英文" → AI 返回地道英文表达 → 点击"保存" → 卡片自动归入卡片组并弹出提示。保存至 public/demo.gif 后替换此注释为：![Demo](./public/demo.gif) -->
-> **截图待补充** — 部署后添加。
+
+<table>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="./mock-ui/record1.png" alt="记录页：输入中文并生成英文" width="100%" />
+      <br />
+      <sub><strong>记录</strong> · 输入中文，生成地道英文表达</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="./mock-ui/record2.png" alt="记录页：保存前确认生成结果" width="100%" />
+      <br />
+      <sub><strong>保存流程</strong> · 编辑确认后保存为卡片</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="./mock-ui/card-group.png" alt="卡片组页面：按主题管理卡片" width="100%" />
+      <br />
+      <sub><strong>卡片组</strong> · AI 自动将卡片归入合适分组</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="./mock-ui/review.png" alt="复习页：基于 FSRS 的复习流程" width="100%" />
+      <br />
+      <sub><strong>复习</strong> · 练习、评分，并用 FSRS 强化记忆</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -143,4 +168,4 @@ MIT
 ---
 
 <a name="demo"></a>
-> **在线 Demo 即将上线。** 部署到 Cloudflare Workers 后在此处添加链接。
+> **在线体验：** https://say-right.kaili.dev
