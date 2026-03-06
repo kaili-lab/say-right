@@ -42,6 +42,7 @@ docs/subagents
 # Cloudflare Workers local secrets
 .dev.vars
 .dev.vars.*
+!backend-hono/.dev.vars.example
 
 # Cloudflare Workers local runtime cache
 backend-hono/.wrangler/

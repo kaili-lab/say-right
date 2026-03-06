@@ -28,8 +28,6 @@ type Bindings = {
   LLM_MODEL?: string;
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
-  LLM_API_KEY?: string;
-  LLM_BASE_URL?: string;
   DB?: unknown;
 };
 

@@ -35,6 +35,14 @@ describe('HONO-008 LLM adapter', () => {
         LLM_MODEL: 'gpt-4o-mini'
       })
     ).toThrow(/OPENAI_API_KEY/i);
+
+    // WHY: 项目已统一收敛到 OPENAI_* 命名，避免示例文件和运行时支持两套变量名继续分叉。
+    const legacyEnv = {
+      LLM_MODE: 'provider',
+      LLM_API_KEY: 'legacy-key'
+    } as unknown as Parameters<typeof resolveLLMConfig>[0];
+
+    expect(() => resolveLLMConfig(legacyEnv)).toThrow(/OPENAI_API_KEY is required/i);
   });
 
   it('文本解析应能从前后缀中提取首个 JSON 对象', () => {

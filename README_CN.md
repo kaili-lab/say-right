@@ -116,8 +116,10 @@ pnpm dev          # http://localhost:8787
 
 ```
 BETTER_AUTH_SECRET=your_secret
-AI_API_KEY=your_key
-AI_BASE_URL=https://api.openai.com/v1   # 或任何 OpenAI 兼容端点
+LLM_MODE=deterministic
+# 若切到 provider 模式，再补充下面两项：
+OPENAI_API_KEY=your_key
+OPENAI_BASE_URL=https://api.openai.com/v1   # 或任何 OpenAI 兼容端点
 ```
 
 ---

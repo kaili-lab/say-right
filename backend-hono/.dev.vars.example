@@ -1,0 +1,9 @@
+# Hono Worker 本地运行时变量
+# WHAT: 与 `.env.example` 保持同一套运行时键名，确保 wrangler dev 与其他本地脚本配置一致。
+APP_CORS_ALLOW_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+BETTER_AUTH_SECRET=replace-with-a-long-random-secret
+BETTER_AUTH_URL=http://localhost:8787
+LLM_MODE=deterministic
+LLM_MODEL=gpt-4o-mini
+OPENAI_API_KEY=
+OPENAI_BASE_URL=

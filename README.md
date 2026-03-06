@@ -116,8 +116,10 @@ Copy `.dev.vars.example` to `.dev.vars` in `backend-hono/` and fill in:
 
 ```
 BETTER_AUTH_SECRET=your_secret
-AI_API_KEY=your_key
-AI_BASE_URL=https://api.openai.com/v1   # or any OpenAI-compatible endpoint
+LLM_MODE=deterministic
+# If you switch to provider mode, also fill these in:
+OPENAI_API_KEY=your_key
+OPENAI_BASE_URL=https://api.openai.com/v1   # or any OpenAI-compatible endpoint
 ```
 
 ---

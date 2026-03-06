@@ -10,8 +10,6 @@ export type LLMRuntimeEnv = {
   LLM_MODEL?: string;
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
-  LLM_API_KEY?: string;
-  LLM_BASE_URL?: string;
 };
 
 export type LLMConfig = {
@@ -36,11 +34,11 @@ export function resolveLLMConfig(env: LLMRuntimeEnv): LLMConfig {
   }
 
   const model = normalizeOptional(env.LLM_MODEL) ?? 'gpt-4o-mini';
-  const apiKey = normalizeOptional(env.OPENAI_API_KEY) ?? normalizeOptional(env.LLM_API_KEY);
-  const baseURL = normalizeOptional(env.OPENAI_BASE_URL) ?? normalizeOptional(env.LLM_BASE_URL);
+  const apiKey = normalizeOptional(env.OPENAI_API_KEY);
+  const baseURL = normalizeOptional(env.OPENAI_BASE_URL);
 
   if (modeRaw === 'provider' && apiKey === null) {
-    throw new Error('OPENAI_API_KEY (or LLM_API_KEY) is required when LLM_MODE=provider');
+    throw new Error('OPENAI_API_KEY is required when LLM_MODE=provider');
   }
 
   return {
