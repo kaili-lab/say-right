@@ -177,8 +177,9 @@ export const authUsers = sqliteTable(
     email: text('email').notNull().unique(),
     email_verified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
     image: text('image'),
-    created_at: integer('created_at').notNull(),
-    updated_at: integer('updated_at').notNull()
+    // Better Auth 运行时会写入 Date 对象；这里使用 timestamp_ms 让 Drizzle 自动做 Date<->毫秒转换。
+    created_at: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updated_at: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
   },
   (table) => ({
     uqAuthUsersEmail: uniqueIndex('uq_auth_users_email').on(table.email)
@@ -193,11 +194,11 @@ export const authSessions = sqliteTable(
       .notNull()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
     token: text('token').notNull().unique(),
-    expires_at: integer('expires_at').notNull(),
+    expires_at: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
     ip_address: text('ip_address'),
     user_agent: text('user_agent'),
-    created_at: integer('created_at').notNull(),
-    updated_at: integer('updated_at').notNull()
+    created_at: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updated_at: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
   },
   (table) => ({
     uqAuthSessionsToken: uniqueIndex('uq_auth_sessions_token').on(table.token),
@@ -217,12 +218,12 @@ export const authAccounts = sqliteTable(
     access_token: text('access_token'),
     refresh_token: text('refresh_token'),
     id_token: text('id_token'),
-    access_token_expires_at: integer('access_token_expires_at'),
-    refresh_token_expires_at: integer('refresh_token_expires_at'),
+    access_token_expires_at: integer('access_token_expires_at', { mode: 'timestamp_ms' }),
+    refresh_token_expires_at: integer('refresh_token_expires_at', { mode: 'timestamp_ms' }),
     scope: text('scope'),
     password: text('password'),
-    created_at: integer('created_at').notNull(),
-    updated_at: integer('updated_at').notNull()
+    created_at: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updated_at: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
   },
   (table) => ({
     uqAuthAccountsProviderAccount: uniqueIndex('uq_auth_accounts_provider_account').on(
@@ -239,9 +240,9 @@ export const authVerifications = sqliteTable(
     id: text('id').primaryKey(),
     identifier: text('identifier').notNull(),
     value: text('value').notNull(),
-    expires_at: integer('expires_at').notNull(),
-    created_at: integer('created_at'),
-    updated_at: integer('updated_at')
+    expires_at: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+    created_at: integer('created_at', { mode: 'timestamp_ms' }),
+    updated_at: integer('updated_at', { mode: 'timestamp_ms' })
   },
   (table) => ({
     idxAuthVerificationsIdentifier: index('idx_auth_verifications_identifier').on(table.identifier),
