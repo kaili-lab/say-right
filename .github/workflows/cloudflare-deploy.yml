@@ -94,15 +94,18 @@ jobs:
           CLOUDFLARE_D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
         run: |
           set -euo pipefail
-          sed -i "s/database_id = \"00000000-0000-0000-0000-000000000000\"/database_id = \"${CLOUDFLARE_D1_DATABASE_ID}\"/" backend-hono/wrangler.toml
+          # WHY: 不依赖仓库中的占位值，确保 CI 总是使用当前环境注入的 D1 数据库 ID。
+          sed -i -E "s|^database_id = \".*\"$|database_id = \"${CLOUDFLARE_D1_DATABASE_ID}\"|" backend-hono/wrangler.toml
 
       - name: Deploy backend-hono worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: backend-hono
-          command: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # WHY: 这里直接调用仓库里已安装的 wrangler，避免 wrangler-action 再封装一层 pnpm
+          # 导致工作目录/错误输出不透明，从而出现仅看到 “pnpm exit code 1” 的排障困难问题。
+          pnpm exec wrangler deploy
+        working-directory: backend-hono
 
   deploy-frontend:
     name: Deploy Frontend
