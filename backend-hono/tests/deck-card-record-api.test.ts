@@ -254,12 +254,23 @@ describe('HONO-006 Deck/Card/Record API parity', () => {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          source_text: '__FAIL_STUB__',
+          source_text: '自定义句子',
           source_lang: 'zh',
           target_lang: 'en'
         })
       });
       expect(generateUnavailableResponse.status).toBe(503);
+
+      const generateFailureTokenResponse = await fixture.requestWithCookie('/records/generate', cookie, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          source_text: '__FAIL_STUB__',
+          source_lang: 'zh',
+          target_lang: 'en'
+        })
+      });
+      expect(generateFailureTokenResponse.status).toBe(503);
 
       const saveMissingDeckResponse = await fixture.requestWithCookie('/records/save', cookie, {
         method: 'POST',

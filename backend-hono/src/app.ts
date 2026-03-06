@@ -26,6 +26,8 @@ type Bindings = {
   BETTER_AUTH_URL?: string;
   LLM_MODE?: string;
   LLM_MODEL?: string;
+  LLM_API_KEY?: string;
+  LLM_BASE_URL?: string;
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
   DB?: unknown;
@@ -276,7 +278,7 @@ function createRuntimeLlm(c: Context<AppEnv>): LLMAdapter {
   } catch (error) {
     if (
       error instanceof Error &&
-      (error.message.includes('LLM_MODE') || error.message.includes('OPENAI_API_KEY'))
+      (error.message.includes('LLM_MODE') || error.message.includes('LLM_API_KEY'))
     ) {
       // provider 配置缺失或非法时回退到 deterministic，保证核心链路可用。
       return new DeterministicLLMAdapter();

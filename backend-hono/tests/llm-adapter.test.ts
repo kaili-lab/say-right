@@ -34,15 +34,18 @@ describe('HONO-008 LLM adapter', () => {
         LLM_MODE: 'provider',
         LLM_MODEL: 'gpt-4o-mini'
       })
-    ).toThrow(/OPENAI_API_KEY/i);
+    ).toThrow(/LLM_API_KEY/i);
 
-    // WHY: 项目已统一收敛到 OPENAI_* 命名，避免示例文件和运行时支持两套变量名继续分叉。
-    const legacyEnv = {
+    // WHY: 运行时主命名恢复为 LLM_*，同时保留 OPENAI_* 兼容读取，避免旧本地配置立即失效。
+    const compatEnv = {
       LLM_MODE: 'provider',
-      LLM_API_KEY: 'legacy-key'
+      OPENAI_API_KEY: 'legacy-key'
     } as unknown as Parameters<typeof resolveLLMConfig>[0];
 
-    expect(() => resolveLLMConfig(legacyEnv)).toThrow(/OPENAI_API_KEY is required/i);
+    expect(resolveLLMConfig(compatEnv)).toMatchObject({
+      mode: 'provider',
+      apiKey: 'legacy-key'
+    });
   });
 
   it('文本解析应能从前后缀中提取首个 JSON 对象', () => {
@@ -67,7 +70,7 @@ describe('HONO-008 LLM adapter', () => {
         sourceLang: 'zh',
         targetLang: 'en'
       })
-    ).resolves.toBe('自定义句子 (in English)');
+    ).rejects.toBeInstanceOf(LLMUnavailableError);
 
     await expect(
       adapter.generateEnglish({

@@ -117,9 +117,10 @@ pnpm dev          # http://localhost:8787
 ```
 BETTER_AUTH_SECRET=your_secret
 LLM_MODE=deterministic
+# deterministic 只用于内置 stub；要生成真实英文请改成 provider
 # 若切到 provider 模式，再补充下面两项：
-OPENAI_API_KEY=your_key
-OPENAI_BASE_URL=https://api.openai.com/v1   # 或任何 OpenAI 兼容端点
+LLM_API_KEY=your_key
+LLM_BASE_URL=https://api.openai.com/v1   # 或任何 OpenAI 兼容端点
 ```
 
 ---

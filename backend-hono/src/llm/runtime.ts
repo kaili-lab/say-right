@@ -8,6 +8,8 @@ export type LLMMode = 'deterministic' | 'provider';
 export type LLMRuntimeEnv = {
   LLM_MODE?: string;
   LLM_MODEL?: string;
+  LLM_API_KEY?: string;
+  LLM_BASE_URL?: string;
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
 };
@@ -34,11 +36,11 @@ export function resolveLLMConfig(env: LLMRuntimeEnv): LLMConfig {
   }
 
   const model = normalizeOptional(env.LLM_MODEL) ?? 'gpt-4o-mini';
-  const apiKey = normalizeOptional(env.OPENAI_API_KEY);
-  const baseURL = normalizeOptional(env.OPENAI_BASE_URL);
+  const apiKey = normalizeOptional(env.LLM_API_KEY) ?? normalizeOptional(env.OPENAI_API_KEY);
+  const baseURL = normalizeOptional(env.LLM_BASE_URL) ?? normalizeOptional(env.OPENAI_BASE_URL);
 
   if (modeRaw === 'provider' && apiKey === null) {
-    throw new Error('OPENAI_API_KEY is required when LLM_MODE=provider');
+    throw new Error('LLM_API_KEY is required when LLM_MODE=provider');
   }
 
   return {

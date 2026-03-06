@@ -81,7 +81,14 @@ export class DeterministicLLMAdapter implements LLMAdapter {
       throw new LLMUnavailableError('stub model unavailable');
     }
 
-    return RECORD_GENERATE_FIXTURES[input.sourceText] ?? `${input.sourceText} (in English)`;
+    const fixture = RECORD_GENERATE_FIXTURES[input.sourceText];
+    if (fixture) {
+      return fixture;
+    }
+
+    // WHY: deterministic 模式只用于可复现测试；未知中文若直接回显原文，
+    // 会让调用方误以为得到了真实翻译结果，因此这里显式返回不可用错误。
+    throw new LLMUnavailableError('deterministic translator only supports fixture phrases');
   }
 
   async scoreReview(input: ReviewScoreInput): Promise<ReviewScoreResult> {
