@@ -99,8 +99,8 @@ describe("record-save-feedback", () => {
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "确认保存" }));
 
-    expect(await screen.findByText(/已保存到/)).toBeInTheDocument();
-    expect(await screen.findByText("默认组")).toBeInTheDocument();
+    expect(await screen.findByText("已保存到 默认组，可以继续记录下一条")).toBeInTheDocument();
+    expect(screen.queryByLabelText("英文结果")).not.toBeInTheDocument();
 
     await waitFor(() =>
       expect(vi.mocked(fetch)).toHaveBeenCalledWith(
@@ -110,7 +110,7 @@ describe("record-save-feedback", () => {
     );
   });
 
-  it("保存成功后英文 textarea 变为只读，保存按钮禁用", async () => {
+  it("保存成功后回到初始状态，并允许用户继续记录", async () => {
     const user = userEvent.setup();
     vi.stubGlobal("fetch", buildMockFetch());
 
@@ -119,10 +119,18 @@ describe("record-save-feedback", () => {
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "确认保存" }));
 
-    await screen.findByText(/已保存到/);
-    const generatedTextarea = screen.getByLabelText("英文结果");
-    expect(generatedTextarea).toHaveAttribute("readonly");
-    expect(screen.getByRole("button", { name: "保存卡片" })).toBeDisabled();
+    await screen.findByText("已保存到 默认组，可以继续记录下一条");
+
+    expect(screen.queryByLabelText("英文结果")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "保存卡片" })).not.toBeInTheDocument();
+
+    const sourceTextarea = screen.getByLabelText("中文内容");
+    expect(sourceTextarea).toHaveValue("");
+    expect(sourceTextarea).toHaveFocus();
+
+    await user.type(sourceTextarea, "我们先确认范围，再安排时间");
+    expect(screen.queryByText("已保存到 默认组，可以继续记录下一条")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "生成英文" })).toBeEnabled();
   });
 
   it("可以选择非默认组后保存", async () => {
@@ -141,8 +149,8 @@ describe("record-save-feedback", () => {
     await user.click(within(dialog).getByRole("radio", { name: /工作沟通/ }));
     await user.click(within(dialog).getByRole("button", { name: "确认保存" }));
 
-    expect(await screen.findByText(/已保存到/)).toBeInTheDocument();
-    expect(await screen.findByText("工作沟通")).toBeInTheDocument();
+    expect(await screen.findByText("已保存到 工作沟通，可以继续记录下一条")).toBeInTheDocument();
+    expect(screen.queryByLabelText("英文结果")).not.toBeInTheDocument();
   });
 
   it("英文超过 300 字时前端直接提示并禁用保存", async () => {

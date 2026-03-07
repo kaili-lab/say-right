@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { fetchDecks } from "./decksApi";
 import { RecordGenerateApiError, generateRecordEnglish, saveRecordToDeck } from "./recordApi";
@@ -47,7 +47,6 @@ export function RecordPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
-  const [savedDeckName, setSavedDeckName] = useState("");
   const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
   const [selectedDeckId, setSelectedDeckId] = useState("");
   const [deckOptions, setDeckOptions] = useState<DeckOption[]>([]);
@@ -88,16 +87,26 @@ export function RecordPage() {
     return () => { disposed = true; };
   }, []);
 
-  const isSaved = saveStatus === "saved";
   const generatedTextLength = generatedText.trim().length;
   const isGeneratedTextTooLong = generatedTextLength > MAX_GENERATED_TEXT_LENGTH;
-  const canGenerate = sourceText.trim().length > 0 && generateStatus !== "loading" && !isSaved;
+  const canGenerate = sourceText.trim().length > 0 && generateStatus !== "loading";
   const canSave =
     generateStatus === "success" &&
     generatedTextLength > 0 &&
     !isGeneratedTextTooLong &&
-    !isSaved &&
     saveStatus !== "saving";
+
+  function resetComposerForNextRecord() {
+    // 保存成功后立即回到初始录入态，避免用户停留在“已保存但不知道下一步做什么”的死胡同页面。
+    setSourceText("");
+    setGeneratedText("");
+    setSourceSnapshot("");
+    setGenerateStatus("idle");
+    setErrorMessage("");
+    window.setTimeout(() => {
+      sourceRef.current?.focus();
+    }, 0);
+  }
 
   async function handleGenerate() {
     const normalizedSourceText = sourceText.trim();
@@ -132,7 +141,7 @@ export function RecordPage() {
     setIsDeckModalOpen(true);
   }
 
-  const handleConfirmSave = useCallback(async () => {
+  async function handleConfirmSave() {
     const targetDeck = deckOptions.find((d) => d.id === selectedDeckId);
     const normalizedGeneratedText = generatedText.trim();
     if (!targetDeck || !sourceSnapshot) return;
@@ -154,15 +163,15 @@ export function RecordPage() {
         deckId: selectedDeckId,
       });
       setSaveStatus("saved");
-      setSavedDeckName(targetDeck.name);
-      setSaveMessage(`已保存到 ${targetDeck.name}`);
+      setSaveMessage(`已保存到 ${targetDeck.name}，可以继续记录下一条`);
+      resetComposerForNextRecord();
     } catch (error) {
       setSaveStatus("error");
       setSaveMessage(
         error instanceof RecordGenerateApiError ? `保存失败：${error.message}` : "保存失败：网络异常，请稍后重试",
       );
     }
-  }, [deckOptions, generatedText, selectedDeckId, sourceSnapshot]);
+  }
 
   function handleSourceTextChange(value: string) {
     setSourceText(value.slice(0, MAX_SOURCE_TEXT_LENGTH));
@@ -178,6 +187,15 @@ export function RecordPage() {
         <h1 className="text-2xl font-bold text-amber-800">记录新表达</h1>
         <p className="mt-1 text-sm text-stone-600">输入你想说的中文，AI 帮你转化为地道英文。</p>
       </header>
+
+      {saveStatus === "saved" && saveMessage ? (
+        <div
+          role="status"
+          className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+        >
+          {saveMessage}
+        </div>
+      ) : null}
 
       <div className="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm">
         <label htmlFor="record-source-text" className="block text-sm font-semibold text-stone-600">
@@ -229,36 +247,22 @@ export function RecordPage() {
               id="record-generated-text"
               aria-label="英文结果"
               value={generatedText}
-              readOnly={isSaved}
               onChange={(event) => setGeneratedText(event.target.value)}
               rows={1}
-              className={`w-full resize-none overflow-hidden rounded-xl border border-dashed p-3 text-base font-semibold leading-6 text-stone-700 outline-none transition ${
-                isSaved
-                  ? "border-stone-200 bg-stone-50 text-stone-500"
-                  : "border-stone-300 bg-[#fffcf7] focus:border-orange-400 focus:border-solid focus:ring-2 focus:ring-orange-100"
-              }`}
+              className="w-full resize-none overflow-hidden rounded-xl border border-dashed border-stone-300 bg-[#fffcf7] p-3 text-base font-semibold leading-6 text-stone-700 outline-none transition focus:border-orange-400 focus:border-solid focus:ring-2 focus:ring-orange-100"
             />
             <div className="flex items-center justify-between gap-3 border-t border-stone-200 pt-3">
-              {isSaved ? (
-                <p className="text-sm text-amber-800">
-                  已保存到{" "}
-                  <span className="inline-flex items-center rounded-md bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
-                    {savedDeckName}
-                  </span>
+              <div className="space-y-1">
+                <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
+                <p className={`text-xs ${isGeneratedTextTooLong ? "text-red-600" : "text-stone-500"}`}>
+                  {generatedTextLength}/{MAX_GENERATED_TEXT_LENGTH}
                 </p>
-              ) : (
-                <div className="space-y-1">
-                  <p className="text-xs text-stone-500">你可以直接编辑上方英文内容</p>
-                  <p className={`text-xs ${isGeneratedTextTooLong ? "text-red-600" : "text-stone-500"}`}>
-                    {generatedTextLength}/{MAX_GENERATED_TEXT_LENGTH}
+                {isGeneratedTextTooLong ? (
+                  <p role="alert" className="text-xs text-red-700">
+                    英文内容最多 {MAX_GENERATED_TEXT_LENGTH} 字，请精简后再保存
                   </p>
-                  {isGeneratedTextTooLong ? (
-                    <p role="alert" className="text-xs text-red-700">
-                      英文内容最多 {MAX_GENERATED_TEXT_LENGTH} 字，请精简后再保存
-                    </p>
-                  ) : null}
-                </div>
-              )}
+                ) : null}
+              </div>
               <button
                 type="button"
                 disabled={!canSave}
