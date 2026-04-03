@@ -62,7 +62,7 @@ describe("review-deck-list", () => {
     await user.click(screen.getByRole("link", { name: "进入 Deck 日常口语" }));
 
     expect(await screen.findByRole("heading", { name: "复习 Session" })).toBeInTheDocument();
-    expect(screen.getByText("Deck：deck-daily")).toBeInTheDocument();
+    expect(screen.queryByText("Deck：deck-daily")).not.toBeInTheDocument();
 
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(

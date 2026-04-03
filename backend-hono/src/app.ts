@@ -1261,7 +1261,7 @@ export function createApp(options: AppOptions = {}) {
     const totalCards = Number(totalCardsRow?.total ?? 0);
 
     const [totalDueRow] = await db
-      .select({ total: sql<number>`sum(${schema.decks.dueCount})` })
+      .select({ total: sql<number>`sum(${schema.decks.dueCount} + ${schema.decks.newCount})` })
       .from(schema.decks)
       .where(eq(schema.decks.userId, currentUser.userId));
     const totalDue = Number(totalDueRow?.total ?? 0);
@@ -1270,7 +1270,8 @@ export function createApp(options: AppOptions = {}) {
       .select({
         id: schema.decks.deckId,
         name: schema.decks.name,
-        dueCount: schema.decks.dueCount
+        dueCount: schema.decks.dueCount,
+        newCount: schema.decks.newCount
       })
       .from(schema.decks)
       .where(eq(schema.decks.userId, currentUser.userId))
@@ -1310,7 +1311,7 @@ export function createApp(options: AppOptions = {}) {
       recent_decks: recentDeckRows.map((deck) => ({
         id: deck.id,
         name: deck.name,
-        due_count: deck.dueCount
+        due_count: deck.dueCount + deck.newCount
       }))
     });
   });

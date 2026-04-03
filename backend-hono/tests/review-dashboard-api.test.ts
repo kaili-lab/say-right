@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { rm } from 'node:fs/promises';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { createClient } from '@libsql/client';
@@ -222,8 +223,37 @@ async function createFixture() {
     createReviewSession,
     insertReviewLog,
     async cleanup() {
-      client.close();
-      await rm(dbPath, { force: true });
+      await client.close();
+      let lastError: unknown;
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        try {
+          await rm(dbPath, { force: true });
+          return;
+        } catch (error) {
+          const errorCode =
+            typeof error === 'object' && error !== null && 'code' in error
+              ? String((error as { code?: unknown }).code ?? '')
+              : '';
+          if (errorCode !== 'EBUSY' && errorCode !== 'EPERM') {
+            throw error;
+          }
+          lastError = error;
+          await sleep(50 * (attempt + 1));
+        }
+      }
+      const lastErrorCode =
+        typeof lastError === 'object' && lastError !== null && 'code' in lastError
+          ? String((lastError as { code?: unknown }).code ?? '')
+          : '';
+      if (lastErrorCode === 'EBUSY') {
+        return;
+      }
+      if (lastErrorCode === 'EPERM') {
+        return;
+      }
+      if (lastError) {
+        throw lastError;
+      }
     }
   };
 }
@@ -553,6 +583,16 @@ describe('HONO-007 Review/Dashboard API parity', () => {
         stability: 2,
         difficulty: 5
       });
+      await fixture.insertCard({
+        userId,
+        deckId: travelDeckId,
+        frontText: '新学卡片',
+        backText: 'new card',
+        dueAt: Date.now() - 1800_000,
+        reps: 0,
+        stability: 0,
+        difficulty: 0
+      });
 
       await fixture.recomputeDeckCounts(travelDeckId);
       await fixture.recomputeDeckCounts(workDeckId);
@@ -584,16 +624,24 @@ describe('HONO-007 Review/Dashboard API parity', () => {
         mastered_count: number;
         total_cards: number;
         total_due: number;
-        recent_decks: Array<{ id: string }>;
+        recent_decks: Array<{ id: string; due_count: number }>;
       };
 
       expect(dashboardBody.display_name).toBe('Kai');
       expect(dashboardBody.insight.length).toBeGreaterThan(0);
       expect(dashboardBody.study_days).toBe(1);
       expect(dashboardBody.mastered_count).toBe(1);
-      expect(dashboardBody.total_cards).toBe(2);
-      expect(dashboardBody.total_due).toBe(1);
+      expect(dashboardBody.total_cards).toBe(3);
+      expect(dashboardBody.total_due).toBe(2);
       expect(dashboardBody.recent_decks.length).toBe(3);
+
+      const reviewDecksResponse = await fixture.requestWithCookie('/review/decks', cookie, {
+        method: 'GET'
+      });
+      expect(reviewDecksResponse.status).toBe(200);
+      const reviewDecks = (await reviewDecksResponse.json()) as Array<{ due_count: number }>;
+      const reviewDecksTotalDue = reviewDecks.reduce((sum, deck) => sum + deck.due_count, 0);
+      expect(dashboardBody.total_due).toBe(reviewDecksTotalDue);
 
       const recentDeckIds = new Set(dashboardBody.recent_decks.map((item) => item.id));
       expect(recentDeckIds.has(travelDeckId)).toBe(true);

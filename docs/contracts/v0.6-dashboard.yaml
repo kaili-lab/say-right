@@ -19,4 +19,5 @@ endpoints:
 rules:
   - study_days 基于 review_logs 的复习自然日去重
   - mastered_count 基于每张卡片最近一次评级（Good/Easy）
+  - total_due 与 recent_decks[].due_count 口径为 `deck.due_count + deck.new_count`（与 `/review/decks` 一致）
   - insight 为每日学习提示，可由静态池稳定抽样

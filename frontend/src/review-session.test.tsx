@@ -83,6 +83,7 @@ describe("review-session", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "复习 Session" })).toBeInTheDocument();
+    expect(screen.queryByText("Deck：deck-daily")).not.toBeInTheDocument();
     expect(screen.getByText("这个我再想想。")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Good" }));

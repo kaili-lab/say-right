@@ -316,7 +316,6 @@ export function ReviewSessionPage() {
             <header className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h1 className="text-2xl font-bold text-amber-800">复习 Session</h1>
-                <p className="mt-1 text-sm text-stone-500">Deck：{deckId}</p>
               </div>
               <Link
                 to="/review"
