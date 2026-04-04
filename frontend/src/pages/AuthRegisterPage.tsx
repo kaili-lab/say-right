@@ -124,6 +124,12 @@ export function AuthRegisterPage() {
           去登录
         </Link>
       </p>
+      <p className="mt-2 text-sm text-stone-600">
+        想先了解产品？
+        <Link to="/" className="ml-1 font-semibold text-orange-600 hover:text-orange-700">
+          返回首页
+        </Link>
+      </p>
     </section>
   );
 }

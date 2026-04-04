@@ -91,7 +91,7 @@ describe("me-page", () => {
     vi.stubGlobal("fetch", buildHomeFetch());
 
     render(
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={["/app"]}>
         <App />
       </MemoryRouter>,
     );
@@ -107,7 +107,7 @@ describe("me-page", () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={["/app"]}>
         <App />
       </MemoryRouter>,
     );

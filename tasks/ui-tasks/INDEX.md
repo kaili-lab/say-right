@@ -19,21 +19,23 @@
 | UI-013 | 首页昵称/洞察与复习总结接口接入 | done | UI-012 | API-016, API-017 | `docs/contracts/v0.5-review-flow-fsrs.yaml` + `docs/contracts/v0.6-dashboard.yaml` | SP-UI-DASHBOARD-REVIEW-SUMMARY |
 | UI-014 | 全局滚动条样式与桌面端 viewport 布局 | done | UI-013 | - | N/A | SP-UI-SCROLL |
 | UI-015 | Token 自动刷新与 401 跳转登录 | done | UI-014 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-UI-AUTH-REFRESH |
-| UI-016 | 手机端”我的”Tab 与个人中心页 | done | UI-015 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-UI-ME-TAB |
-| UI-017 | 记录页 textarea 自动增长与手动分组保存（前端） | done | UI-016, API-026 | API-026 | `docs/contracts/v0.7-record-save-manual.yaml` | SP-UI-RECORD-SAVE |
+| UI-016 | 手机端“我的”Tab 与个人中心页 | done | UI-015 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-UI-ME-TAB |
+| UI-017 | 记录页 textarea 自动增高与手动分组保存（前端） | done | UI-016, API-026 | API-026 | `docs/contracts/v0.7-record-save-manual.yaml` | SP-UI-RECORD-SAVE |
 | UI-018 | 卡片组页卡片内容截断与详情弹窗 | done | UI-016 | - | N/A | SP-UI-CARD-TRUNCATE |
 | UI-019 | 卡片组删除功能落地 | done | UI-018 | - | `docs/contracts/v0.2.1-deck-delete.yaml` | SP-UI-DECK-DELETE |
-
-| UI-021 | 语音转文字 API Client | done | HONO-013 | HONO-013 | docs/contracts/v0.9-speech-transcribe.yaml | SP-HONO-SPEECH-API |
-
+| UI-021 | 语音转文字 API Client | done | HONO-013 | HONO-013 | `docs/contracts/v0.9-speech-transcribe.yaml` | SP-HONO-SPEECH-API |
 | UI-022 | 录音采集 Hook useSpeechRecorder | done | UI-021 | - | N/A（前端录音能力） | SP-UI-SPEECH-RECORDER |
-
-| UI-023 | 通用语音输入组件 SpeechEnabledTextarea | done | UI-022 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-UI-SPEECH-COMPONENT |
-
-| UI-024 | 记录页学习型输入框语音接入 | done | UI-023 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-UI-RECORD-SPEECH |
-
-| UI-025 | 复习页英文答案语音接入 | done | UI-023 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-UI-REVIEW-SPEECH |
-
-| UI-026 | 卡片编辑弹窗语音接入 | done | UI-023 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-UI-DECK-CARD-SPEECH |
-
-| UI-027 | 语音输入回归与端到端验收 | done | UI-024, UI-025, UI-026 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-UI-SPEECH-E2E |
+| UI-023 | 通用语音输入组件 SpeechEnabledTextarea | done | UI-022 | - | `docs/contracts/v0.9-speech-transcribe.yaml` | SP-UI-SPEECH-COMPONENT |
+| UI-024 | 记录页学习型输入框语音接入 | done | UI-023 | - | `docs/contracts/v0.9-speech-transcribe.yaml` | SP-UI-RECORD-SPEECH |
+| UI-025 | 复习页英文答案语音接入 | done | UI-023 | - | `docs/contracts/v0.9-speech-transcribe.yaml` | SP-UI-REVIEW-SPEECH |
+| UI-026 | 卡片编辑弹窗语音接入 | done | UI-023 | - | `docs/contracts/v0.9-speech-transcribe.yaml` | SP-UI-DECK-CARD-SPEECH |
+| UI-027 | 语音输入回归与端到端验收 | done | UI-024, UI-025, UI-026 | - | `docs/contracts/v0.9-speech-transcribe.yaml` | SP-UI-SPEECH-E2E |
+| UI-028 | 公开 landing page 路由拆分 | done | UI-027 | - | N/A（前端公开入口与受保护路由结构） | SP-UI-LANDING-ROUTE |
+| UI-029 | landing page 双语文案与语言切换 | done | UI-028 | - | N/A（公开页文案与本地语言状态） | SP-UI-LANDING-LOCALE |
+| UI-030 | landing page 顶部导航与首屏 Hero | done | UI-029 | - | N/A（公开页首屏结构） | SP-UI-LANDING-HERO |
+| UI-031 | landing page 三步工作流区 | done | UI-030 | - | N/A（公开页流程表达） | SP-UI-LANDING-WORKFLOW |
+| UI-032 | landing page 功能卖点与展示证明区 | done | UI-031 | - | N/A（公开页展示内容） | SP-UI-LANDING-PROOF |
+| UI-033 | 公开页与认证页入口一致性 | done | UI-032 | - | `docs/contracts/v0.1-auth-basic.yaml` | SP-UI-LANDING-AUTH-ENTRY |
+| UI-034 | landing page 路由与语言切换测试 | done | UI-033 | - | N/A（前端路由与公开页状态测试） | SP-UI-LANDING-TESTS |
+| UI-035 | landing page 视觉回归与响应式验收 | done | UI-034 | - | N/A（视觉回归任务） | SP-UI-LANDING-VISUAL |
+| UI-036 | landing page 文档与作品集叙事对齐 | done | UI-035 | - | N/A（文档对齐任务） | SP-UI-LANDING-DOCS |

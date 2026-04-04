@@ -32,12 +32,15 @@ describe("app-shell", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={["/app"]}>
         <App />
       </MemoryRouter>,
     );
 
     await screen.findByRole("heading", { name: "还没有学习卡片" });
+    const brandHomeLink = screen.getByRole("link", { name: "Say Right 首页" });
+    expect(brandHomeLink).toHaveAttribute("href", "/app");
+
     const home = screen.getAllByRole("link", { name: "首页" })[0];
     expect(home).toBeInTheDocument();
     expect(home).toHaveAttribute("aria-current", "page");
@@ -78,7 +81,7 @@ describe("app-shell", () => {
     );
 
     const { container } = render(
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={["/app"]}>
         <App />
       </MemoryRouter>,
     );

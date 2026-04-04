@@ -73,7 +73,7 @@ export function AuthLoginPage() {
         password: password.trim(),
       });
       persistSession(result, email.trim().toLowerCase());
-      navigate("/", { replace: true });
+      navigate("/app", { replace: true });
     } catch (error) {
       if (error instanceof AuthApiError) {
         setErrorMessage(`登录失败：${error.message}`);
@@ -145,6 +145,12 @@ export function AuthLoginPage() {
         还没有账号？
         <Link to="/auth/register" className="ml-1 font-semibold text-orange-600 hover:text-orange-700">
           去注册
+        </Link>
+      </p>
+      <p className="mt-2 text-sm text-stone-600">
+        想先了解产品？
+        <Link to="/" className="ml-1 font-semibold text-orange-600 hover:text-orange-700">
+          返回首页
         </Link>
       </p>
     </section>

@@ -22,6 +22,7 @@ type CompareOptions = {
   mockFile: string;
   snapshotName: string;
   maxDiffPixelRatio?: number;
+  seedSession?: boolean;
   setupAppBeforeGoto?: (page: Page) => Promise<void>;
   setupAppAfterGoto?: (page: Page) => Promise<void>;
   setupMockAfterGoto?: (page: Page) => Promise<void>;
@@ -34,6 +35,7 @@ async function compareWithMockBaseline({
   mockFile,
   snapshotName,
   maxDiffPixelRatio = 0.45,
+  seedSession = true,
   setupAppBeforeGoto,
   setupAppAfterGoto,
   setupMockAfterGoto,
@@ -57,7 +59,9 @@ async function compareWithMockBaseline({
   await mkdir(path.dirname(snapshotPath), { recursive: true });
   await writeFile(snapshotPath, mockBaseline);
 
-  await seedAuthSession(page);
+  if (seedSession) {
+    await seedAuthSession(page);
+  }
   if (setupAppBeforeGoto) {
     await setupAppBeforeGoto(page);
   }
@@ -79,7 +83,7 @@ test.describe("visual-regression @visual", () => {
     await compareWithMockBaseline({
       page,
       testInfo,
-      appPath: "/",
+      appPath: "/app",
       mockFile: "v3-c-warm-orange-home.html",
       snapshotName: "home.png",
       maxDiffPixelRatio: 0.7,
@@ -193,6 +197,29 @@ test.describe("visual-regression @visual", () => {
       maxDiffPixelRatio: 0.9,
       setupMockAfterGoto: async (mockPage) => {
         await mockPage.locator("#emptyLink").click();
+      },
+    });
+  });
+
+  test("landing page 视觉基线与响应式行为", async ({ page }, testInfo) => {
+    await compareWithMockBaseline({
+      page,
+      testInfo,
+      appPath: "/",
+      mockFile: "v3-c-warm-orange-landing.html",
+      snapshotName: "landing.png",
+      maxDiffPixelRatio: 0.85,
+      seedSession: false,
+      setupAppAfterGoto: async (appPage) => {
+        await expect(appPage.getByRole("heading", { level: 1 })).toBeVisible();
+        const publicNav = appPage.getByRole("navigation", { name: "public nav" });
+        if (testInfo.project.name === "desktop-chromium") {
+          await expect(publicNav).toBeVisible();
+          return;
+        }
+        await expect(publicNav).toBeHidden();
+        await expect(appPage.getByRole("button", { name: "EN" })).toBeVisible();
+        await expect(appPage.getByRole("button", { name: "中" })).toBeVisible();
       },
     });
   });

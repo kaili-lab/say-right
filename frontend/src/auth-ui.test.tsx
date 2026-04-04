@@ -123,7 +123,7 @@ describe('auth-ui', () => {
     vi.stubGlobal('fetch', mockFetch);
 
     render(
-      <MemoryRouter initialEntries={['/']}>
+      <MemoryRouter initialEntries={['/app']}>
         <App />
       </MemoryRouter>,
     );

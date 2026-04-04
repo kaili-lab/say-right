@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Say Right Landing Mock</title>
+    <style>
+      :root {
+        --bg: #faf9f6;
+        --card: #fffffe;
+        --line: #fed7aa;
+        --text: #292524;
+        --muted: #78716c;
+        --brand: #f97316;
+        --brand-dark: #c2410c;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: radial-gradient(circle at 20% 0%, #fff7ed 0%, #faf9f6 45%, #fffdf9 100%);
+        color: var(--text);
+      }
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        border-bottom: 1px solid #ffedd5;
+        backdrop-filter: blur(8px);
+        background: rgba(250, 249, 246, 0.92);
+      }
+      .container {
+        width: 100%;
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+      .header-inner {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--brand);
+        color: #fff;
+        font-weight: 800;
+        font-size: 12px;
+        display: grid;
+        place-items: center;
+      }
+      .brand-title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .brand-sub {
+        margin: 0;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      nav[aria-label="public nav"] {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        font-size: 14px;
+        color: #57534e;
+      }
+      nav[aria-label="public nav"] a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn {
+        height: 36px;
+        border-radius: 10px;
+        padding: 0 12px;
+        border: 0;
+        font-weight: 600;
+        font-size: 13px;
+      }
+      .btn-outline {
+        background: #fff7ed;
+        color: #9a3412;
+      }
+      .btn-brand {
+        background: var(--brand);
+        color: #fff;
+      }
+      main {
+        padding-top: 40px;
+        padding-bottom: 56px;
+      }
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 16px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+      .hero {
+        padding: 32px;
+        background: linear-gradient(135deg, #fff9f2, #fffdf8 60%, #ffffff);
+      }
+      .hero h1 {
+        margin: 10px 0 0;
+        font-size: 44px;
+        line-height: 1.12;
+      }
+      .hero p {
+        margin: 14px 0 0;
+        max-width: 760px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      .hero-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 22px;
+      }
+      .mini {
+        padding: 24px;
+      }
+      .mini h2 {
+        margin: 0;
+        font-size: 16px;
+      }
+      .pill {
+        margin-top: 8px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid #ffedd5;
+        background: #fff7ed;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      section {
+        margin-top: 28px;
+        padding: 28px;
+      }
+      section h2 {
+        margin: 0;
+        font-size: 30px;
+        color: #7c2d12;
+      }
+      .section-intro {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .three-col {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .item {
+        border: 1px solid #ffedd5;
+        border-radius: 16px;
+        background: rgba(255, 247, 237, 0.6);
+        padding: 16px;
+      }
+      .item h3 {
+        margin: 0;
+        font-size: 14px;
+        color: #9a3412;
+      }
+      .item p {
+        margin: 8px 0 0;
+        font-size: 14px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .feature-grid {
+        display: grid;
+        grid-template-columns: 7fr 5fr;
+        gap: 14px;
+      }
+      .proof-grid {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .proof-grid img {
+        width: 100%;
+        border: 1px solid #e7e5e4;
+        border-radius: 16px;
+      }
+      .cta {
+        background: linear-gradient(90deg, #fff7ed, #fef3c7);
+      }
+      @media (max-width: 768px) {
+        .container {
+          padding: 0 16px;
+        }
+        nav[aria-label="public nav"] {
+          display: none;
+        }
+        .hero-grid,
+        .feature-grid,
+        .three-col,
+        .proof-grid {
+          grid-template-columns: 1fr;
+        }
+        .hero {
+          padding: 24px;
+        }
+        .hero h1 {
+          font-size: 34px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="container header-inner">
+        <div class="brand">
+          <span class="logo">SR</span>
+          <div>
+            <p class="brand-title">Say Right</p>
+            <p class="brand-sub">AI English Expression Coach</p>
+          </div>
+        </div>
+        <nav aria-label="public nav">
+          <a href="#workflow">Workflow</a>
+          <a href="#features">Features</a>
+          <a href="#proof">Proof</a>
+        </nav>
+        <div class="actions">
+          <button class="btn btn-outline">中</button>
+          <button class="btn btn-outline">EN</button>
+          <button class="btn btn-brand">Sign Up</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="hero-grid">
+        <article class="card hero">
+          <p style="margin: 0; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: #ea580c; font-weight: 700">Portfolio-ready Narrative</p>
+          <h1>Turn Chinese thoughts into natural English that sticks</h1>
+          <p>Say Right connects expression generation, card capture, and spaced review into one loop. The current release focuses on practical English training for Chinese-speaking learners.</p>
+          <div class="hero-actions">
+            <button class="btn btn-brand" style="height: 44px; border-radius: 12px; padding: 0 18px">Try It Now</button>
+            <button class="btn" style="height: 44px; border-radius: 12px; padding: 0 18px; border: 1px solid #fed7aa; background: #fff">See Workflow</button>
+          </div>
+        </article>
+        <article class="card mini">
+          <h2>Today</h2>
+          <p class="pill">Expression-first learning flow</p>
+          <p class="pill">FSRS review scheduling</p>
+          <p class="pill">Public entry for product showcase</p>
+        </article>
+      </div>
+
+      <section id="workflow" class="card">
+        <h2>A 3-step learning loop</h2>
+        <p class="section-intro">Not just vocabulary memorization, but practical expression training.</p>
+        <div class="three-col">
+          <article class="item">
+            <h3>1. Start from your Chinese thought</h3>
+            <p>Capture what you actually need to say in real life.</p>
+          </article>
+          <article class="item">
+            <h3>2. Generate and refine natural English</h3>
+            <p>Use AI output as a draft, then edit for your own voice.</p>
+          </article>
+          <article class="item">
+            <h3>3. Review with spaced repetition</h3>
+            <p>Practice at the right time with FSRS-based scheduling.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="features" class="card feature-grid">
+        <article>
+          <h2>Why this works well as a portfolio project</h2>
+          <p class="section-intro">It demonstrates product thinking and engineering depth.</p>
+          <div class="three-col" style="grid-template-columns: 1fr; margin-top: 14px">
+            <article class="item">
+              <h3>Expression-first design</h3>
+              <p>Built around real sentence expression, not isolated word lists.</p>
+            </article>
+            <article class="item">
+              <h3>End-to-end learning flow</h3>
+              <p>Generation, saving, and review are connected in one product path.</p>
+            </article>
+            <article class="item">
+              <h3>Production-oriented implementation</h3>
+              <p>Auth, data, review logic, tests, and visual QA are all wired.</p>
+            </article>
+          </div>
+        </article>
+        <article>
+          <h2>Engineering Signals</h2>
+          <div class="three-col" style="grid-template-columns: 1fr; margin-top: 14px">
+            <article class="item"><p>React 19 + TypeScript + React Router</p></article>
+            <article class="item"><p>Hono + Cloudflare Workers + D1 + Drizzle</p></article>
+            <article class="item"><p>Vitest + Playwright visual regression</p></article>
+            <article class="item"><p>Session auth and API contracts</p></article>
+          </div>
+        </article>
+      </section>
+
+      <section id="proof" class="card">
+        <h2>Product Screenshots</h2>
+        <p class="section-intro">These screens come from the current implementation.</p>
+        <div class="proof-grid">
+          <img src="./record1.png" alt="record screenshot" />
+          <img src="./record2.png" alt="save screenshot" />
+          <img src="./card-group.png" alt="decks screenshot" />
+          <img src="./review.png" alt="review screenshot" />
+        </div>
+      </section>
+
+      <section class="card cta">
+        <h2>Use this as your portfolio entry point</h2>
+        <p class="section-intro">Start with a public narrative, then walk interviewers through the real product.</p>
+        <div class="hero-actions">
+          <button class="btn btn-brand" style="height: 44px; border-radius: 12px; padding: 0 18px">Log In</button>
+          <button class="btn" style="height: 44px; border-radius: 12px; padding: 0 18px; border: 1px solid #fed7aa; background: #fff">Sign Up</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

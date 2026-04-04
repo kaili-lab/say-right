@@ -31,7 +31,7 @@
     <td width="50%" align="center" valign="top">
       <img src="./mock-ui/card-group.png" alt="Deck management page showing grouped cards" width="100%" />
       <br />
-      <sub><strong>Decks</strong> · AI auto-organizes cards into the right deck</sub>
+      <sub><strong>Decks</strong> · Manage decks and move cards across topics</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="./mock-ui/review.png" alt="Review page with FSRS-based study flow" width="100%" />
@@ -48,8 +48,8 @@
 **1. The complete loop no mainstream app has**
 Type a Chinese thought → AI rewrites it as natural English → saved as a flashcard → reviewed via FSRS spaced repetition. Most vocabulary apps stop at word lists. SayRight closes the full cycle from expression to retention.
 
-**2. Group Agent: AI auto-organizes your cards**
-When you save a card, an AI agent reads your existing decks and decides where it belongs — creating a new deck if needed. No manual tagging. Cards find their own home.
+**2. Public landing + protected workspace**
+`/` is a bilingual public landing page for product storytelling, while `/app` is the authenticated workspace for real usage flow. This split improves both onboarding and portfolio presentation.
 
 **3. FSRS + AI review scoring**
 During review, optionally type your own English attempt and get an AI score (0–100) mapped to Anki's four grades (Again / Hard / Good / Easy). The FSRS algorithm schedules the next review based on your actual retention — not fixed intervals.
@@ -72,12 +72,13 @@ During review, optionally type your own English attempt and get an AI score (0�
 ## Features
 
 - **Record** — input Chinese (up to 200 chars), generate natural English, edit before saving
-- **Auto-deck** — Group Agent assigns each card to the best existing deck, or creates one
+- **Deck-first save flow** — choose a target deck before saving; move cards later from deck management
 - **Review** — FSRS scheduling with 4-grade self-rating; optional AI scoring with feedback
 - **Deck management** — view cards by deck, move cards between decks, delete empty decks
 - **Home dashboard** — today's review count, recent decks, streak stats
 - **Responsive** — bottom nav on mobile, top nav on desktop (Warm Orange theme)
 - **Session auth** — cookie-based auth via better-auth; multi-tenant data isolation
+- **Landing locale toggle** — public page supports Chinese / English switch for global portfolio sharing
 
 ---
 
@@ -92,7 +93,7 @@ During review, optionally type your own English attempt and get an AI score (0�
 ┌──────────────────────▼──────────────────────┐
 │  Hono  ·  Cloudflare Workers                │
 │  better-auth  ·  Drizzle ORM                │
-│  Group Agent (AI orchestration)             │
+│  Record API (/records/save primary path)    │
 └──────────────────────┬──────────────────────┘
                        │
           ┌────────────▼────────────┐
@@ -153,7 +154,7 @@ LLM_BASE_URL=https://api.openai.com/v1   # or any OpenAI-compatible endpoint
 ## Roadmap
 
 - [ ] Real LLM integration for English generation — API contract defined, provider connection pending
-- [ ] Group Agent with live AI — stub complete, wiring to provider pending
+- [ ] Re-evaluate Group Agent usability and keep it only if it beats manual deck selection
 - [ ] AI review scoring with live model — stub complete, wiring pending
 - [ ] Deploy to Cloudflare Workers + D1 (production)
 - [ ] Voice input: speak Chinese → auto transcribe → generate English (v2)

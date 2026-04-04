@@ -9,7 +9,7 @@ describe("应用入口", () => {
     vi.unstubAllGlobals();
   });
 
-  it("应渲染首页主路径入口", async () => {
+  it("应渲染业务首页主路径入口", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
@@ -32,7 +32,7 @@ describe("应用入口", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={["/app"]}>
         <App />
       </MemoryRouter>,
     );

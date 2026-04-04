@@ -1,11 +1,12 @@
 # React + TypeScript + Vite
 
-## 当前页面数据来源说明（2026-03-01）
+## 当前页面数据来源说明（2026-04-04）
 
-- 首页（`/`）走后端 `GET /dashboard/home-summary`
-- 记录页（`/record`）分组数据走后端 `GET /decks`，生成/保存分别走 `POST /records/generate`、`POST /records/save-with-agent`
-- 复习页（`/review`）、复习会话（`/review/session/:deckId`）、卡片组页（`/decks`）走后端 API
-- 认证与会话状态（注册/登录/退出）走后端接口 + localStorage
+- 公开入口（`/`）是 landing page，用于展示产品价值与作品集叙事；不依赖登录态后端数据。
+- 登录后业务首页（`/app`）走后端 `GET /dashboard/home-summary`。
+- 记录页（`/record`）分组数据走后端 `GET /decks`，生成/保存主链路分别走 `POST /records/generate`、`POST /records/save`。
+- 复习页（`/review`）、复习会话（`/review/session/:deckId`）、卡片组页（`/decks`）走后端 API。
+- 认证与会话状态（注册/登录/退出）走后端接口 + localStorage。
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

@@ -5,6 +5,7 @@ import { AuthLoginPage } from "./pages/AuthLoginPage";
 import { AuthRegisterPage } from "./pages/AuthRegisterPage";
 import { DeckListPage } from "./pages/DeckListPage";
 import { HomePage } from "./pages/HomePage";
+import { LandingPage } from "./pages/LandingPage";
 import { MePage } from "./pages/MePage";
 import { RecordPage } from "./pages/RecordPage";
 import { ReviewDeckListPage } from "./pages/ReviewDeckListPage";
@@ -26,7 +27,7 @@ function ShellLayout() {
 function RequireAuthLayout() {
   const accessToken = readAccessToken();
   if (!accessToken) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to="/" replace />;
   }
   return <Outlet />;
 }
@@ -34,7 +35,7 @@ function RequireAuthLayout() {
 function GuestOnlyLayout() {
   const accessToken = readAccessToken();
   if (accessToken) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/app" replace />;
   }
   return <Outlet />;
 }
@@ -42,22 +43,23 @@ function GuestOnlyLayout() {
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route element={<GuestOnlyLayout />}>
         <Route path="/auth/login" element={<AuthLoginPage />} />
         <Route path="/auth/register" element={<AuthRegisterPage />} />
       </Route>
       <Route element={<RequireAuthLayout />}>
         <Route element={<ShellLayout />}>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/app" element={<HomePage />} />
           <Route path="/record" element={<RecordPage />} />
           <Route path="/review" element={<ReviewDeckListPage />} />
           <Route path="/review/session/:deckId" element={<ReviewSessionPage />} />
           <Route path="/decks" element={<DeckListPage />} />
           <Route path="/me" element={<MePage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/app" replace />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/auth/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

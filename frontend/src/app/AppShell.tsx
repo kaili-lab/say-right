@@ -6,7 +6,7 @@
  */
 import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import { clearSession, logoutAccount, readSessionEmail } from "../pages/authApi";
 import { DESKTOP_TABS, MOBILE_TABS } from "./navigation";
@@ -73,12 +73,16 @@ export function AppShell({ children }: PropsWithChildren) {
     <div className="min-h-screen bg-[#faf9f6] text-stone-800 md:h-screen md:flex md:flex-col md:overflow-hidden">
       <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-[#faf9f6]/90 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-[1100px] items-center justify-between px-4 md:px-6">
-          <div className="flex items-center gap-2">
+          <Link
+            to="/app"
+            aria-label="Say Right 首页"
+            className="flex items-center gap-2 rounded-lg no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
+          >
             <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-orange-500 text-xs font-extrabold text-white">
               SR
             </span>
             <span className="text-sm font-bold text-amber-800">Say Right</span>
-          </div>
+          </Link>
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="主导航">
             {DESKTOP_TABS.map((tab) => (
@@ -86,7 +90,7 @@ export function AppShell({ children }: PropsWithChildren) {
                 key={tab.path}
                 to={tab.path}
                 className={({ isActive }) => `${navBase} ${isActive ? navActive : ""}`}
-                end={tab.path === "/"}
+                end={tab.path === "/app"}
               >
                 {tab.label}
               </NavLink>
@@ -148,7 +152,7 @@ export function AppShell({ children }: PropsWithChildren) {
             className={({ isActive }) =>
               `rounded-lg px-2 py-2 text-center text-xs font-medium ${isActive ? "text-orange-500" : "text-stone-500"}`
             }
-            end={tab.path === "/"}
+            end={tab.path === "/app"}
           >
             {tab.label}
           </NavLink>
