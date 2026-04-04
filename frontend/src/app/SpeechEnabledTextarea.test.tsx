@@ -49,6 +49,8 @@ function StatefulTextarea(props?: Partial<SpeechTextareaProps>) {
   );
 }
 
+type TranscribeResult = Awaited<ReturnType<typeof transcribeSpeech>>;
+
 describe("SpeechEnabledTextarea", () => {
   beforeEach(() => {
     vi.mocked(transcribeSpeech).mockReset();
@@ -83,10 +85,10 @@ describe("SpeechEnabledTextarea", () => {
     });
     vi.mocked(useSpeechRecorder).mockReturnValue(recorder);
 
-    let resolveTranscribe: ((value: { text: string; language: "en"; providerModel: string }) => void) | null = null;
+    let resolveTranscribe: ((value: TranscribeResult) => void) | undefined;
     vi.mocked(transcribeSpeech).mockImplementation(
       () =>
-        new Promise((resolve) => {
+        new Promise<TranscribeResult>((resolve) => {
           resolveTranscribe = resolve;
         }),
     );
@@ -97,7 +99,10 @@ describe("SpeechEnabledTextarea", () => {
     await user.click(screen.getByRole("button", { name: "停止录音" }));
     expect(screen.getByText("转写中...")).toBeInTheDocument();
 
-    resolveTranscribe?.({
+    if (!resolveTranscribe) {
+      throw new Error("transcribe resolver was not initialized");
+    }
+    resolveTranscribe({
       text: "hello",
       language: "en",
       providerModel: "whisper-large-v3",

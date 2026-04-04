@@ -14,6 +14,16 @@ vi.mock("./pages/speechApi", () => ({
   transcribeSpeech: vi.fn(),
 }));
 
+function getRequestUrl(input: Parameters<typeof fetch>[0]) {
+  if (typeof input === "string") {
+    return input;
+  }
+  if (input instanceof URL) {
+    return input.toString();
+  }
+  return input.url;
+}
+
 function setupRecorderMock() {
   vi.mocked(useSpeechRecorder).mockImplementation(() => ({
     status: "recording",
@@ -38,7 +48,7 @@ describe("speech-page-integration", () => {
   it("记录页中文语音回填后不应自动触发生成", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = getRequestUrl(input);
       if (url.endsWith("/decks")) {
         return Promise.resolve(
           new Response(
@@ -68,7 +78,7 @@ describe("speech-page-integration", () => {
     await user.click(await screen.findByTestId("speech-action-record_source"));
     expect(screen.getByLabelText("中文内容")).toHaveValue("我想先练习这个句子");
     expect(fetchMock.mock.calls.some(([input]) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = getRequestUrl(input);
       return url.endsWith("/records/generate");
     })).toBe(false);
   });
@@ -76,7 +86,7 @@ describe("speech-page-integration", () => {
   it("记录页英文语音回填后不应自动触发保存", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = getRequestUrl(input);
       if (url.endsWith("/decks")) {
         return Promise.resolve(
           new Response(
@@ -134,7 +144,7 @@ describe("speech-page-integration", () => {
       expect(englishTextarea).toHaveValue("Initial English.Improved version.");
     });
     expect(fetchMock.mock.calls.some(([input]) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = getRequestUrl(input);
       return url.endsWith("/records/save");
     })).toBe(false);
   });
@@ -142,7 +152,7 @@ describe("speech-page-integration", () => {
   it("复习页语音回填后仍可继续 AI 评分与手动评级", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = getRequestUrl(input);
       if (url.endsWith("/review/decks/deck-daily/session")) {
         return Promise.resolve(
           new Response(
@@ -229,7 +239,7 @@ describe("speech-page-integration", () => {
   it("卡片编辑 front/back 支持语音，Deck 创建弹窗不出现语音入口", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = getRequestUrl(input);
       if (url.endsWith("/decks")) {
         return Promise.resolve(
           new Response(
