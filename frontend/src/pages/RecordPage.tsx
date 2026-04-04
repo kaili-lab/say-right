@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import { SpeechEnabledTextarea } from "../app/SpeechEnabledTextarea";
 import { fetchDecks } from "./decksApi";
 import { RecordGenerateApiError, generateRecordEnglish, saveRecordToDeck } from "./recordApi";
 
@@ -198,17 +199,18 @@ export function RecordPage() {
       ) : null}
 
       <div className="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm">
-        <label htmlFor="record-source-text" className="block text-sm font-semibold text-stone-600">
-          中文内容
-        </label>
-        <textarea
-          ref={sourceRef}
+        <SpeechEnabledTextarea
           id="record-source-text"
+          label="中文内容"
           value={sourceText}
-          onChange={(event) => handleSourceTextChange(event.target.value)}
+          onChange={handleSourceTextChange}
+          scene="record_source"
+          language="zh"
+          textareaRef={sourceRef}
           placeholder="例如：我们明天先对齐目标，再确定执行节奏"
           rows={1}
-          className="mt-2 w-full resize-none overflow-hidden rounded-xl border border-stone-200 bg-[#fffdfb] p-3 text-sm leading-6 text-stone-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+          maxLength={MAX_SOURCE_TEXT_LENGTH}
+          textareaClassName="mt-2 w-full resize-none overflow-hidden rounded-xl border border-stone-200 bg-[#fffdfb] p-3 text-sm leading-6 text-stone-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
         />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -239,17 +241,18 @@ export function RecordPage() {
           </div>
 
           <div className="space-y-3 p-6">
-            <label htmlFor="record-generated-text" className="sr-only">
-              英文结果
-            </label>
-            <textarea
-              ref={generatedRef}
+            <SpeechEnabledTextarea
               id="record-generated-text"
+              label="英文结果"
+              labelClassName="sr-only"
               aria-label="英文结果"
               value={generatedText}
-              onChange={(event) => setGeneratedText(event.target.value)}
+              onChange={setGeneratedText}
+              scene="record_generated"
+              language="en"
+              textareaRef={generatedRef}
               rows={1}
-              className="w-full resize-none overflow-hidden rounded-xl border border-dashed border-stone-300 bg-[#fffcf7] p-3 text-base font-semibold leading-6 text-stone-700 outline-none transition focus:border-orange-400 focus:border-solid focus:ring-2 focus:ring-orange-100"
+              textareaClassName="w-full resize-none overflow-hidden rounded-xl border border-dashed border-stone-300 bg-[#fffcf7] p-3 text-base font-semibold leading-6 text-stone-700 outline-none transition focus:border-orange-400 focus:border-solid focus:ring-2 focus:ring-orange-100"
             />
             <div className="flex items-center justify-between gap-3 border-t border-stone-200 pt-3">
               <div className="space-y-1">

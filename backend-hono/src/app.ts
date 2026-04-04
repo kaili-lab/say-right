@@ -19,6 +19,12 @@ import {
   type LLMAdapter
 } from './llm/adapter';
 import { resolveLLMConfig } from './llm/runtime';
+import {
+  createSpeechAdapter,
+  SpeechProviderUnavailableError,
+  type SpeechToTextAdapter
+} from './speech/adapter';
+import { resolveSpeechConfig, resolveSpeechInput, type SpeechConfig } from './speech/runtime';
 
 type Bindings = {
   APP_CORS_ALLOW_ORIGINS?: string;
@@ -30,6 +36,11 @@ type Bindings = {
   LLM_BASE_URL?: string;
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
+  STT_PROVIDER?: string;
+  STT_MODEL?: string;
+  STT_TIMEOUT_MS?: string;
+  STT_MAX_FILE_SIZE_BYTES?: string;
+  STT_FEATURE_ENABLED?: string;
   DB?: unknown;
 };
 
@@ -59,6 +70,7 @@ type AppOptions = {
   getAuth?: (c: Context<AppEnv>) => AuthInstance;
   getDb?: (c: Context<AppEnv>) => Database;
   getLlm?: (c: Context<AppEnv>) => LLMAdapter;
+  getSpeech?: (c: Context<AppEnv>, config: SpeechConfig) => SpeechToTextAdapter;
 };
 
 type Database = DrizzleD1Database<typeof schema>;
@@ -287,6 +299,10 @@ function createRuntimeLlm(c: Context<AppEnv>): LLMAdapter {
   }
 }
 
+function createRuntimeSpeech(config: SpeechConfig): SpeechToTextAdapter {
+  return createSpeechAdapter(config);
+}
+
 function toValidationDetail(
   source: ValidationSource,
   error: any
@@ -310,6 +326,18 @@ function createValidationHook(source: ValidationSource) {
     }
 
     return undefined;
+  };
+}
+
+function buildBodyValidationError(field: string, message: string) {
+  return {
+    detail: [
+      {
+        loc: ['body', field],
+        msg: message,
+        type: 'value_error'
+      }
+    ]
   };
 }
 
@@ -674,6 +702,8 @@ export function createApp(options: AppOptions = {}) {
   const resolveAuth = (c: Context<AppEnv>) => options.getAuth?.(c) ?? createRuntimeAuth(c);
   const resolveDb = (c: Context<AppEnv>) => options.getDb?.(c) ?? createRuntimeDb(c);
   const resolveLlm = (c: Context<AppEnv>) => options.getLlm?.(c) ?? createRuntimeLlm(c);
+  const resolveSpeech = (c: Context<AppEnv>, config: SpeechConfig) =>
+    options.getSpeech?.(c, config) ?? createRuntimeSpeech(config);
 
   app.use(
     '*',
@@ -749,8 +779,90 @@ export function createApp(options: AppOptions = {}) {
   app.use('/decks/*', requireSession);
   app.use('/cards/*', requireSession);
   app.use('/records/*', requireSession);
+  app.use('/speech/*', requireSession);
   app.use('/review/*', requireSession);
   app.use('/dashboard/*', requireSession);
+
+  app.post('/speech/transcribe', async (c) => {
+    let speechConfig: SpeechConfig;
+    try {
+      speechConfig = resolveSpeechConfig(c.env);
+    } catch {
+      return c.json({ detail: 'speech unavailable' }, 503);
+    }
+
+    if (!speechConfig.featureEnabled) {
+      return c.json({ detail: 'speech unavailable' }, 503);
+    }
+
+    let formData: FormData;
+    try {
+      formData = await c.req.formData();
+    } catch {
+      return c.json(buildBodyValidationError('request', 'multipart/form-data is required'), 422);
+    }
+
+    const file = formData.get('file');
+    if (!(file instanceof File) || file.size === 0) {
+      return c.json(buildBodyValidationError('file', 'file is required'), 422);
+    }
+
+    if (file.size > speechConfig.maxFileSizeBytes) {
+      return c.json(
+        { detail: `audio file exceeds ${speechConfig.maxFileSizeBytes} bytes limit` },
+        413
+      );
+    }
+
+    const sceneValue = formData.get('scene');
+    if (typeof sceneValue !== 'string' || sceneValue.trim().length === 0) {
+      return c.json(buildBodyValidationError('scene', 'scene is required'), 422);
+    }
+
+    const languageValue = formData.get('language');
+    if (typeof languageValue !== 'string' || languageValue.trim().length === 0) {
+      return c.json(buildBodyValidationError('language', 'language is required'), 422);
+    }
+
+    let resolvedInput: ReturnType<typeof resolveSpeechInput>;
+    try {
+      resolvedInput = resolveSpeechInput({
+        scene: sceneValue,
+        language: languageValue
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'invalid speech input';
+      const field = message.includes('language') ? 'language' : 'scene';
+      return c.json(buildBodyValidationError(field, message), 422);
+    }
+
+    let speech: SpeechToTextAdapter;
+    try {
+      speech = resolveSpeech(c, speechConfig);
+    } catch {
+      return c.json({ detail: 'speech unavailable' }, 503);
+    }
+
+    try {
+      const transcribed = await speech.transcribe({
+        audio: file,
+        scene: resolvedInput.scene,
+        language: resolvedInput.language,
+        prompt: resolvedInput.prompt
+      });
+
+      return c.json({
+        text: transcribed.text,
+        language: transcribed.language,
+        provider_model: transcribed.providerModel
+      });
+    } catch (error) {
+      if (error instanceof SpeechProviderUnavailableError) {
+        return c.json({ detail: error.message || 'provider unavailable' }, 503);
+      }
+      throw error;
+    }
+  });
 
   app.get('/decks', async (c) => {
     const db = resolveDb(c);

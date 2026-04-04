@@ -23,3 +23,17 @@
 | UI-017 | 记录页 textarea 自动增长与手动分组保存（前端） | done | UI-016, API-026 | API-026 | `docs/contracts/v0.7-record-save-manual.yaml` | SP-UI-RECORD-SAVE |
 | UI-018 | 卡片组页卡片内容截断与详情弹窗 | done | UI-016 | - | N/A | SP-UI-CARD-TRUNCATE |
 | UI-019 | 卡片组删除功能落地 | done | UI-018 | - | `docs/contracts/v0.2.1-deck-delete.yaml` | SP-UI-DECK-DELETE |
+
+| UI-021 | 语音转文字 API Client | done | HONO-013 | HONO-013 | docs/contracts/v0.9-speech-transcribe.yaml | SP-HONO-SPEECH-API |
+
+| UI-022 | 录音采集 Hook useSpeechRecorder | done | UI-021 | - | N/A（前端录音能力） | SP-UI-SPEECH-RECORDER |
+
+| UI-023 | 通用语音输入组件 SpeechEnabledTextarea | done | UI-022 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-UI-SPEECH-COMPONENT |
+
+| UI-024 | 记录页学习型输入框语音接入 | done | UI-023 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-UI-RECORD-SPEECH |
+
+| UI-025 | 复习页英文答案语音接入 | done | UI-023 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-UI-REVIEW-SPEECH |
+
+| UI-026 | 卡片编辑弹窗语音接入 | done | UI-023 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-UI-DECK-CARD-SPEECH |
+
+| UI-027 | 语音输入回归与端到端验收 | done | UI-024, UI-025, UI-026 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-UI-SPEECH-E2E |

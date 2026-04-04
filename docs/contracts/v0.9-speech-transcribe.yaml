@@ -1,0 +1,26 @@
+﻿version: v0.9-speech-transcribe
+endpoints:
+  - method: POST
+    path: /speech/transcribe
+    auth: session
+    request:
+      content_type: multipart/form-data
+      body:
+        file: binary
+        language: zh | en
+        scene: record_source | record_generated | review_answer | card_front | card_back
+    response:
+      status: 200
+      body:
+        text: string
+        language: zh | en
+        provider_model: string
+    errors:
+      - 401_unauthorized
+      - 413_audio_too_large
+      - 422_validation
+      - 503_provider_unavailable
+rules:
+  - 该接口仅供英语学习相关输入框使用，不用于 login、register、deck/group 创建等非学习型表单。
+  - scene 由前端按学习场景显式传入，后端负责映射 prompt、language 与 provider 参数。
+  - provider 调用必须经过服务抽象层，路由与前端不得直接耦合具体模型名。

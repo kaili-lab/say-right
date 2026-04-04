@@ -7,14 +7,16 @@
 import { expect, test } from "@playwright/test";
 import { seedAuthSession } from "../support/authSession";
 
+const API_BASE = "http://127.0.0.1:8787";
+
 test.describe("critical-path @critical-path", () => {
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop-chromium", "关键路径 e2e 在桌面端执行；移动端由视觉验收覆盖。");
     await seedAuthSession(page);
   });
 
-  test("记录页：生成英文并保存后可立即调整分组 @critical-path", async ({ page }) => {
-    await page.route("**/decks", async (route) => {
+  test("记录页：生成英文并保存到指定分组 @critical-path", async ({ page }) => {
+    await page.route(`${API_BASE}/decks`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -26,7 +28,7 @@ test.describe("critical-path @critical-path", () => {
       });
     });
 
-    await page.route("**/records/generate", async (route) => {
+    await page.route(`${API_BASE}/records/generate`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -36,9 +38,9 @@ test.describe("critical-path @critical-path", () => {
       });
     });
 
-    await page.route("**/records/save-with-agent", async (route) => {
+    await page.route(`${API_BASE}/records/save`, async (route) => {
       await route.fulfill({
-        status: 200,
+        status: 201,
         contentType: "application/json",
         body: JSON.stringify({
           card_id: "card-critical-001",
@@ -57,20 +59,16 @@ test.describe("critical-path @critical-path", () => {
 
     await expect(page.getByLabel(/英文结果/)).toHaveValue("I need to double-check the time for this meeting.");
     await page.getByRole("button", { name: "保存卡片" }).click();
-
-    await expect(page.getByText("已保存到 工作沟通")).toBeVisible();
-    await page.getByRole("button", { name: "立即调整分组" }).click();
-
-    const dialog = page.getByRole("dialog", { name: "调整卡片组" });
+    const dialog = page.getByRole("dialog", { name: "选择卡片组" });
     await expect(dialog).toBeVisible();
     await dialog.getByRole("radio", { name: /旅行应急/ }).click();
-    await dialog.getByRole("button", { name: "确认分组" }).click();
+    await dialog.getByRole("button", { name: "确认保存" }).click();
 
-    await expect(page.getByText("当前分组：旅行应急")).toBeVisible();
+    await expect(page.getByText("已保存到 旅行应急")).toBeVisible();
   });
 
   test("复习页：进入 session 并完成一轮评级 @critical-path", async ({ page }) => {
-    await page.route("**/review/decks", async (route) => {
+    await page.route(`${API_BASE}/review/decks`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -78,7 +76,7 @@ test.describe("critical-path @critical-path", () => {
       });
     });
 
-    await page.route("**/review/decks/deck-daily/session", async (route) => {
+    await page.route(`${API_BASE}/review/decks/deck-daily/session`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -96,7 +94,7 @@ test.describe("critical-path @critical-path", () => {
       });
     });
 
-    await page.route("**/review/session/session-critical-001/ai-score", async (route) => {
+    await page.route(`${API_BASE}/review/session/session-critical-001/ai-score`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -104,7 +102,7 @@ test.describe("critical-path @critical-path", () => {
       });
     });
 
-    await page.route("**/review/session/session-critical-001/rate", async (route) => {
+    await page.route(`${API_BASE}/review/session/session-critical-001/rate`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",

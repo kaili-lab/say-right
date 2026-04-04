@@ -46,3 +46,19 @@
 
 - D1 生产数据导入窗口（是否允许短暂停机）
 - 是否需要保留 `legacy/fastapi-main-2026-03-05` 受保护策略（建议保留）
+
+## 新增决策（2026-04-04）
+
+- 语音转文字当前供应商基线：`AIHubMix + whisper-large-v3`
+- STT 必须有独立 provider 抽象层，路由层不得直接耦合模型名或第三方请求细节
+- 语音接口契约统一为 `docs/contracts/v0.9-speech-transcribe.yaml`
+- 本地执行任何 `backend-hono` task 前，固定先执行 `pnpm exec wrangler d1 migrations apply say-right --local`
+- 语音输入范围仅限英语学习相关输入：
+  - 记录页中文原文输入
+  - 记录页生成后的英文编辑输入
+  - 复习页英文答案输入
+  - 卡片编辑弹窗的中英文输入
+- 明确排除非学习型表单：
+  - login / register
+  - deck/group 创建
+  - 删除确认等系统操作输入

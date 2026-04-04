@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, vi } from "vitest";
 
@@ -160,8 +160,7 @@ describe("record-save-feedback", () => {
     await renderAndGenerate(user);
 
     const generatedTextarea = screen.getByLabelText("英文结果");
-    await user.clear(generatedTextarea);
-    await user.type(generatedTextarea, "a".repeat(301));
+    fireEvent.change(generatedTextarea, { target: { value: "a".repeat(301) } });
 
     expect(await screen.findByRole("alert")).toHaveTextContent("英文内容最多 300 字");
     expect(screen.getByRole("button", { name: "保存卡片" })).toBeDisabled();
@@ -174,8 +173,7 @@ describe("record-save-feedback", () => {
 
     await renderAndGenerate(user);
     const generatedTextarea = screen.getByLabelText("英文结果");
-    await user.clear(generatedTextarea);
-    await user.type(generatedTextarea, "a".repeat(300));
+    fireEvent.change(generatedTextarea, { target: { value: "a".repeat(300) } });
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     const saveButton = screen.getByRole("button", { name: "保存卡片" });

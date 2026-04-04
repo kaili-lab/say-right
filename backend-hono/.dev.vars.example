@@ -1,10 +1,17 @@
-# Hono Worker 本地运行时变量
-# WHAT: 与 `.env.example` 保持同一套运行时键名，确保 wrangler dev 与其他本地脚本配置一致。
+# Hono Worker local runtime variables
+# Runtime DB is provided by Wrangler D1 binding "DB"; no DATABASE_URL is needed for normal local dev.
 APP_CORS_ALLOW_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 BETTER_AUTH_SECRET=replace-with-a-long-random-secret
 BETTER_AUTH_URL=http://localhost:8787
 LLM_MODE=deterministic
-# deterministic 仅支持内置测试短句；要启用真实中译英，请改为 provider 并配置 LLM_API_KEY
+# deterministic only supports built-in fixture phrases; switch to provider for real generation.
 LLM_MODEL=gpt-4o-mini
 LLM_API_KEY=
 LLM_BASE_URL=
+
+# STT runtime settings. By default, STT reuses LLM_API_KEY and LLM_BASE_URL.
+STT_PROVIDER=aihubmix
+STT_MODEL=whisper-large-v3
+STT_TIMEOUT_MS=15000
+STT_MAX_FILE_SIZE_BYTES=10485760
+STT_FEATURE_ENABLED=true

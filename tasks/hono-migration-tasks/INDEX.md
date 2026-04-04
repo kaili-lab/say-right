@@ -9,6 +9,14 @@
 3. `tasks/hono-migration-tasks/SESSION-MEMORY.md`
 4. 当前 task 的 `context_files`
 
+## 本地 D1 前置（强制）
+
+- 开始任何 `backend-hono` 任务前，先在 `backend-hono` 目录执行：
+  - `pnpm exec wrangler d1 migrations apply say-right --local`
+- 目的：
+  - 确保本地 D1 schema 已创建，避免测试或本地联调连接到空库。
+  - 该命令可重复执行，适合作为后端 task 的固定前置步骤。
+
 ## 任务收尾顺序（强制）
 
 每个 `HONO-*` 任务必须按以下顺序收尾：
@@ -31,3 +39,9 @@
 | HONO-008 | OpenAI 兼容 LLM 适配层与 Stub 替换 | done | HONO-006 | - | `docs/contracts/v0.3.5-record-generate.yaml` + `docs/contracts/v0.5-review-flow-fsrs.yaml` | SP-HONO-LLM |
 | HONO-009 | Postgres -> D1 数据迁移与一致性校验 | done | HONO-007 | - | N/A（数据迁移任务） | SP-HONO-DATA-MIGRATION |
 | HONO-010 | 全量回归、切换 Runbook 与上线收口 | done | HONO-008, HONO-009 | - | 全量契约回归 | SP-HONO-CUTOVER |
+
+| HONO-011 | 语音转文字契约与运行时基线 | done | HONO-010 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-HONO-SPEECH-CONTRACT |
+
+| HONO-012 | STT Provider 抽象与 AIHubMix Whisper 适配器 | done | HONO-011 | - | docs/contracts/v0.9-speech-transcribe.yaml | SP-HONO-SPEECH-PROVIDER |
+
+| HONO-013 | 语音转文字接口 /speech/transcribe | done | HONO-012 | UI-021 | docs/contracts/v0.9-speech-transcribe.yaml | SP-HONO-SPEECH-API |

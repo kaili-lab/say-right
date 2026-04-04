@@ -9,8 +9,11 @@
 
 ## 后端任务必读
 
-- 执行 `backend/` 相关 task 前，必须先阅读：`docs/FastAPI项目固定流程.md`。
-- 执行 `backend/` 相关 task 完成前，必须执行并通过：`make -C backend check`。
+- `backend/`（FastAPI 历史目录）相关 task 才需要阅读：`docs/FastAPI项目固定流程.md`。
+- 当前主线（`backend-hono/` + `frontend/`）的 task 结束门禁统一为：
+  - `cd backend-hono && pnpm test && pnpm lint && pnpm typecheck`
+  - `cd frontend && pnpm test && pnpm lint && pnpm typecheck`
+  - 仅在任务显式要求 E2E 时追加：`cd frontend && pnpm test:e2e`
 
 ## 语言与沟通
 

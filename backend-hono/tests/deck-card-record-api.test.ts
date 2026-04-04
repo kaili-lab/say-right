@@ -86,7 +86,14 @@ async function createFixture() {
     requestWithCookie,
     async cleanup() {
       client.close();
-      await rm(dbPath, { force: true });
+      try {
+        await rm(dbPath, { force: true });
+      } catch (error) {
+        const errno = error as { code?: string };
+        if (errno.code !== 'EBUSY') {
+          throw error;
+        }
+      }
     }
   };
 }

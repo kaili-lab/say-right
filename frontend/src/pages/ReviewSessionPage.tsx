@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { SpeechEnabledTextarea } from "../app/SpeechEnabledTextarea";
 import {
   type ReviewAiScoreResult,
   ReviewApiError,
@@ -330,15 +331,17 @@ export function ReviewSessionPage() {
               <p className="mt-1 text-xl font-bold text-amber-800">{currentCard?.frontText}</p>
             </section>
 
-            <label htmlFor="review-user-answer" className="mt-4 block text-sm font-semibold text-stone-600">
-              你的英文答案
-            </label>
-            <textarea
+            <SpeechEnabledTextarea
               id="review-user-answer"
+              label="你的英文答案"
+              labelClassName="mt-4 block text-sm font-semibold text-stone-600"
+              scene="review_answer"
+              language="en"
+              ariaLabel="你的英文答案"
               value={userAnswer}
-              onChange={(event) => setUserAnswer(event.target.value)}
+              onChange={setUserAnswer}
               rows={4}
-              className="mt-2 w-full rounded-xl border border-stone-200 bg-[#fffdfb] p-3 text-sm leading-6 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+              textareaClassName="mt-2 w-full rounded-xl border border-stone-200 bg-[#fffdfb] p-3 text-sm leading-6 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
               placeholder="可输入你的英文表达，也可以直接手动评级"
             />
 

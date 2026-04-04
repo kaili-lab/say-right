@@ -54,6 +54,79 @@
 
 > 按时间倒序追加，最新在最上方。
 
+## [2026-04-04 12:20] HONO-013 语音转文字接口 /speech/transcribe
+
+- 关键变更：
+  - 在 `backend-hono/src/app.ts` 新增 `POST /speech/transcribe`，并将 `/speech/*` 纳入会话鉴权。
+  - 路由接入 `resolveSpeechConfig` + `resolveSpeechInput` + `SpeechToTextAdapter`，映射 `401/413/422/503`。
+  - 新增集成测试 `backend-hono/tests/speech-transcribe.test.ts`，覆盖未登录、缺文件、非法 scene/language、超限、provider 失败、成功链路。
+  - 修复多份后端测试 cleanup 的 Windows `EBUSY` 问题，恢复本地全量测试可通过。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm exec wrangler d1 migrations apply say-right --local`
+  - 退出码：`0`
+  - 关键通过行：`✅ Successfully applied`（Wrangler migration）
+  - 命令：`cd backend-hono && pnpm test`
+  - 退出码：`0`
+  - 关键通过行：`Test Files  13 passed (13)`、`Tests  46 passed (46)`
+  - 命令：`cd backend-hono && pnpm lint`
+  - 退出码：`0`
+  - 关键通过行：`eslint .`
+  - 命令：`cd backend-hono && pnpm typecheck`
+  - 退出码：`0`
+  - 关键通过行：`tsc --noEmit`
+- 踩坑/教训：
+  - Node/libsql 在 Windows 下释放 sqlite 文件句柄存在延迟，测试 cleanup 必须对 `EBUSY` 做容错，否则会出现“业务通过但测试红”的假失败。
+- 新增规则：
+  - 新增本地 sqlite 文件测试时，cleanup 必须兜底 `EBUSY`。
+- 对后续任务影响：
+  - 前端可直接按契约接入 `/speech/transcribe`，无需再等待后端接口变更。
+
+## [2026-04-04 11:20] HONO-012 STT Provider 抽象与 AIHubMix Whisper 适配器
+
+- 关键变更：
+  - 新增 `backend-hono/src/speech/adapter.ts`，定义 `SpeechToTextAdapter` 与 provider 工厂。
+  - 新增 `backend-hono/src/speech/aihubmix-adapter.ts`，封装 OpenAI-compatible 转写请求与异常映射。
+  - 新增 `backend-hono/tests/speech-adapter.test.ts`，覆盖成功、超时、空文本、上游异常与配置错误。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm test -- speech-adapter`
+  - 退出码：`0`
+  - 关键通过行：`tests/speech-adapter.test.ts (5 tests)`
+  - 命令：`cd backend-hono && pnpm lint`
+  - 退出码：`0`
+  - 关键通过行：`eslint .`
+  - 命令：`cd backend-hono && pnpm typecheck`
+  - 退出码：`0`
+  - 关键通过行：`tsc --noEmit`
+- 踩坑/教训：
+  - provider 超时、空文本与非 JSON 错误必须在 adapter 层统一收敛，避免路由层重复处理。
+- 新增规则：
+  - 路由层禁止直接拼接第三方 STT 请求参数，必须经 adapter 抽象。
+- 对后续任务影响：
+  - `HONO-013` 可专注路由校验与错误映射，不再关注 provider 实现细节。
+
+## [2026-04-04 10:40] HONO-011 语音契约与运行时基线
+
+- 关键变更：
+  - 新增 `backend-hono/src/speech/types.ts` 与 `backend-hono/src/speech/runtime.ts`，统一语音场景、语言、prompt 映射与 STT 配置解析。
+  - 新增 `backend-hono/tests/speech-runtime.test.ts`，覆盖 scene 白名单、默认语言、非法输入与配置校验。
+  - 语音场景限制为学习型输入：`record_source/record_generated/review_answer/card_front/card_back`。
+- 测试证据：
+  - 命令：`cd backend-hono && pnpm test -- speech-runtime`
+  - 退出码：`0`
+  - 关键通过行：`tests/speech-runtime.test.ts (8 tests)`
+  - 命令：`cd backend-hono && pnpm lint`
+  - 退出码：`0`
+  - 关键通过行：`eslint .`
+  - 命令：`cd backend-hono && pnpm typecheck`
+  - 退出码：`0`
+  - 关键通过行：`tsc --noEmit`
+- 踩坑/教训：
+  - `scene` 与 `language` 必须在运行时层一次性校验，否则路由和前端易出现重复枚举漂移。
+- 新增规则：
+  - 语音能力扩展时，先改 `speech/runtime.ts` 的映射，再改路由/前端接入。
+- 对后续任务影响：
+  - 为 `HONO-012/013` 提供稳定契约基线与统一配置来源。
+
 ## [2026-03-06 06:54] HONO-010 全量回归、切换 Runbook 与上线收口
 
 - 关键变更：

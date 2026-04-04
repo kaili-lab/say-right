@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
+import { SpeechEnabledTextarea } from "../app/SpeechEnabledTextarea";
 import { DeckApiError, createDeck, deleteDeck, deleteCard, fetchDeckCards, fetchDecks, moveCard, updateCard } from "./decksApi";
 import type { DeckCard, DeckSummary } from "./decksApi";
 
@@ -712,36 +713,36 @@ export function DeckListPage() {
 
             <div className="space-y-3 p-4">
               <div>
-                <label htmlFor="edit-front" className="mb-1 block text-sm font-semibold text-stone-600">
-                  中文
-                </label>
-                <textarea
+                <SpeechEnabledTextarea
                   id="edit-front"
+                  label="中文"
+                  scene="card_front"
+                  language="zh"
                   value={cardModalState.frontText}
-                  onChange={(event) =>
+                  onChange={(nextFrontText) =>
                     setCardModalState((previous) =>
-                      previous.mode === "edit" ? { ...previous, frontText: event.target.value } : previous,
+                      previous.mode === "edit" ? { ...previous, frontText: nextFrontText } : previous,
                     )
                   }
                   rows={3}
-                  className="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  textareaClassName="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                 />
               </div>
 
               <div>
-                <label htmlFor="edit-back" className="mb-1 block text-sm font-semibold text-stone-600">
-                  英文
-                </label>
-                <textarea
+                <SpeechEnabledTextarea
                   id="edit-back"
+                  label="英文"
+                  scene="card_back"
+                  language="en"
                   value={cardModalState.backText}
-                  onChange={(event) =>
+                  onChange={(nextBackText) =>
                     setCardModalState((previous) =>
-                      previous.mode === "edit" ? { ...previous, backText: event.target.value } : previous,
+                      previous.mode === "edit" ? { ...previous, backText: nextBackText } : previous,
                     )
                   }
                   rows={3}
-                  className="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  textareaClassName="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                 />
               </div>
 

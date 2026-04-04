@@ -8,8 +8,9 @@ import type { Page } from "@playwright/test";
 
 export async function seedAuthSession(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    window.localStorage.setItem("say_right_access_token", "e2e-access-token");
-    window.localStorage.setItem("say_right_refresh_token", "e2e-refresh-token");
+    window.localStorage.setItem("say_right_session_active", "1");
     window.localStorage.setItem("say_right_user_email", "e2e@example.com");
+    window.localStorage.removeItem("say_right_access_token");
+    window.localStorage.removeItem("say_right_refresh_token");
   });
 }
