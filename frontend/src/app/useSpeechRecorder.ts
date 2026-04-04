@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export type SpeechRecorderStatus = "idle" | "recording" | "stopping" | "error";
 
 const DEFAULT_MAX_DURATION_MS = 15_000;
+const DEFAULT_MIN_DURATION_MS = 500;
 const DEFAULT_RECORDER_MIME_CANDIDATES = [
   "audio/webm;codecs=opus",
   "audio/webm",
@@ -60,6 +61,7 @@ export function useSpeechRecorder(options?: {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const startedAtRef = useRef<number>(0);
   const timeoutRef = useRef<number | null>(null);
   const pendingStopRef = useRef<Promise<Blob | null> | null>(null);
   const resolveStopRef = useRef<((blob: Blob | null) => void) | null>(null);
@@ -117,6 +119,18 @@ export function useSpeechRecorder(options?: {
       return null;
     }
 
+    const elapsed = Date.now() - startedAtRef.current;
+    if (elapsed < DEFAULT_MIN_DURATION_MS) {
+      try { recorder.stop(); } catch { /* 静默释放资源 */ }
+      clearTimer();
+      releaseStream();
+      resolveStopRef.current?.(null);
+      resetRecorder();
+      setErrorMessage("录音时间太短，请至少录制 0.5 秒。");
+      syncStatus("idle");
+      return null;
+    }
+
     syncStatus("stopping");
     clearTimer();
 
@@ -128,7 +142,7 @@ export function useSpeechRecorder(options?: {
     }
 
     return pendingStopRef.current;
-  }, [clearTimer, setRecorderError, syncStatus]);
+  }, [clearTimer, releaseStream, resetRecorder, setRecorderError, syncStatus]);
 
   const startRecording = useCallback(async () => {
     if (isStartingRef.current || statusRef.current === "recording" || statusRef.current === "stopping") {
@@ -185,6 +199,7 @@ export function useSpeechRecorder(options?: {
       };
 
       recorder.start();
+      startedAtRef.current = Date.now();
       syncStatus("recording");
 
       if (maxDurationMs > 0) {

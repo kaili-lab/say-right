@@ -341,4 +341,30 @@ describe('HONO-013 speech transcribe endpoint', () => {
       await fixture.cleanup();
     }
   });
+
+  it('provider response status should be propagated when available', async () => {
+    const speech: SpeechToTextAdapter = {
+      async transcribe() {
+        throw new SpeechProviderUnavailableError('rate limited', 429);
+      }
+    };
+    const fixture = await createFixture({ speech });
+
+    try {
+      const cookie = await fixture.signUpAndGetCookie(`speech-429-${randomUUID()}@example.com`);
+      const response = await fixture.requestWithCookie('/speech/transcribe', cookie, {
+        method: 'POST',
+        body: buildFormData({
+          file: createAudioFile('hello'),
+          scene: 'review_answer',
+          language: 'en'
+        })
+      });
+
+      expect(response.status).toBe(429);
+      expect((await response.json()).detail).toBe('rate limited');
+    } finally {
+      await fixture.cleanup();
+    }
+  });
 });

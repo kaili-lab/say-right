@@ -105,8 +105,13 @@ export async function transcribeSpeech(
   },
   fetchImpl: typeof fetch = fetch,
 ): Promise<SpeechTranscribeResult> {
+  const file = toFile(params.audio);
+  if (file.size <= 0) {
+    throw new SpeechApiError("audio payload is empty", 422);
+  }
+
   const formData = new FormData();
-  formData.set("file", toFile(params.audio));
+  formData.set("file", file);
   formData.set("language", params.language);
   formData.set("scene", params.scene);
 

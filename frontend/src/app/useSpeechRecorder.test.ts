@@ -41,6 +41,54 @@ class MockMediaRecorder {
   }
 }
 
+class MockMediaRecorderRequestDataRace {
+  static stopCallCount = 0;
+  static requestDataCallCount = 0;
+  public state: RecordingState = "inactive";
+  public mimeType = "audio/webm";
+  public ondataavailable: ((event: BlobEvent) => void) | null = null;
+  public onerror: ((event: Event) => void) | null = null;
+  public onstop: ((event: Event) => void) | null = null;
+  private drained = false;
+
+  static isTypeSupported(mimeType: string) {
+    return mimeType === "audio/webm" || mimeType === "audio/webm;codecs=opus";
+  }
+
+  constructor(_stream: MediaStream, options?: MediaRecorderOptions) {
+    if (options?.mimeType) {
+      this.mimeType = options.mimeType;
+    }
+  }
+
+  start() {
+    this.state = "recording";
+  }
+
+  requestData() {
+    MockMediaRecorderRequestDataRace.requestDataCallCount += 1;
+    this.drained = true;
+    setTimeout(() => {
+      this.ondataavailable?.({ data: new Blob(["full-audio"], { type: this.mimeType }) } as BlobEvent);
+    }, 0);
+  }
+
+  stop() {
+    if (this.state === "inactive") {
+      return;
+    }
+    this.state = "inactive";
+    MockMediaRecorderRequestDataRace.stopCallCount += 1;
+    queueMicrotask(() => {
+      const payload = this.drained
+        ? new Blob(["x"], { type: this.mimeType })
+        : new Blob(["full-audio"], { type: this.mimeType });
+      this.ondataavailable?.({ data: payload } as BlobEvent);
+      this.onstop?.(new Event("stop"));
+    });
+  }
+}
+
 function createMockStream(trackStop = vi.fn()) {
   return {
     stream: {
@@ -78,12 +126,16 @@ describe("useSpeechRecorder", () => {
       configurable: true,
     });
 
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     const { result } = renderHook(() => useSpeechRecorder());
 
     await act(async () => {
       await result.current.startRecording();
     });
     expect(result.current.status).toBe("recording");
+
+    // 模拟录制超过最短时长
+    await act(async () => { vi.advanceTimersByTime(600); });
 
     let blob: Blob | null = null;
     await act(async () => {
@@ -203,5 +255,39 @@ describe("useSpeechRecorder", () => {
     });
 
     expect(MockMediaRecorder.lastMimeType).toBe("audio/webm");
+  });
+
+  it("stop 前 requestData 不应导致最终仅返回极短音频", async () => {
+    const { stream } = createMockStream();
+    const getUserMediaMock = vi.fn().mockResolvedValue(stream);
+    Object.defineProperty(navigator, "mediaDevices", {
+      value: {
+        getUserMedia: getUserMediaMock,
+      },
+      configurable: true,
+    });
+
+    vi.stubGlobal("MediaRecorder", MockMediaRecorderRequestDataRace as unknown as typeof MediaRecorder);
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+
+    const { result } = renderHook(() => useSpeechRecorder());
+
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+
+    let blob: Blob | null = null;
+    await act(async () => {
+      blob = await result.current.stopRecording();
+    });
+
+    expect(blob).toBeInstanceOf(Blob);
+    expect(await blob?.text()).toBe("full-audio");
+    expect(MockMediaRecorderRequestDataRace.requestDataCallCount).toBe(0);
+    expect(MockMediaRecorderRequestDataRace.stopCallCount).toBe(1);
   });
 });

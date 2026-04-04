@@ -105,7 +105,7 @@ export class AiHubMixSpeechAdapter {
 
   constructor(private readonly options: AiHubMixSpeechAdapterOptions) {
     this.endpoint = withPath(options.baseURL, '/audio/transcriptions');
-    this.fetchImpl = options.fetchImpl ?? globalThis.fetch;
+    this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
   }
 
   async transcribe(input: SpeechTranscribePayload): Promise<SpeechTranscribeResult> {

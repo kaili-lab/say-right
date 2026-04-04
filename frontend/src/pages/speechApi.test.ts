@@ -93,6 +93,27 @@ describe("speechApi", () => {
     expect(file.type).toBe("audio/mp4");
   });
 
+  it("empty audio should fail before sending request", async () => {
+    const fetchMock = vi.fn<typeof fetch>();
+
+    await expect(
+      transcribeSpeech(
+        {
+          audio: new Blob([], { type: "audio/webm" }),
+          language: "en",
+          scene: "review_answer",
+        },
+        fetchMock,
+      ),
+    ).rejects.toMatchObject({
+      name: "SpeechApiError",
+      status: 422,
+      message: "audio payload is empty",
+    });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("422 应提取 detail 数组内的 msg", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(

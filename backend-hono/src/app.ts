@@ -8,6 +8,7 @@ import { zValidator } from '@hono/zod-validator';
 import { and, desc, eq, gte, lt, lte, sql } from 'drizzle-orm';
 import { type Context, Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { type ContentfulStatusCode } from 'hono/utils/http-status';
 import { type DrizzleD1Database, drizzle } from 'drizzle-orm/d1';
 import { z } from 'zod';
 import { createBetterAuth } from './auth';
@@ -858,7 +859,11 @@ export function createApp(options: AppOptions = {}) {
       });
     } catch (error) {
       if (error instanceof SpeechProviderUnavailableError) {
-        return c.json({ detail: error.message || 'provider unavailable' }, 503);
+        const status: ContentfulStatusCode =
+          Number.isInteger(error.status) && error.status >= 400 && error.status < 600
+            ? (error.status as ContentfulStatusCode)
+            : 503;
+        return c.json({ detail: error.message || 'provider unavailable' }, status);
       }
       throw error;
     }
