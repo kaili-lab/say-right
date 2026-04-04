@@ -3,6 +3,38 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export type SpeechRecorderStatus = "idle" | "recording" | "stopping" | "error";
 
 const DEFAULT_MAX_DURATION_MS = 15_000;
+const DEFAULT_RECORDER_MIME_CANDIDATES = [
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/mp4",
+  "audio/mp4;codecs=mp4a.40.2",
+  "audio/ogg;codecs=opus",
+  "audio/ogg",
+  "audio/mpeg",
+] as const;
+
+function pickSupportedRecorderMimeType(preferred?: string) {
+  const recorderCtor = globalThis.MediaRecorder as
+    | (typeof MediaRecorder & { isTypeSupported?: (mimeType: string) => boolean })
+    | undefined;
+
+  if (!recorderCtor || typeof recorderCtor.isTypeSupported !== "function") {
+    return preferred?.trim() ? preferred.trim() : null;
+  }
+
+  const normalizedPreferred = preferred?.trim();
+  if (normalizedPreferred && recorderCtor.isTypeSupported(normalizedPreferred)) {
+    return normalizedPreferred;
+  }
+
+  for (const candidate of DEFAULT_RECORDER_MIME_CANDIDATES) {
+    if (recorderCtor.isTypeSupported(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
 
 function mapRecorderError(error: unknown) {
   if (error instanceof DOMException) {
@@ -114,8 +146,9 @@ export function useSpeechRecorder(options?: {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = options?.mimeType
-        ? new MediaRecorder(stream, { mimeType: options.mimeType })
+      const selectedMimeType = pickSupportedRecorderMimeType(options?.mimeType);
+      const recorder = selectedMimeType
+        ? new MediaRecorder(stream, { mimeType: selectedMimeType })
         : new MediaRecorder(stream);
 
       streamRef.current = stream;
@@ -139,7 +172,7 @@ export function useSpeechRecorder(options?: {
         const blob =
           chunksRef.current.length > 0
             ? new Blob(chunksRef.current, {
-                type: recorder.mimeType || options?.mimeType || "audio/webm",
+                type: recorder.mimeType || selectedMimeType || "audio/webm",
               })
             : null;
 

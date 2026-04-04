@@ -38,8 +38,28 @@ function toFile(audio: Blob | File) {
   if (audio instanceof File) {
     return audio;
   }
-  return new File([audio], "speech.webm", {
-    type: audio.type || "audio/webm",
+  const mimeType = audio.type || "audio/webm";
+  const extension = (() => {
+    if (mimeType.includes("webm")) {
+      return "webm";
+    }
+    if (mimeType.includes("ogg")) {
+      return "ogg";
+    }
+    if (mimeType.includes("wav") || mimeType.includes("wave")) {
+      return "wav";
+    }
+    if (mimeType.includes("mpeg") || mimeType.includes("mp3")) {
+      return "mp3";
+    }
+    if (mimeType.includes("mp4") || mimeType.includes("m4a")) {
+      return "m4a";
+    }
+    return "bin";
+  })();
+
+  return new File([audio], `speech.${extension}`, {
+    type: mimeType,
   });
 }
 

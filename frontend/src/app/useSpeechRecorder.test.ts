@@ -4,6 +4,13 @@ import { useSpeechRecorder } from "./useSpeechRecorder";
 
 class MockMediaRecorder {
   static stopCallCount = 0;
+  static lastMimeType: string | null = null;
+  static supportedMimeTypes = new Set<string>(["audio/webm;codecs=opus", "audio/webm"]);
+
+  static isTypeSupported(mimeType: string) {
+    return MockMediaRecorder.supportedMimeTypes.has(mimeType);
+  }
+
   public state: RecordingState = "inactive";
   public mimeType = "audio/webm";
   public ondataavailable: ((event: BlobEvent) => void) | null = null;
@@ -11,6 +18,7 @@ class MockMediaRecorder {
   public onstop: ((event: Event) => void) | null = null;
 
   constructor(_stream: MediaStream, options?: MediaRecorderOptions) {
+    MockMediaRecorder.lastMimeType = options?.mimeType ?? null;
     if (options?.mimeType) {
       this.mimeType = options.mimeType;
     }
@@ -49,6 +57,8 @@ function createMockStream(trackStop = vi.fn()) {
 describe("useSpeechRecorder", () => {
   beforeEach(() => {
     MockMediaRecorder.stopCallCount = 0;
+    MockMediaRecorder.lastMimeType = null;
+    MockMediaRecorder.supportedMimeTypes = new Set(["audio/webm;codecs=opus", "audio/webm"]);
     vi.stubGlobal("MediaRecorder", MockMediaRecorder as unknown as typeof MediaRecorder);
   });
 
@@ -153,5 +163,45 @@ describe("useSpeechRecorder", () => {
 
     expect(getUserMediaMock).toHaveBeenCalledTimes(1);
     expect(result.current.status).toBe("recording");
+  });
+
+  it("prefers explicit mimeType when supported", async () => {
+    const { stream } = createMockStream();
+    const getUserMediaMock = vi.fn().mockResolvedValue(stream);
+    Object.defineProperty(navigator, "mediaDevices", {
+      value: {
+        getUserMedia: getUserMediaMock,
+      },
+      configurable: true,
+    });
+    MockMediaRecorder.supportedMimeTypes = new Set(["audio/mp4"]);
+
+    const { result } = renderHook(() => useSpeechRecorder({ mimeType: "audio/mp4" }));
+
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    expect(MockMediaRecorder.lastMimeType).toBe("audio/mp4");
+  });
+
+  it("falls back to first supported candidate when preferred mimeType is unsupported", async () => {
+    const { stream } = createMockStream();
+    const getUserMediaMock = vi.fn().mockResolvedValue(stream);
+    Object.defineProperty(navigator, "mediaDevices", {
+      value: {
+        getUserMedia: getUserMediaMock,
+      },
+      configurable: true,
+    });
+    MockMediaRecorder.supportedMimeTypes = new Set(["audio/webm"]);
+
+    const { result } = renderHook(() => useSpeechRecorder({ mimeType: "audio/mp4" }));
+
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    expect(MockMediaRecorder.lastMimeType).toBe("audio/webm");
   });
 });

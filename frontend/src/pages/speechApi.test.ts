@@ -56,7 +56,41 @@ describe("speechApi", () => {
     const form = init?.body as FormData;
     expect(form.get("scene")).toBe("review_answer");
     expect(form.get("language")).toBe("en");
-    expect(form.get("file")).toBeInstanceOf(File);
+    const file = form.get("file");
+    expect(file).toBeInstanceOf(File);
+    expect((file as File).name).toBe("speech.webm");
+    expect((file as File).type).toBe("audio/webm");
+  });
+
+  it("audio/mp4 should be uploaded as speech.m4a", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          text: "hello world",
+          language: "en",
+          provider_model: "whisper-large-v3",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+
+    await transcribeSpeech(
+      {
+        audio: new Blob(["audio-data"], { type: "audio/mp4" }),
+        language: "en",
+        scene: "review_answer",
+      },
+      fetchMock,
+    );
+
+    const [, init] = fetchMock.mock.calls[0] ?? [];
+    const form = init?.body as FormData;
+    const file = form.get("file") as File;
+    expect(file.name).toBe("speech.m4a");
+    expect(file.type).toBe("audio/mp4");
   });
 
   it("422 应提取 detail 数组内的 msg", async () => {

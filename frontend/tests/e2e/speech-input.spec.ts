@@ -3,8 +3,8 @@ import { seedAuthSession } from "../support/authSession";
 
 const API_BASE = "http://127.0.0.1:8787";
 
-async function stubMediaRecorder(page: Page) {
-  await page.addInitScript(() => {
+async function stubMediaRecorder(page: Page, mimeType = "audio/webm") {
+  await page.addInitScript(({ recorderMimeType }) => {
     const stream = {
       getTracks() {
         return [
@@ -24,7 +24,7 @@ async function stubMediaRecorder(page: Page) {
 
     class MockMediaRecorder {
       public state: RecordingState = "inactive";
-      public mimeType = "audio/webm";
+      public mimeType = recorderMimeType;
       public ondataavailable: ((event: BlobEvent) => void) | null = null;
       public onstop: ((event: Event) => void) | null = null;
       public onerror: ((event: Event) => void) | null = null;
@@ -48,7 +48,7 @@ async function stubMediaRecorder(page: Page) {
 
     (window as unknown as { MediaRecorder: typeof MediaRecorder }).MediaRecorder =
       MockMediaRecorder as unknown as typeof MediaRecorder;
-  });
+  }, { recorderMimeType: mimeType });
 }
 
 async function routeSpeechTranscribe(page: Page) {
@@ -285,6 +285,42 @@ test.describe("speech-input @speech-e2e", () => {
     await page.getByRole("button", { name: "+ 创建卡片组" }).click();
     const createDialog = page.getByRole("dialog", { name: "创建卡片组" });
     await expect(createDialog.locator("[data-testid^='speech-action-']")).toHaveCount(0);
+  });
+
+  test("audio/mp4 upload should contain m4a filename in multipart body", async ({ page }) => {
+    await page.unroute(`${API_BASE}/speech/transcribe`);
+    await stubMediaRecorder(page, "audio/mp4");
+
+    let capturedMultipart = "";
+    await page.route(`${API_BASE}/speech/transcribe`, async (route) => {
+      capturedMultipart = route.request().postDataBuffer()?.toString("utf8") ?? "";
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          text: "speech input",
+          language: "en",
+          provider_model: "whisper-large-v3",
+        }),
+      });
+    });
+
+    await page.route(`${API_BASE}/decks`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          { id: "deck-default", name: "deck", is_default: true, new_count: 0, learning_count: 0, due_count: 0 },
+        ]),
+      });
+    });
+
+    await page.goto("/record");
+    await page.getByTestId("speech-action-record_source").click();
+    await page.getByTestId("speech-action-record_source").click();
+
+    expect(capturedMultipart).toContain('filename="speech.m4a"');
+    expect(capturedMultipart).toContain("Content-Type: audio/mp4");
   });
 });
 
