@@ -62,3 +62,18 @@
   - login / register
   - deck/group 创建
   - 删除确认等系统操作输入
+
+## 新增决策（2026-04-08）
+
+- `backend-hono/src/app.ts` 进入增量重构阶段，但**不做一次性重写**。
+- 重构策略固定为：
+  - `app.ts` 最终只保留 bootstrap / dependency resolution / middleware registration / route mounting
+  - pure helper、repository helper、middleware、route module 按批次逐步抽离
+- 批次执行规则：
+  - 同一批次内顺序执行，不并行落码
+  - 每个批次末尾必须停止，并执行完整 review gate
+  - full review gate 通过前，不得进入下一批
+- 测试策略：
+  - 现有 integration tests 作为主回归网
+  - 纯函数 / helper / repository 抽离任务必须补 focused tests
+  - 若某段抽离前没有足够保护，必须先加 characterization test

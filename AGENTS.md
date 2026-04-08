@@ -15,10 +15,6 @@
   - `cd frontend && pnpm test && pnpm lint && pnpm typecheck`
   - 仅在任务显式要求 E2E 时追加：`cd frontend && pnpm test:e2e`
 
-## 语言与沟通
-
-- 所有输出使用中文。
-
 ## 版本策略
 
 - 默认使用各技术栈的最新稳定版（GA），禁止无理由沿用过时主版本（如在无约束下继续使用 React 18）。

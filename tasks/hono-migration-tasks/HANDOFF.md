@@ -3,19 +3,24 @@
 ## 最近一次交接
 
 - 当前阶段：`HONO-011/012/013` 已完成，语音后端链路已落地。
+- 已新增下一阶段任务包：`HONO-014 ~ HONO-026`，用于逐步拆解 `backend-hono/src/app.ts`。
 - 本次完成：
   - `HONO-011`：语音契约与运行时基线（`scene/language/prompt` 映射、配置解析）。
   - `HONO-012`：STT provider 抽象与 AIHubMix 适配器。
   - `HONO-013`：`POST /speech/transcribe` 路由、鉴权接入、`401/413/422/503` 映射与集成测试。
   - 修复 Windows 本地 `EBUSY` 导致的后端测试清理失败问题（仅测试 cleanup 容错）。
+- 新增规划产出：
+  - `INDEX.md` 已登记 `HONO-014 ~ HONO-026`
+  - 每个 refactor task 都注明所属 batch、停止点与 full review gate
 - 本次门禁证据：
   - `cd backend-hono && pnpm exec wrangler d1 migrations apply say-right --local`
   - `cd backend-hono && pnpm test`（13 files / 46 tests passed）
   - `cd backend-hono && pnpm lint`（passed）
   - `cd backend-hono && pnpm typecheck`（passed）
 - 下一个任务建议：
-  1. 联调生产 STT 凭据与限流策略（`STT_TIMEOUT_MS/STT_MAX_FILE_SIZE_BYTES`）。
-  2. 按业务需要追加 `/speech/transcribe` 监控告警（4xx/5xx 分桶与 provider 超时统计）。
+  1. 从 `HONO-014` 开始执行 `app.ts` 增量重构，不要跳批次。
+  2. 每完成一个 batch，先跑全量门禁并 review，再进入下一批。
+  3. 若中途发现 contract drift 或测试盲区，优先补 characterization test，不直接继续抽离。
 
 ## 注意事项
 

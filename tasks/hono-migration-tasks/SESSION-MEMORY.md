@@ -410,3 +410,9 @@
   - 迁移期统一使用 `backend-hono/.env.example` 作为变量口径文档，真实值仅放本地 `.env/.dev.vars`。
 - 对后续任务影响：
   - `HONO-002` 可以直接复用当前环境变量基线与 CORS origin 变量，不需要再次定义。
+# 2026-04-08
+
+- 规划 `backend-hono/src/app.ts` 大文件重构时，不做“大爆炸重写”，改为 `HONO-014 ~ HONO-026` 的批次式任务包。
+- 由于多数任务都会同时触碰 `backend-hono/src/app.ts`，任务之间不适合并行落码；可同批次推进，但应顺序执行。
+- 现有 `backend-hono/tests/*` 已对 auth / deck / record / review / dashboard / speech 主链路形成 integration 回归网；重构任务应复用这些测试，而不是重写整套测试。
+- 对 pure helper / repository helper 的抽离，优先补 focused unit 或 DB-backed tests；对 route extraction，优先依赖既有 integration tests。
