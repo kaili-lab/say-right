@@ -6,7 +6,6 @@ import { LANDING_COPY } from "./landingCopy";
 import type { LandingLocale } from "./landingLocale";
 import { persistLandingLocale, readLandingLocale } from "./landingLocale";
 
-const STEP_ICONS = ["✍️", "🤖", "🔁"];
 
 function localeButtonClass(active: boolean) {
   return active
@@ -25,7 +24,7 @@ export function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_0%,#fff7ed_0%,#faf9f6_45%,#fffdf9_100%)] text-stone-800">
+    <div className="min-h-screen bg-[#faf9f6] text-stone-800">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-orange-100/80 bg-[#faf9f6]/90 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-[1160px] items-center justify-between px-4 md:px-6">
@@ -86,7 +85,7 @@ export function LandingPage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               to={isAuthed ? "/app" : "/auth/register"}
-              className="inline-flex h-12 items-center justify-center rounded-xl bg-orange-500 px-6 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:bg-orange-600"
+              className="inline-flex h-12 items-center justify-center rounded-xl bg-orange-500 px-6 text-sm font-semibold text-white hover:bg-orange-600"
             >
               {copy.heroPrimaryCta}
             </Link>
@@ -100,7 +99,7 @@ export function LandingPage() {
         </section>
 
         {/* Pain point: before / after */}
-        <section className="rounded-3xl border border-orange-100 bg-white p-7 shadow-sm">
+        <section className="rounded-3xl border border-orange-100 bg-white p-7">
           <h2 className="text-center text-2xl font-bold text-amber-900">{copy.painTitle}</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-stone-200 bg-stone-50 p-5">
@@ -129,41 +128,40 @@ export function LandingPage() {
         </section>
 
         {/* Workflow */}
-        <section id="workflow" className="mt-10 rounded-3xl border border-orange-100 bg-white p-7 shadow-sm">
+        <section id="workflow" className="mt-10 rounded-3xl border border-orange-100 bg-white p-7">
           <h2 className="text-center text-2xl font-bold text-amber-900">{copy.workflowTitle}</h2>
           <p className="mt-2 text-center text-sm text-stone-600">{copy.workflowIntro}</p>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {copy.workflowSteps.map((step, i) => (
-              <article key={step.title} className="rounded-2xl border border-orange-100 bg-orange-50/40 p-5 text-center">
-                <span className="text-3xl">{STEP_ICONS[i]}</span>
-                <h3 className="mt-3 text-sm font-bold text-amber-800">{step.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-stone-600">{step.description}</p>
-              </article>
+          <div className="mt-8 grid gap-6">
+            {copy.workflowSteps.map((step) => (
+              <div key={step.title}>
+                <h3 className="text-base font-bold text-amber-800">{step.title}</h3>
+                <p className="mt-1 text-sm leading-6 text-stone-600">{step.description}</p>
+              </div>
             ))}
           </div>
         </section>
 
         {/* Benefits */}
-        <section className="mt-10 rounded-3xl border border-orange-100 bg-white p-7 shadow-sm">
+        <section className="mt-10 rounded-3xl border border-orange-100 bg-white p-7">
           <h2 className="text-center text-2xl font-bold text-amber-900">{copy.benefitTitle}</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="mt-8 grid gap-6">
             {copy.benefitItems.map((item) => (
-              <article key={item.title} className="rounded-2xl border border-orange-100 bg-gradient-to-b from-orange-50/50 to-white p-5">
-                <h3 className="text-sm font-bold text-amber-800">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-stone-600">{item.description}</p>
-              </article>
+              <div key={item.title}>
+                <h3 className="text-base font-bold text-amber-800">{item.title}</h3>
+                <p className="mt-1 text-sm leading-6 text-stone-600">{item.description}</p>
+              </div>
             ))}
           </div>
         </section>
 
         {/* Final CTA */}
-        <section className="mt-10 rounded-3xl border border-orange-100 bg-gradient-to-r from-orange-50 to-amber-50 p-10 text-center shadow-sm">
+        <section className="mt-10 rounded-3xl border border-orange-100 bg-orange-50 p-10 text-center">
           <h2 className="text-2xl font-bold text-amber-900">{copy.finalCtaTitle}</h2>
           <p className="mt-2 text-sm text-stone-600">{copy.finalCtaDescription}</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               to={isAuthed ? "/app" : "/auth/register"}
-              className="inline-flex h-12 items-center justify-center rounded-xl bg-orange-500 px-6 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:bg-orange-600"
+              className="inline-flex h-12 items-center justify-center rounded-xl bg-orange-500 px-6 text-sm font-semibold text-white hover:bg-orange-600"
             >
               {copy.heroPrimaryCta}
             </Link>
