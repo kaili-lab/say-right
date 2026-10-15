@@ -102,6 +102,23 @@ function createMockStream(trackStop = vi.fn()) {
   };
 }
 
+/**
+ * WHAT: 在 act 中停止录音，并把 hook 实际返回的音频收集出来。
+ * WHY: 不能写成 `let blob: Blob | null = null` 再在回调里赋值。
+ * TS 会把初始的 null 收窄成 null，而回调里的赋值不参与外层控制流分析，
+ * 之后读它的属性时会被收窄成 never，`tsc -b` 因此报 TS2339。
+ */
+async function stopAndCollectAudio(stopRecording: () => Promise<Blob | null>) {
+  const produced: Blob[] = [];
+  await act(async () => {
+    const stopped = await stopRecording();
+    if (stopped) {
+      produced.push(stopped);
+    }
+  });
+  return produced;
+}
+
 describe("useSpeechRecorder", () => {
   beforeEach(() => {
     MockMediaRecorder.stopCallCount = 0;
@@ -137,12 +154,9 @@ describe("useSpeechRecorder", () => {
     // 模拟录制超过最短时长
     await act(async () => { vi.advanceTimersByTime(600); });
 
-    let blob: Blob | null = null;
-    await act(async () => {
-      blob = await result.current.stopRecording();
-    });
+    const produced = await stopAndCollectAudio(result.current.stopRecording);
 
-    expect(blob).toBeInstanceOf(Blob);
+    expect(produced).toHaveLength(1);
     expect(result.current.status).toBe("idle");
     expect(trackStop).toHaveBeenCalledTimes(1);
   });
@@ -280,13 +294,10 @@ describe("useSpeechRecorder", () => {
       vi.advanceTimersByTime(600);
     });
 
-    let blob: Blob | null = null;
-    await act(async () => {
-      blob = await result.current.stopRecording();
-    });
+    const produced = await stopAndCollectAudio(result.current.stopRecording);
 
-    expect(blob).toBeInstanceOf(Blob);
-    expect(await blob?.text()).toBe("full-audio");
+    expect(produced).toHaveLength(1);
+    expect(await produced[0].text()).toBe("full-audio");
     expect(MockMediaRecorderRequestDataRace.requestDataCallCount).toBe(0);
     expect(MockMediaRecorderRequestDataRace.stopCallCount).toBe(1);
   });
